@@ -1,0 +1,116 @@
+# Domain hints for generate.py — see linkml-data-gen's docs/hints.md for the
+# full key reference. Values here are a starting point; tune visually in
+# Aperture once loaded (per design.md's Open Questions).
+
+slots:
+  # Entity's lifecycle flag (hippo_core.yaml) — always active for this demo;
+  # Mosaic's own availability-transition mechanism (not generation) is how a
+  # real deployment would later mark things archived/superseded/removed.
+  is_available:
+    const: true
+
+classes:
+
+  Donor:
+    name:
+      faker: name
+    cohort:
+      choices: {control: 45, case: 35, at_risk: 20}
+    sex:
+      choices: {male: 48, female: 48, unknown: 4}
+    age_at_death:
+      distribution: normal
+      params: {mean: 68, std: 12}
+      minimum: 21
+      maximum: 102
+      integer: true
+    history_of_rhi:
+      choices: {false: 82, true: 18}
+    cause_of_death:
+      prob: 0.4
+    notes:
+      prob: 0.5
+
+  Sample:
+    sample_type:
+      choices: {blood: 40, tissue: 30, csf: 12, urine: 10, saliva: 8}
+    brain_region:
+      prob: 0.35
+      choices: {hippocampus: 25, frontal_cortex: 25, cerebellum: 25, brainstem: 25}
+    storage_condition:
+      choices: {frozen: 55, fresh: 20, fixed: 15, ambient: 10}
+    replicate_number:
+      choices: [1, 2, 3]
+      weights: [70, 20, 10]
+    tags:
+      prob: 0.6
+      cardinality: {min: 1, max: 5, dist: poisson, lam: 2}
+    collected_at:
+      prob: 0.85
+      date_start: "2015-01-01"
+      date_end: "2024-12-31"
+    accession:
+      pattern: "SMP[0-9]{6}"
+
+  Workflow:
+    name:
+      faker: catch_phrase
+    input_samples:
+      prob: 0.98
+      cardinality: {min: 1, max: 5, dist: poisson, lam: 2}
+    status:
+      choices: {completed: 68, failed: 10, running: 8, queued: 8, cancelled: 6}
+    workflow_type:
+      choices: {alignment: 30, variant_calling: 21, qc: 21, quantification: 13, rna_seq: 15}
+    started_at:
+      date_start: "2019-01-01"
+      date_end: "2024-12-31"
+    completed_at:
+      # Approximates "null mostly for running/queued" (~26% of statuses) —
+      # an approximation per design.md, not an enforced cross-field
+      # correlation.
+      prob: 0.75
+    duration_hours:
+      distribution: lognormal
+      params: {mean: 1.6, sigma: 0.8}
+      minimum: 0.05
+      maximum: 72
+      prob: 0.75
+
+  Dataset:
+    name:
+      faker: catch_phrase
+    dataset_type:
+      choices: {bam: 30, vcf: 25, counts_matrix: 30, report: 15}
+    access_level:
+      choices: {public: 20, controlled: 55, restricted: 25}
+    is_public:
+      choices: {false: 82, true: 18}
+    description:
+      prob: 0.5
+    file_size_bytes:
+      distribution: lognormal
+      params: {mean: 16.5, sigma: 1.6}
+      minimum: 1000000
+      maximum: 50000000000
+      integer: true
+    quality_metrics:
+      prob: 0.7
+
+  QualityMetrics:
+    read_count:
+      distribution: lognormal
+      params: {mean: 16, sigma: 0.8}
+      minimum: 100000
+      maximum: 200000000
+      integer: true
+    mean_quality_score:
+      distribution: normal
+      params: {mean: 35, std: 4}
+      minimum: 10
+      maximum: 40
+    percent_duplicates:
+      distribution: exponential
+      params: {lam: 0.15}
+      minimum: 0
+      maximum: 60

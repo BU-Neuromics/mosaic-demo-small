@@ -1,0 +1,3 @@
+schema_path: schemas/demo.yaml
+storage_backend: sqlite
+database_url: data/mosaic.db

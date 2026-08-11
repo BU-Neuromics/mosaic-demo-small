@@ -1,0 +1,36 @@
+id: https://w3id.org/mosaic-demo-small/generation_root
+name: mosaic-demo-small-generation-root
+description: >-
+  Generation-only wrapper around schemas/demo.yaml. Adds a tree_root
+  container class so linkml-data-gen's container mode can build a connected,
+  cross-referenced bundle. Deliberately kept OUTSIDE schemas/ so `mosaic
+  migrate --schema-dir schemas` / `mosaic ingest --validate-schema
+  schemas/demo.yaml` never see it — Mosaic ignores a user-declared
+  `tree_root` and auto-synthesizes its own bundle root from the domain
+  schema's concrete classes (ADR-0003), but a user-declared tree_root class
+  is NOT a value type and would otherwise get its own real (unwanted) table.
+default_range: string
+imports:
+  - demo
+
+classes:
+  DemoBundle:
+    tree_root: true
+    description: Generation-time container collecting every entity pool.
+    attributes:
+      donors:
+        range: Donor
+        multivalued: true
+        inlined_as_list: true
+      samples:
+        range: Sample
+        multivalued: true
+        inlined_as_list: true
+      workflows:
+        range: Workflow
+        multivalued: true
+        inlined_as_list: true
+      datasets:
+        range: Dataset
+        multivalued: true
+        inlined_as_list: true

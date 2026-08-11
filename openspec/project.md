@@ -43,8 +43,11 @@ multi-hop relationship traversal — see the `add-small-demo-schema` change's
 acceptance criteria for the concrete checklist.
 
 ### Git Workflow
-Local-only git repo (no remote configured, matching sibling repos like
-`hippo-reference-ensembl`). Never pushed anywhere.
+Published as a **private** repo under `BU-Neuromics/mosaic-demo-small` (2026-08-05), alongside the
+`mosaic`/`aperture`/`reel` components this demo exercises. Previously local-only; the
+"never pushed anywhere" rule that applied to sibling repos like `hippo-reference-ensembl` no
+longer applies to this one. Generated artifacts (`*.db`, `data/bundle.yaml`) stay gitignored —
+regenerate with `make generate migrate ingest`.
 
 ## Domain Context
 Models a simplified biobank/omics pipeline: a `Donor` yields one or more
@@ -63,7 +66,9 @@ worth demonstrating, not a bug to work around).
   real numeric distributions (normal/lognormal), sparse optional fields,
   skewed repeated values — not purely uniform-random and not thousands of
   near-identical rows.
-- Never touch upstream/remote git state on any repo, including this one.
+- Never touch upstream/remote git state on **other** repos (`../hippo`, `../datahelix`,
+  `../linkml-data-gen`, …) — read-only there, always. This repo has its own remote (see Git
+  Workflow) and may be pushed to.
 
 ## External Dependencies
 - `linkml-data-gen` (BU-Neuromics) — must be switched to `origin/main`

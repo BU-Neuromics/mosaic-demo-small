@@ -1,0 +1,14 @@
+# Mosaic / generated data (regenerate with `make generate migrate ingest`)
+*.db
+*.db-shm
+*.db-wal
+*.db-journal
+data/bundle.yaml
+
+# Python
+__pycache__/
+*.py[cod]
+*.egg-info/
+
+# OS
+.DS_Store

@@ -1,0 +1,301 @@
+id: https://w3id.org/mosaic-demo-small/demo
+name: mosaic-demo-small
+version: 0.1.0
+description: >-
+  A small, self-contained Mosaic demo: four entity classes (Donor, Sample,
+  Workflow, Dataset) modeling a simplified biobank/omics pipeline. Deliberately
+  independent of the brainbank-hippo-schema demo — built to exercise Aperture's
+  faceting, full-text search, and relationship traversal at a scale that's easy
+  to scan and reason about, not a reduction of the larger schema.
+prefixes:
+  linkml: https://w3id.org/linkml/
+  demo: https://w3id.org/mosaic-demo-small/
+default_prefix: demo
+default_range: string
+imports:
+  - linkml:types
+  - hippo_core
+
+classes:
+
+  Donor:
+    is_a: Entity
+    description: >-
+      An individual who contributed one or more biological samples.
+    attributes:
+      name:
+        required: true
+        description: Human-readable label for this donor.
+      cohort:
+        range: CohortEnum
+        required: true
+        description: Study cohort this donor belongs to (facet).
+      sex:
+        range: SexEnum
+        required: true
+        description: Donor's recorded sex (facet).
+      age_at_death:
+        range: integer
+        required: true
+        description: Donor's age at death, in years.
+      history_of_rhi:
+        range: boolean
+        required: true
+        description: >-
+          Whether this donor has a documented history of repetitive head
+          impacts (RHI) (facet).
+      cause_of_death:
+        description: Free-text cause of death, when known (sparse — often unrecorded).
+      notes:
+        description: >-
+          Free-text intake notes. Full-text searchable — one of the fields
+          used to exercise Aperture's search.
+        annotations:
+          hippo_search: fts5
+
+  Sample:
+    is_a: Entity
+    description: >-
+      A biological specimen collected from a single donor. Linked to its donor
+      via a single-valued reference (a plain FK column, filterable in both
+      directions by equality).
+    attributes:
+      name:
+        required: true
+        description: Human-readable label for this sample.
+      donor:
+        range: Donor
+        required: true
+        description: >-
+          The donor this sample was collected from (single-valued reference —
+          a real FK column; forward-resolved and reverse-queryable via an
+          equality filter on this field).
+      sample_type:
+        range: SampleTypeEnum
+        required: true
+        description: Kind of biological material (facet).
+      brain_region:
+        range: BrainRegionEnum
+        description: >-
+          Anatomical brain region this sample was collected from (facet).
+          Sparse/optional — only meaningful for `sample_type: tissue`
+          samples; most other sample types have no brain region.
+      storage_condition:
+        range: StorageConditionEnum
+        required: true
+        description: How the sample is stored (facet).
+      replicate_number:
+        range: integer
+        required: true
+        description: >-
+          Which technical replicate this is for its donor/sample_type
+          combination. Deliberately skewed — most samples are replicate 1.
+      accession:
+        required: true
+        description: >-
+          Lab accession code. Exact-match lookup key, not meant for full-text
+          search.
+        annotations:
+          hippo_index: true
+      tags:
+        multivalued: true
+        description: Free-form labels (e.g. batch or shipment tags); sparse and variable in count.
+      collected_at:
+        range: date
+        description: Date the sample was collected.
+
+  Workflow:
+    is_a: Entity
+    description: >-
+      A computational or laboratory pipeline run that consumes one or more
+      samples and produces a dataset. Consumes samples via a multivalued
+      reference — stored in Mosaic's `relationships` table, forward-resolved
+      only (no reverse "which workflows consumed this sample" query exists).
+    attributes:
+      name:
+        required: true
+        description: Human-readable label for this workflow run.
+      input_samples:
+        range: Sample
+        multivalued: true
+        required: true
+        description: >-
+          Samples consumed by this workflow run (multivalued reference — a
+          many-to-many edge; forward-resolved only).
+      status:
+        range: WorkflowStatusEnum
+        required: true
+        description: Current run status (facet). Heavily weighted toward completed.
+      workflow_type:
+        range: WorkflowTypeEnum
+        required: true
+        description: Kind of pipeline run (facet).
+      started_at:
+        range: datetime
+        required: true
+        description: When the workflow run started.
+      completed_at:
+        range: datetime
+        description: >-
+          When the workflow run finished. Sparse — approximately null for
+          runs still queued/running (an approximation, not an enforced
+          correlation with `status`).
+      duration_hours:
+        range: float
+        description: Wall-clock duration of the run, in hours, once complete.
+
+  Dataset:
+    is_a: Entity
+    description: >-
+      A data artifact produced by exactly one workflow run. Linked to its
+      producing workflow via a single-valued reference (a plain FK column).
+    attributes:
+      name:
+        required: true
+        description: Human-readable label for this dataset.
+      produced_by:
+        range: Workflow
+        required: true
+        description: >-
+          The workflow run that produced this dataset (single-valued
+          reference — a real FK column; forward-resolved and
+          reverse-queryable via an equality filter on this field).
+      dataset_type:
+        range: DatasetTypeEnum
+        required: true
+        description: Kind of data artifact (facet).
+      access_level:
+        range: AccessLevelEnum
+        required: true
+        description: Data access tier (facet).
+      is_public:
+        range: boolean
+        required: true
+        description: Whether this dataset is publicly released (boolean facet).
+      description:
+        description: >-
+          Free-text description. Full-text searchable — the other field used
+          to exercise Aperture's search.
+        annotations:
+          hippo_search: fts5
+      file_size_bytes:
+        range: float
+        description: >-
+          Size of the underlying data artifact, in bytes. `float`, not
+          `integer` — GraphQL's `Int` scalar is 32-bit signed, and file
+          sizes here realistically range into the tens of gigabytes.
+      quality_metrics:
+        range: QualityMetrics
+        inlined: true
+        description: >-
+          Inlined quality-control metrics for this dataset (a value object,
+          not its own entity — exercises the structured/JSON slot kind).
+
+  QualityMetrics:
+    description: >-
+      Inlined quality-control measurements for a Dataset. Not an entity — has
+      no identifier slot, so it is embedded as structured data rather than
+      stored in its own table.
+    attributes:
+      read_count:
+        range: integer
+        description: Number of sequencing reads or records represented.
+      mean_quality_score:
+        range: float
+        description: Mean per-base or per-record quality score.
+      percent_duplicates:
+        range: float
+        description: Percentage of reads/records flagged as duplicates.
+
+  ExternalID:
+    abstract: true
+    description: >-
+      Override of hippo_core's deprecated ExternalID: this demo doesn't use
+      the external-system-ID linking mechanism, and ExternalID (unlike
+      Process/Validator/ReferenceLoader) isn't in Mosaic's own
+      INFRASTRUCTURE_CLASSES exclusion list, so without this override it
+      would show up as its own (permanently empty) Aperture collection.
+      Marking it `abstract: true` here — a local redeclaration, which
+      LinkML's import-merge semantics let win over hippo_core's imported
+      shape — excludes it the same way any other value-typed/abstract
+      class is excluded, with no changes to hippo_core.yaml or Aperture and
+      no effect on this schema's own `is_a: Entity` classes.
+
+enums:
+  CohortEnum:
+    description: Study cohort a donor was enrolled under.
+    permissible_values:
+      control:
+        description: Control cohort — no disease/exposure of interest.
+      case:
+        description: Case cohort — carries the disease/exposure of interest.
+      at_risk:
+        description: At-risk cohort — elevated risk factors but not diagnosed.
+
+  SexEnum:
+    description: Donor's recorded sex.
+    permissible_values:
+      male:
+      female:
+      unknown:
+
+  SampleTypeEnum:
+    description: Kind of biological material a sample represents.
+    permissible_values:
+      blood:
+      tissue:
+      csf:
+        description: Cerebrospinal fluid.
+      urine:
+      saliva:
+
+  StorageConditionEnum:
+    description: Physical storage condition of a sample.
+    permissible_values:
+      frozen:
+      fresh:
+      fixed:
+        description: Chemically fixed (e.g. formalin).
+      ambient:
+
+  WorkflowStatusEnum:
+    description: Lifecycle status of a workflow run.
+    permissible_values:
+      completed:
+      failed:
+      running:
+      queued:
+      cancelled:
+
+  WorkflowTypeEnum:
+    description: Category of computational pipeline.
+    permissible_values:
+      alignment:
+      variant_calling:
+      qc:
+      quantification:
+      rna_seq:
+        description: RNA sequencing pipeline run.
+
+  BrainRegionEnum:
+    description: Anatomical brain region a tissue sample was collected from.
+    permissible_values:
+      hippocampus:
+      frontal_cortex:
+      cerebellum:
+      brainstem:
+
+  DatasetTypeEnum:
+    description: Kind of data artifact.
+    permissible_values:
+      bam:
+      vcf:
+      counts_matrix:
+      report:
+
+  AccessLevelEnum:
+    description: Data governance tier controlling who may access a dataset.
+    permissible_values:
+      public:
+      controlled:
+      restricted:
