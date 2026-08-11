@@ -12,6 +12,8 @@ model string's prefix (ANTHROPIC_API_KEY, OPENAI_API_KEY, ...).
 """
 import json
 import os
+import time
+from dataclasses import dataclass
 
 import litellm
 import openai  # litellm normalizes all provider errors onto openai's exception hierarchy;
@@ -133,33 +135,24 @@ PLAN_TOOL = {
 }
 
 
-def build_grounding_context(hippo_schema: dict, capability_manifest: dict) -> str:
-    """The ONLY source of field/entity names and capabilities the model may use."""
-    lines = ["## Live schema -- the ONLY field names that exist, per entity:"]
+def render_schema_slots(hippo_schema: dict) -> str:
+    """Placeholder renderer: the per-entity field listing. Substituted into the context
+    template at render time from LIVE introspection, never stored in the artifact."""
+    lines = []
     for entity, info in sorted(hippo_schema.items()):
         slots = ", ".join(sorted(info["fields"]))
         lines.append(f"- {entity} (accessor: {info['accessor_name']}): {slots}")
-    lines.append("")
-    lines.append(_related_lookup_grounding(hippo_schema))
-    lines.append("")
-    lines.append("## Known unsupported capabilities (reject plans needing these):")
-    lines.append(_manifest_limitations(capability_manifest))
     return "\n".join(lines)
 
 
-def _related_lookup_grounding(hippo_schema: dict) -> str:
-    """Enumerates the ONLY valid relationship_type values for related_lookup steps, derived
-    directly from hippoSchema field metadata -- never from the capability manifest's
-    human-authored descriptive labels (e.g. "workflows_via_input_samples"), which are keys
-    for *this documentation*, not values the API accepts. Confirmed empirically: a model
-    given the manifest's raw dict passed its descriptive keys as relationship_type, which
-    silently matches nothing (relatedTo finds zero edges for a relationship_type that was
-    never written to the relationships table)."""
-    lines = [
-        "## Valid related_lookup relationship_type values (the ONLY strings accepted -- "
-        "these are multivalued-reference SLOT NAMES, never a descriptive label):"
-    ]
-    found_any = False
+def render_relationship_types(hippo_schema: dict) -> str:
+    """Placeholder renderer: the ONLY valid relationship_type values for related_lookup steps,
+    derived directly from hippoSchema field metadata -- never from the capability manifest's
+    human-authored descriptive labels (e.g. "workflows_via_input_samples"), which are keys for
+    documentation, not values the API accepts. Confirmed empirically: a model given the
+    manifest's raw dict passed those descriptive keys as relationship_type, which silently
+    matches nothing (relatedTo finds zero edges for a type never written to the table)."""
+    lines = []
     for owner_entity, info in sorted(hippo_schema.items()):
         for field_name, field_info in sorted(info["fields"].items()):
             if field_info.get("kind") == "reference" and field_info.get("multivalued"):
@@ -169,8 +162,7 @@ def _related_lookup_grounding(hippo_schema: dict) -> str:
                     f"that reference an already-identified {target} id through this slot "
                     f"(e.g. source_step's result is a list of {target} ids)"
                 )
-                found_any = True
-    if not found_any:
+    if not lines:
         lines.append("- (none found in this schema)")
     lines.append(
         "A forward single-valued reference (e.g. Sample.donor) is NOT a related_lookup -- "
@@ -179,10 +171,12 @@ def _related_lookup_grounding(hippo_schema: dict) -> str:
     return "\n".join(lines)
 
 
-def _manifest_limitations(manifest: dict) -> str:
+def render_limitations(manifest: dict) -> str:
+    """Placeholder renderer: what this instance genuinely cannot do, so the model is not
+    tuned toward asking for it."""
     lines = []
     meta = manifest.get("_meta", {})
-    for k in ("known_gotcha", "known_gotcha_2"):
+    for k in ("known_gotcha", "known_gotcha_2", "unfilterable_fields"):
         if k in meta:
             lines.append(f"- {meta[k]}")
     for entity, caps in manifest.get("entities", {}).items():
@@ -191,74 +185,203 @@ def _manifest_limitations(manifest: dict) -> str:
     return "\n".join(lines)
 
 
-def plan_query(instruction: str, hippo_schema: dict, capability_manifest: dict) -> QueryPlan:
-    """Calls the configured litellm model. Raises on any provider/auth error -- never falls
-    back to a guess. EXON_MODEL selects the provider; see module docstring."""
-    grounding = build_grounding_context(hippo_schema, capability_manifest)
+# Default composition, used when no tuned context artifact is injected. The harness renders
+# the same three placeholders through a versioned template instead -- same renderers, so a
+# tuning gain reaches `python -m exon` unchanged.
+DEFAULT_GROUNDING_BODY = """## Live schema -- the ONLY field names that exist, per entity:
+{{schema_slots}}
 
-    system = (
-        "You are Exon, a query planner for a bioinformatics metadata graph. Translate the "
-        "user's natural-language instruction into a typed query plan by calling "
-        "emit_query_plan -- never respond with prose or raw GraphQL. Ground every field, "
-        "entity, and relationship name STRICTLY in the schema and capability manifest given "
-        "below; never guess a GraphQL camelCase field name for a filter (the wrong one "
-        "is rejected outright by the server). If the instruction "
-        "needs to know what references an already-identified entity (e.g. 'which workflows "
-        "consumed this sample'), emit a related_lookup step scoped via source_step to the "
-        "ids from an earlier step -- never propose scanning an entire entity table."
+## Valid related_lookup relationship_type values (multivalued-reference SLOT NAMES, never a descriptive label):
+{{relationship_types}}
+
+## Known unsupported capabilities (reject plans needing these):
+{{limitations}}"""
+
+
+def build_grounding_context(hippo_schema: dict, capability_manifest: dict) -> str:
+    """The source of field/entity names and capabilities the model may use."""
+    return (
+        DEFAULT_GROUNDING_BODY.replace("{{schema_slots}}", render_schema_slots(hippo_schema))
+        .replace("{{relationship_types}}", render_relationship_types(hippo_schema))
+        .replace("{{limitations}}", render_limitations(capability_manifest))
     )
 
-    extra_params = {}
-    if MODEL.startswith("ollama"):
-        extra_params["num_ctx"] = OLLAMA_NUM_CTX
 
-    # Forced tool_choice isn't 100% reliably honored by every model -- verified empirically
-    # against ollama_chat/gemma4:12b: across repeated calls with identical grounding/
-    # instruction, it sometimes returned a real tool_calls response and sometimes dumped the
-    # same JSON as markdown-fenced prose instead, despite tool_choice forcing the named
-    # function. A bounded retry absorbs this sampling variance without weakening the
-    # contract: a retry still requires a genuine tool_calls response, never a fallback parse
-    # of free-text content (that would silently reintroduce exactly the "trust the prose"
-    # failure mode this design exists to avoid).
-    last_content = None
-    for attempt in range(MAX_ATTEMPTS):
-        try:
-            response = litellm.completion(
-                model=MODEL,
-                max_tokens=MAX_TOKENS,
-                tools=[PLAN_TOOL],
-                tool_choice={"type": "function", "function": {"name": "emit_query_plan"}},
-                messages=[
-                    {"role": "system", "content": system},
-                    {
-                        "role": "user",
-                        "content": f"{grounding}\n\n## Instruction\n{instruction}",
-                    },
-                ],
-                **extra_params,
-            )
-        except openai.APIError as e:
-            # litellm maps EVERY provider's errors onto openai's exception hierarchy
-            # regardless of which provider actually served the request (confirmed
-            # empirically: Anthropic's missing-key case raises AuthenticationError,
-            # OpenAI's raises InternalServerError -- both are openai.APIError subclasses,
-            # neither is guessable in advance). Catch the common base, and don't retry --
-            # an auth/provider error won't resolve itself on a second attempt.
-            raise RuntimeError(
-                f"Call to model {MODEL!r} failed -- check the provider's API key env var "
-                f"is set (see exon/README.md for the convention per provider) and that the "
-                f"model string is valid for that provider. Original error: {e}"
-            ) from e
+@dataclass
+class PlanAttempt:
+    """One model call, whatever happened. Deliberately records failure modes rather than
+    raising, because the harness grades the distribution of outcomes -- a raised exception
+    would collapse the very signal being measured."""
 
-        tool_calls = response.choices[0].message.tool_calls
+    protocol: str
+    plan: QueryPlan | None = None
+    raw_content: str | None = None
+    structured_arguments: str | None = None
+    finish_reason: str | None = None
+    usage: dict | None = None
+    error: str | None = None
+    latency_s: float = 0.0
+    parse_error: str | None = None
+
+    @property
+    def truncated(self) -> bool:
+        """Ran out of budget before producing anything. On Ollama this is usually num_ctx
+        (prompt+completion, independent of max_tokens) rather than the model's fault, so the
+        harness must classify it as a config problem, not a context problem."""
+        return self.finish_reason == "length" and self.plan is None
+
+
+DEFAULT_SYSTEM_PROMPT = (
+    "You are Exon, a query planner for a bioinformatics metadata graph. Translate the user's "
+    "natural-language instruction into a typed query plan. Never respond with prose or raw "
+    "GraphQL. Ground every field, entity, and relationship name STRICTLY in the schema given "
+    "below -- a name that is not listed there is rejected by the server. Preserve EVERY "
+    "constraint the instruction states: if it names a region, a type, or an attribute, that "
+    "must appear as a filter. If the instruction asks what references an already-identified "
+    "entity (e.g. 'which workflows consumed this sample'), emit a related_lookup step scoped "
+    "via source_step to the ids from an earlier step -- never propose scanning an entire "
+    "entity table."
+)
+
+PLAN_JSON_SCHEMA = PLAN_TOOL["function"]["parameters"]
+
+
+def request_plan(
+    instruction: str,
+    hippo_schema: dict,
+    capability_manifest: dict,
+    *,
+    model: str = None,
+    context: tuple = None,
+    protocol: str = "tool_call",
+    decode_kwargs: dict = None,
+    max_tokens: int = None,
+) -> PlanAttempt:
+    """One stateless single-turn call. No retries -- see plan_query for the retrying facade.
+
+    `context` is an optional (system_prompt, grounding) pair, letting the harness swap in a
+    tuned context artifact; omitted, the module defaults are rendered. The call carries no
+    conversation history, no prior plan, and no expectation, so the model's only knowledge of
+    this schema is what the injected context supplies.
+    """
+    model = model or MODEL
+    max_tokens = max_tokens or MAX_TOKENS
+    if context is None:
+        system = DEFAULT_SYSTEM_PROMPT
+        grounding = build_grounding_context(hippo_schema, capability_manifest)
+    else:
+        system, grounding = context
+
+    kwargs = dict(decode_kwargs or {})
+    if model.startswith("ollama") and "num_ctx" not in kwargs:
+        kwargs["num_ctx"] = OLLAMA_NUM_CTX
+
+    messages = [
+        {"role": "system", "content": system},
+        {"role": "user", "content": f"{grounding}\n\n## Instruction\n{instruction}"},
+    ]
+    if protocol == "tool_call":
+        kwargs.update(
+            tools=[PLAN_TOOL],
+            tool_choice={"type": "function", "function": {"name": "emit_query_plan"}},
+        )
+    elif protocol == "json_schema":
+        kwargs["response_format"] = {
+            "type": "json_schema",
+            "json_schema": {"name": "query_plan", "schema": PLAN_JSON_SCHEMA},
+        }
+    elif protocol == "json_object":
+        kwargs["response_format"] = {"type": "json_object"}
+    elif protocol not in ("delimited", "raw"):
+        raise ValueError(f"unsupported protocol {protocol!r}")
+
+    started = time.monotonic()
+    try:
+        response = litellm.completion(
+            model=model, max_tokens=max_tokens, messages=messages, **kwargs
+        )
+    except openai.APIError as e:
+        # litellm maps EVERY provider's errors onto openai's exception hierarchy regardless of
+        # which provider served the request (verified: Anthropic's missing-key case raises
+        # AuthenticationError, OpenAI's raises InternalServerError). Catch the common base.
+        return PlanAttempt(
+            protocol=protocol,
+            error=f"{type(e).__name__}: {e}",
+            latency_s=time.monotonic() - started,
+        )
+
+    latency = time.monotonic() - started
+    choice = response.choices[0]
+    attempt = PlanAttempt(
+        protocol=protocol,
+        raw_content=choice.message.content,
+        finish_reason=choice.finish_reason,
+        usage=dict(response.usage) if getattr(response, "usage", None) else None,
+        latency_s=latency,
+    )
+
+    payload = None
+    tool_calls = getattr(choice.message, "tool_calls", None)
+    if protocol == "tool_call":
         if tool_calls:
-            raw = json.loads(tool_calls[0].function.arguments)
-            return _parse_plan(instruction, raw)
-        last_content = response.choices[0].message.content
+            attempt.structured_arguments = tool_calls[0].function.arguments
+            payload = attempt.structured_arguments
+    else:
+        # Structured-output protocols put the object in content. NOTE: no fenced-code or prose
+        # extraction here, ever -- parsing a reply that ignored the requested format would
+        # silently reintroduce the "trust the prose" failure mode this design exists to avoid.
+        payload = attempt.raw_content
+        attempt.structured_arguments = payload
 
+    if payload:
+        try:
+            attempt.plan = _parse_plan(instruction, json.loads(payload))
+        except (json.JSONDecodeError, KeyError, TypeError, ValueError) as e:
+            attempt.parse_error = f"{type(e).__name__}: {e}"
+    return attempt
+
+
+def plan_query(
+    instruction: str,
+    hippo_schema: dict,
+    capability_manifest: dict,
+    *,
+    context: tuple = None,
+    protocol: str = "tool_call",
+) -> QueryPlan:
+    """Retrying facade for the product surface (`python -m exon "<question>"`).
+
+    A bounded retry is right here -- a user asking a question wants an answer, and the observed
+    format failures are sampling variance. It is deliberately NOT used by the harness runner,
+    where a retry would conceal the unreliability being measured.
+    """
+    last = None
+    for _ in range(MAX_ATTEMPTS):
+        last = request_plan(
+            instruction,
+            hippo_schema,
+            capability_manifest,
+            context=context,
+            protocol=protocol,
+        )
+        if last.error:
+            raise RuntimeError(
+                f"Call to model {MODEL!r} failed -- check the provider's API key env var is "
+                f"set (see exon/README.md for the convention per provider) and that the model "
+                f"string is valid for that provider. Original error: {last.error}"
+            )
+        if last.plan is not None:
+            return last.plan
+
+    detail = last.parse_error or f"content: {(last.raw_content or '')[:400]!r}"
+    if last.truncated:
+        detail = (
+            f"response truncated (finish_reason=length) before producing a plan -- for an "
+            f"ollama model raise EXON_OLLAMA_NUM_CTX (currently {OLLAMA_NUM_CTX}); {detail}"
+        )
     raise RuntimeError(
-        f"Model {MODEL!r} did not call emit_query_plan in {MAX_ATTEMPTS} attempt(s) despite "
-        f"forced tool_choice -- last response content: {last_content!r}"
+        f"Model {MODEL!r} produced no usable plan in {MAX_ATTEMPTS} attempt(s) via "
+        f"protocol={protocol!r} -- {detail}"
     )
 
 
