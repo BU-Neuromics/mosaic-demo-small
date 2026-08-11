@@ -31,6 +31,11 @@ PROBE_MAX_TOKENS = int(os.environ.get("EXON_PROBE_MAX_TOKENS", "4096"))
 # _check_protocol_under_load for why an isolated-only probe is actively misleading.
 LOADED_SAMPLES = int(os.environ.get("EXON_PROBE_LOADED_SAMPLES", "3"))
 LOADED_MAX_TOKENS = int(os.environ.get("EXON_PROBE_LOADED_MAX_TOKENS", "8192"))
+# Generations under real load run for minutes on a local model; litellm's default request
+# timeout kills them mid-flight and the failure then looks like a model defect rather than a
+# transport one. Measured: a 16384-token arm of this experiment was entirely invalidated that
+# way before the timeout was raised.
+REQUEST_TIMEOUT = int(os.environ.get("EXON_REQUEST_TIMEOUT", "1800"))
 
 
 class OutputProtocol(str, Enum):
@@ -148,7 +153,8 @@ def _extra(model: str) -> dict:
 
 def _call(model: str, **kwargs) -> object:
     return litellm.completion(
-        model=model, temperature=0, max_tokens=PROBE_MAX_TOKENS, **_extra(model), **kwargs
+        model=model, temperature=0, max_tokens=PROBE_MAX_TOKENS,
+        timeout=REQUEST_TIMEOUT, **_extra(model), **kwargs
     )
 
 
@@ -372,6 +378,7 @@ def _check_protocol_under_load(
                 model=model,
                 temperature=0,
                 max_tokens=LOADED_MAX_TOKENS,
+                timeout=REQUEST_TIMEOUT,
                 messages=messages,
                 **_extra(model),
                 **kwargs,

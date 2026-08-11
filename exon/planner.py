@@ -34,6 +34,11 @@ MAX_TOKENS = int(os.environ.get("EXON_MAX_TOKENS", "8192"))
 # have this parameter.
 OLLAMA_NUM_CTX = int(os.environ.get("EXON_OLLAMA_NUM_CTX", "32768"))
 MAX_ATTEMPTS = int(os.environ.get("EXON_MAX_ATTEMPTS", "3"))
+# A loaded generation on a local model runs for minutes. litellm's default request timeout cuts
+# it off, and the resulting APIConnectionError is indistinguishable from a real transport fault
+# unless you know to look -- it silently turned one measurement arm into noise before this was
+# raised.
+REQUEST_TIMEOUT = int(os.environ.get("EXON_REQUEST_TIMEOUT", "1800"))
 
 PLAN_TOOL = {
     "type": "function",
@@ -298,7 +303,8 @@ def request_plan(
     started = time.monotonic()
     try:
         response = litellm.completion(
-            model=model, max_tokens=max_tokens, messages=messages, **kwargs
+            model=model, max_tokens=max_tokens, messages=messages,
+            timeout=REQUEST_TIMEOUT, **kwargs
         )
     except openai.APIError as e:
         # litellm maps EVERY provider's errors onto openai's exception hierarchy regardless of
