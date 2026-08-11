@@ -166,6 +166,81 @@ review pass caught three more after the driving example first "worked":
   at validation (not dangerous, but a hole in "validate before execute"). Closed: `select_fields`
   and `forward_relation.select_fields` are now checked too.
 
+## The context-tuning harness (`exon/harness/`)
+
+Exon's reliability is now a measured number rather than an anecdote. The harness runs each
+benchmark question `k` times against an editable context, grades the distribution, and (with
+`--auto-refine`) tunes the context until the pass rate rises.
+
+```bash
+python -m exon.harness probe                    # fingerprint the target model
+python -m exon.harness run --samples 3          # one pass; prints per-case pass rates
+python -m exon.harness loop --auto-refine       # the full measure -> refine -> re-measure cycle
+python -m exon.harness report --run <dir>
+```
+
+Defaults to report-and-stop; `--auto-refine` needs `EXON_REFINER_MODEL` and its credential.
+
+**What it measures.** Per-case pass rate over k samples, plus strict (k-of-k) count and flake
+rate reported separately — the failures that motivated this were intermittent, and a
+single-sample suite would have called them green about half the time. The gate is
+`--threshold` (default **0.8**, not 1.0): perfection was never the goal, and a 1.0 gate against a
+local model would simply never terminate.
+
+**The tier that matters.** The validator answers "is this plan safe and executable". It cannot
+answer "does this plan represent what was asked" — and the real failure passed the first while
+failing the second. Tier 3 checks faithfulness: every stated constraint present, none silently
+added. Comparison is on semantics, never spelling.
+
+**What it will not do.** Environment failures (num_ctx truncation, provider errors) are reported
+to you but withheld from the refiner, which would otherwise try to fix a config bug by rewording
+prose. The holdout split is withheld too, enforced by `build_bundle` raising rather than by
+convention. Candidate contexts are rejected if they drop a schema placeholder, exceed the size
+cap, name a test case, or quote a question verbatim — a context that encodes answers raises the
+score without improving anything.
+
+### Findings from the first real run against `ollama_chat/gemma4:12b`
+
+**The capability probe contradicted itself, and that was the most useful result.** In isolation
+every output protocol passed 5/5, determinism read 100%, preamble tendency 0%. Under a
+realistically sized request:
+
+| protocol | isolated | under load |
+|---|---|---|
+| `json_schema` | 5/5 | 0/3 |
+| `tool_call` | 5/5 | 0/3 |
+| `json_object` | 5/5 | 0/3 |
+
+An isolated-only probe — which is what both this project's original spec and the `ctxtune` spec
+called for — would have told the loop "protocol is fine, this must be a prose problem" and sent
+the refiner to reword instructions that were never the cause. The under-load check exists because
+of this result.
+
+**Is the unreliability a budget problem or a model problem? Partly measured, partly not.** One
+clean sample at `max_tokens=8192` finished normally (`finish=stop`) after only 3632 completion
+tokens and still returned markdown-fenced JSON instead of the forced tool call. So budget is not
+the sole cause: this model does ignore forced `tool_choice` under load. A separate sample
+truncated at the 8192 ceiling, which *is* budget-shaped — and whether a larger budget fixes that
+half is **still unmeasured**, because the `max_tokens=16384` arm was entirely invalidated by
+litellm request timeouts before `EXON_REQUEST_TIMEOUT` was raised.
+
+**Load is the variable, not the protocol.** The heavy driving question fails every structured
+protocol, while a light question (`q01`) produced a parseable plan through `json_schema`. That
+points at shrinking the grounding as a real lever, which is exactly the kind of change the loop
+can make and measure.
+
+### Test suite
+
+Four files, 60 checks, no model calls required:
+
+- `tests/test_grading.py` — the golden set, anchored on the two REAL captured plans (the faithful
+  one, and the `filters: []` one that silently dropped every constraint).
+- `tests/test_harness_invariants.py` — render determinism, patch apply-then-invert, append-only
+  versioning, fingerprint binding, placeholder/size guards, memorization lint, holdout isolation.
+- `tests/test_independence.py` — asserts on the prompts actually assembled at the litellm
+  boundary: no case ids, no expectations, no expected results, no conversation history.
+- `tests/test_runner_fake.py` — a fake litellm target for deterministic end-to-end runs.
+
 ## Known limitations (by design, not oversight)
 
 - One instruction in, one result out — no multi-turn conversation, no session state.
