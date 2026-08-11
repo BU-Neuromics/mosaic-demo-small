@@ -496,8 +496,17 @@ def probe_model(
                 recommended = proto
                 break
         else:
-            log("  WARNING: no protocol held unanimously UNDER LOAD -- the isolated ladder's "
-                "choice is optimistic; expect format failures the context cannot fix")
+            log("")
+            log("  *** NO PROTOCOL HELD UNDER LOAD ***")
+            log("  Every protocol that passed in isolation fails on a realistically sized")
+            log("  request. The isolated ladder's choice is not merely optimistic, it is wrong.")
+            log("  This is a MODEL/CONFIG limit, not something context wording can fix:")
+            log("    - if the loaded evidence shows finish_reason=length, raise num_ctx")
+            log("    - otherwise this model cannot hold a structured format under this much")
+            log("      context, and the honest options are a smaller grounding, a different")
+            log("      model, or accepting a low reliability ceiling and reporting it")
+            log("  Proceeding with the isolated choice so the run can continue, but treat its")
+            log("  format failures as expected rather than as context defects.")
 
     ctx = _context_window(model)
     log(f"  context window        : {ctx if ctx else 'unknown (warning)'}")

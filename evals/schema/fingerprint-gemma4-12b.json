@@ -1,0 +1,165 @@
+{
+  "model": "ollama_chat/gemma4:12b",
+  "honours_system_role": true,
+  "supports_json_schema": true,
+  "supports_tool_call": true,
+  "supports_json_object": true,
+  "honours_stop_sequences": true,
+  "determinism_at_temp_0": 1.0,
+  "preamble_tendency": 0.0,
+  "max_context_tokens": 262144,
+  "recommended_protocol": "json_schema",
+  "checks": {
+    "system_role": {
+      "name": "system_role",
+      "passed": 5,
+      "total": 5,
+      "detail": "",
+      "evidence": [
+        "ACK",
+        "ACK",
+        "ACK",
+        "ACK",
+        "ACK"
+      ]
+    },
+    "protocol:json_schema": {
+      "name": "protocol:json_schema",
+      "passed": 5,
+      "total": 5,
+      "detail": "",
+      "evidence": [
+        "{\"entity\": \"Sample\"}",
+        "{\"entity\": \"Sample\"}",
+        "{\"entity\": \"Sample\"}",
+        "{\"entity\": \"Sample\"}",
+        "{\"entity\": \"Sample\"}"
+      ]
+    },
+    "protocol:tool_call": {
+      "name": "protocol:tool_call",
+      "passed": 5,
+      "total": 5,
+      "detail": "",
+      "evidence": [
+        "{\"entity\": \"Sample\"}",
+        "{\"entity\": \"Sample\"}",
+        "{\"entity\": \"Sample\"}",
+        "{\"entity\": \"Sample\"}",
+        "{\"entity\": \"Sample\"}"
+      ]
+    },
+    "protocol:json_object": {
+      "name": "protocol:json_object",
+      "passed": 5,
+      "total": 5,
+      "detail": "",
+      "evidence": [
+        "{\"entity\": \"Sample\"}",
+        "{\"entity\": \"Sample\"}",
+        "{\"entity\": \"Sample\"}",
+        "{\"entity\": \"Sample\"}",
+        "{\"entity\": \"Sample\"}"
+      ]
+    },
+    "protocol:delimited": {
+      "name": "protocol:delimited",
+      "passed": 5,
+      "total": 5,
+      "detail": "",
+      "evidence": [
+        "<answer>Sample</answer>",
+        "<answer>Sample</answer>",
+        "<answer>Sample</answer>",
+        "<answer>Sample</answer>",
+        "<answer>Sample</answer>"
+      ]
+    },
+    "protocol:raw": {
+      "name": "protocol:raw",
+      "passed": 5,
+      "total": 5,
+      "detail": "",
+      "evidence": [
+        "Sample",
+        "Sample",
+        "Sample",
+        "Sample",
+        "Sample"
+      ]
+    },
+    "stop_sequences": {
+      "name": "stop_sequences",
+      "passed": 5,
+      "total": 5,
+      "detail": "",
+      "evidence": [
+        "",
+        "",
+        "",
+        "",
+        ""
+      ]
+    },
+    "determinism_temp_0": {
+      "name": "determinism_temp_0",
+      "passed": 5,
+      "total": 5,
+      "detail": "5/5 byte-identical to the first reply",
+      "evidence": [
+        "Hippocampus",
+        "Hippocampus",
+        "Hippocampus",
+        "Hippocampus",
+        "Hippocampus"
+      ]
+    },
+    "preamble": {
+      "name": "preamble",
+      "passed": 5,
+      "total": 5,
+      "detail": "",
+      "evidence": [
+        "Sample",
+        "Sample",
+        "Sample",
+        "Sample",
+        "Sample"
+      ]
+    },
+    "loaded:json_schema": {
+      "name": "loaded:json_schema",
+      "passed": 0,
+      "total": 3,
+      "detail": "",
+      "evidence": [
+        "<error: JSONDecodeError: Expecting value: line 1 column 1 (char 0)>",
+        "<error: JSONDecodeError: Expecting value: line 1 column 1 (char 0)>",
+        "<error: JSONDecodeError: Expecting value: line 1 column 1 (char 0)>"
+      ]
+    },
+    "loaded:tool_call": {
+      "name": "loaded:tool_call",
+      "passed": 0,
+      "total": 3,
+      "detail": "",
+      "evidence": [
+        "```json\n{\n  \"steps\": [\n    {\n      \"step_type\": \"filter\",\n      \"entity\": \"samples\",\n      \"filter_mode\": \"AND\",\n      \"filters\": [\n        {\n          \"field\": \"brain_region\",\n          \"op\": \"EQ\",\n          \"value\": \"hippocampus\"\n        }\n      ],\n      \"forward_relation\": {\n        \"field\": \"don",
+        "<truncated: finish_reason=length> ",
+        "<truncated: finish_reason=length> "
+      ]
+    },
+    "loaded:json_object": {
+      "name": "loaded:json_object",
+      "passed": 0,
+      "total": 3,
+      "detail": "",
+      "evidence": [
+        "<error: JSONDecodeError: Expecting value: line 1 column 1 (char 0)>",
+        "<error: JSONDecodeError: Expecting value: line 1 column 1 (char 0)>",
+        "<error: JSONDecodeError: Expecting value: line 1 column 1 (char 0)>"
+      ]
+    }
+  },
+  "id": "528ac2da8ae22796"
+}
