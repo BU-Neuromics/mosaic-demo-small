@@ -24,6 +24,15 @@
 #                   out of scope for the planner, so scoring them would measure a capability
 #                   nobody claimed.
 #   q29             entityHistory provenance traversal -- same reason, no op for it.
+#   q20, q25        UNDER-SPECIFIED FOR A STATELESS PLANNER. Both say "the tissue-request
+#                   example", a reference to *other questions* in this file. They were authored
+#                   as benchmark follow-ups for a reader with the whole file in view, but this
+#                   harness evaluates every sample as an independent single-turn call, so the
+#                   planner cannot resolve which four regions are meant. Scoring them would
+#                   test mind-reading, and worse: the refiner would keep trying to fix an
+#                   unfixable case, most likely by writing the four regions into the context --
+#                   exactly the answer-key memorization the lint exists to prevent. q35 is the
+#                   fully self-contained form of the same question and is used instead.
 # Get-by-id questions (q18/q19/q30) ARE included: `id` is an ordinary filterable slot, so
 # `samples(filters:[{field:"id",...}])` is the semantically equivalent supported form.
 
@@ -170,19 +179,6 @@
       required_forward_relation: donor
       required_forward_select: [cohort, sex, history_of_rhi]
 
-# The full driving example: filter + donor attributes in one call.
-- id: q20
-  split: train
-  execute: true
-  steps:
-    - step_type: filter
-      entity: Sample
-      required_filters:
-        - {field: sample_type, value: tissue}
-        - {field: brain_region, value: [hippocampus, frontal_cortex, cerebellum, brainstem], op: IN}
-      required_forward_relation: donor
-      required_forward_select: [cohort, sex, history_of_rhi]
-
 - id: q21
   split: train
   execute: true
@@ -221,9 +217,11 @@
       source_step: 0
       relationship_type: input_samples
 
-# The rnaSeq leg of the driving example: bounded reverse lookup + client-side narrowing, because
-# relatedTo carries no predicate (mosaic#148, open).
-- id: q25
+# THE driving question, verbatim and fully self-contained (added to questions.yaml as q35
+# because q20/q25 reference other questions -- see the scope note above). Two bounded stages:
+# filter + forward donor resolution, then one relatedTo call per already-identified sample,
+# narrowed client-side because relatedTo carries no predicate (mosaic#148, open).
+- id: q35
   split: train
   execute: true
   steps:
@@ -231,7 +229,9 @@
       entity: Sample
       required_filters:
         - {field: sample_type, value: tissue}
-        - {field: brain_region, value: [hippocampus, frontal_cortex, cerebellum, brainstem], op: IN}
+        - {field: brain_region, value: hippocampus}
+      required_forward_relation: donor
+      required_forward_select: [cohort, sex, history_of_rhi]
     - step_type: related_lookup
       source_step: 0
       relationship_type: input_samples

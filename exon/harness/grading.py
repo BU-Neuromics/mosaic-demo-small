@@ -311,11 +311,17 @@ def _plan_to_dict(plan) -> dict:
 
 
 def _compare_expected(case_id: str, result: dict, expected_results: dict | None) -> str:
-    """Compare the executed result against the benchmark's recorded answer.
+    """Compare an executed plan against the benchmark's recorded answer.
 
-    Deliberately conservative: only compares the totals/counts the benchmark actually records,
-    and says nothing when it has no comparable figure. Inventing a stricter comparison than the
-    recorded data supports would manufacture failures.
+    Compares each stage against the figure that actually describes it: the filter step's `total`
+    against the recorded response total, and a reverse-lookup step's match count against the
+    recorded number of entities that matched. Comparing the wrong stage's number was a real bug
+    here -- for a two-step plan the LAST step is the lookup, so checking its 9 matches against
+    the 26-sample total reported a mismatch for a completely correct plan.
+
+    Deliberately conservative: silent when the benchmark records no comparable figure. Inventing
+    a stricter comparison than the recorded data supports would manufacture failures, which for a
+    tuning loop is worse than checking nothing.
     """
     if not expected_results:
         return ""
@@ -323,11 +329,10 @@ def _compare_expected(case_id: str, result: dict, expected_results: dict | None)
     if not isinstance(exp, dict) or exp.get("status") != "ok":
         return ""
 
-    final = result.get("final") or {}
-    actual_total = final.get("total")
-    if actual_total is None:
-        actual_total = len(final.get("matches") or {}) or None
+    steps = result.get("steps") or {}
+    problems = []
 
+    # Stage 1: the filtered record count.
     expected_total = None
     resp = exp.get("response")
     if isinstance(resp, dict):
@@ -335,14 +340,26 @@ def _compare_expected(case_id: str, result: dict, expected_results: dict | None)
             if isinstance(v, dict) and "total" in v:
                 expected_total = v["total"]
                 break
-    if expected_total is None:
-        expected_total = exp.get("samples_with_rna_seq_workflow")
+    first = steps.get(0) if isinstance(steps, dict) else None
+    if expected_total is not None and isinstance(first, dict) and "total" in first:
+        if int(first["total"]) != int(expected_total):
+            problems.append(
+                f"filter step returned {first['total']} record(s), benchmark says "
+                f"{expected_total}"
+            )
 
-    if expected_total is None or actual_total is None:
-        return ""
-    if int(expected_total) != int(actual_total):
-        return (
-            f"executed plan returned {actual_total} record(s) but the benchmark's verified "
-            f"answer for {case_id} is {expected_total}"
-        )
-    return ""
+    # Stage 2: how many entities the bounded reverse lookup actually matched.
+    expected_matches = exp.get("samples_with_rna_seq_workflow")
+    lookup = next(
+        (v for v in (steps.values() if isinstance(steps, dict) else []) if isinstance(v, dict) and "matches" in v),
+        None,
+    )
+    if expected_matches is not None and lookup is not None:
+        got = len(lookup["matches"])
+        if int(got) != int(expected_matches):
+            problems.append(
+                f"reverse lookup matched {got} entity/entities, benchmark says "
+                f"{expected_matches}"
+            )
+
+    return "; ".join(problems)

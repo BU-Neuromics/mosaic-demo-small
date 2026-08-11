@@ -1707,5 +1707,17 @@
     "blocked_by": [
       "mosaic#148"
     ]
+  },
+  "q35": {
+    "status": "ok",
+    "method": "filter samples by sample_type=tissue AND brain_region=hippocampus with donor resolved forward; then one bounded relatedTo(input_samples) call per sample, filtered client-side by workflow_type==rna_seq",
+    "response": {
+      "samples": {
+        "total": 26
+      }
+    },
+    "samples_with_rna_seq_workflow": 9,
+    "call_count": 26,
+    "note": "The project's verbatim driving question. Fully self-contained, unlike q20/q25 which reference 'the tissue-request example'."
   }
 }
