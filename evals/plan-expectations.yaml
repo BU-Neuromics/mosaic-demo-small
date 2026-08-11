@@ -1,0 +1,283 @@
+# Plan-level expectations for the Exon context-tuning harness.
+#
+# Keyed by the SAME ids as questions.yaml -- the natural-language questions there are the source
+# of truth and are not duplicated here. Loading joins on id and raises if an id is unknown, so
+# the two files cannot silently drift apart.
+#
+# What an expectation asserts is *query semantics*, not spelling or formatting:
+#   - required_filters      : these filters MUST be present (field resolved through hippoSchema,
+#                             so `sample_type` and `sampleType` both satisfy the same expectation)
+#   - forbid_extra_filters  : true (default) means silently ADDING a constraint is also a failure,
+#                             not just dropping one -- over-filtering answers a different question
+#   - required_forward_relation / required_forward_select : a single-valued reference resolved in
+#                             the same call (e.g. Sample.donor)
+#   - relationship_type / required_client_filter : a bounded reverse lookup step
+#   - expect_rejection      : the CORRECT behaviour is the validator refusing the plan. A planner
+#                             that invents a plausible unsupported plan which slips through is
+#                             failing, and nothing else tests for that.
+#   - execute: true         : additionally run the plan and diff against expected-results.json
+#   - split                 : train (refiner may see its failures) | holdout (never shown)
+#
+# SCOPE NOTE -- deliberately excluded, with reasons, rather than silently skipped:
+#   q26, q27, q28   full-text search (searchDonors/searchDatasets/searchSamples). Exon v1's op
+#                   catalog has no search op by design; these are real benchmark questions but
+#                   out of scope for the planner, so scoring them would measure a capability
+#                   nobody claimed.
+#   q29             entityHistory provenance traversal -- same reason, no op for it.
+# Get-by-id questions (q18/q19/q30) ARE included: `id` is an ordinary filterable slot, so
+# `samples(filters:[{field:"id",...}])` is the semantically equivalent supported form.
+
+- id: q01
+  split: train
+  steps:
+    - step_type: filter
+      entity: Donor
+      required_filters: [{field: cohort, value: case}]
+
+- id: q02
+  split: train
+  steps:
+    - step_type: filter
+      entity: Donor
+      required_filters: [{field: cohort, value: [case, at_risk], op: IN}]
+
+- id: q03
+  split: holdout
+  steps:
+    - step_type: filter
+      entity: Donor
+      required_filters: [{field: sex, value: male}]
+
+- id: q04
+  split: train
+  steps:
+    - step_type: filter
+      entity: Donor
+      required_filters: [{field: sex, value: unknown}]
+
+- id: q05
+  split: train
+  execute: true
+  steps:
+    - step_type: filter
+      entity: Donor
+      required_filters: [{field: history_of_rhi, value: true}]
+
+- id: q06
+  split: holdout
+  steps:
+    - step_type: filter
+      entity: Sample
+      required_filters: [{field: sample_type, value: blood}]
+
+- id: q07
+  split: train
+  steps:
+    - step_type: filter
+      entity: Sample
+      required_filters: [{field: storage_condition, value: frozen}]
+
+- id: q08
+  split: train
+  steps:
+    - step_type: filter
+      entity: Sample
+      required_filters: [{field: storage_condition, value: fixed}]
+
+# The driving example's first leg. This is the case whose observed failure (an empty filter list,
+# silently dropping every stated constraint) is the reason the harness exists.
+- id: q09
+  split: train
+  execute: true
+  steps:
+    - step_type: filter
+      entity: Sample
+      required_filters:
+        - {field: sample_type, value: tissue}
+        - {field: brain_region, value: [hippocampus, frontal_cortex, cerebellum, brainstem], op: IN}
+
+- id: q10
+  split: train
+  steps:
+    - step_type: filter
+      entity: Workflow
+      required_filters: [{field: status, value: completed}]
+
+- id: q11
+  split: holdout
+  steps:
+    - step_type: filter
+      entity: Workflow
+      required_filters: [{field: status, value: failed}]
+
+- id: q12
+  split: train
+  steps:
+    - step_type: filter
+      entity: Workflow
+      required_filters: [{field: workflow_type, value: rna_seq}]
+
+- id: q13
+  split: train
+  steps:
+    - step_type: filter
+      entity: Dataset
+      required_filters: [{field: access_level, value: controlled}]
+
+- id: q14
+  split: holdout
+  steps:
+    - step_type: filter
+      entity: Dataset
+      required_filters: [{field: is_public, value: true}]
+
+- id: q15
+  split: train
+  steps:
+    - step_type: filter
+      entity: Dataset
+      required_filters: [{field: dataset_type, value: vcf}]
+
+- id: q16
+  split: train
+  steps:
+    - step_type: filter
+      entity: Dataset
+      required_filters: [{field: dataset_type, value: [bam, vcf], op: IN}]
+
+- id: q17
+  split: train
+  execute: true
+  steps:
+    - step_type: filter
+      entity: Sample
+      required_filters: [{field: accession, value: SMP604876}]
+
+- id: q18
+  split: holdout
+  steps:
+    - step_type: filter
+      entity: Sample
+      required_filters: [{field: id, value: SMPL-0001}]
+
+- id: q19
+  split: train
+  execute: true
+  steps:
+    - step_type: filter
+      entity: Sample
+      required_filters: [{field: id, value: SMPL-0001}]
+      required_forward_relation: donor
+      required_forward_select: [cohort, sex, history_of_rhi]
+
+# The full driving example: filter + donor attributes in one call.
+- id: q20
+  split: train
+  execute: true
+  steps:
+    - step_type: filter
+      entity: Sample
+      required_filters:
+        - {field: sample_type, value: tissue}
+        - {field: brain_region, value: [hippocampus, frontal_cortex, cerebellum, brainstem], op: IN}
+      required_forward_relation: donor
+      required_forward_select: [cohort, sex, history_of_rhi]
+
+- id: q21
+  split: train
+  execute: true
+  steps:
+    - step_type: filter
+      entity: Sample
+      required_filters: [{field: donor, value: DNR-0068}]
+
+- id: q22
+  split: holdout
+  steps:
+    - step_type: filter
+      entity: Dataset
+      required_filters: [{field: produced_by, value: WRKF-0245}]
+
+# Dataset -> Workflow -> Sample -> Donor. The Workflow -> Sample hop is a forward multivalued
+# reference, which Exon's catalog reaches only in the reverse direction, so the supported
+# equivalent starts from the dataset and resolves produced_by forward.
+- id: q23
+  split: holdout
+  steps:
+    - step_type: filter
+      entity: Dataset
+      required_filters: [{field: id, value: DTST-0001}]
+      required_forward_relation: produced_by
+
+# Donor -> samples -> referencing workflows -> datasets. Three bounded stages; the middle one is
+# one relatedTo call per already-identified sample id, never a scan.
+- id: q24
+  split: train
+  steps:
+    - step_type: filter
+      entity: Sample
+      required_filters: [{field: donor, value: DNR-0001}]
+    - step_type: related_lookup
+      source_step: 0
+      relationship_type: input_samples
+
+# The rnaSeq leg of the driving example: bounded reverse lookup + client-side narrowing, because
+# relatedTo carries no predicate (mosaic#148, open).
+- id: q25
+  split: train
+  execute: true
+  steps:
+    - step_type: filter
+      entity: Sample
+      required_filters:
+        - {field: sample_type, value: tissue}
+        - {field: brain_region, value: [hippocampus, frontal_cortex, cerebellum, brainstem], op: IN}
+    - step_type: related_lookup
+      source_step: 0
+      relationship_type: input_samples
+      required_client_filter: {field: workflow_type, value: rna_seq}
+
+- id: q30
+  split: train
+  steps:
+    - step_type: filter
+      entity: Sample
+      required_filters: [{field: id, value: SMPL-0001}]
+      select_fields_include: [is_available]
+
+# Pagination is the executor's job, not the plan's -- the plan just needs the right filter, and
+# the executor pages until items == total. Included to catch a planner that tries to express
+# paging itself, or that invents a limit that would truncate the answer.
+- id: q31
+  split: train
+  execute: true
+  steps:
+    - step_type: filter
+      entity: Workflow
+      required_filters: [{field: status, value: completed}]
+
+# ---- Cases where refusing is the correct answer -------------------------------------------
+
+- id: q32
+  split: train
+  expect_rejection: "unsupported"
+  rejection_reason: >-
+    Needs a range op (GT) and a sort. FilterOp has only EQ/IN and no list query takes a sort
+    argument (mosaic#96, open). The planner must refuse rather than silently degrade GT to EQ,
+    which would return a confidently wrong answer.
+
+- id: q33
+  split: holdout
+  expect_rejection: "unsupported"
+  rejection_reason: >-
+    Needs group-by/facet counts, which no root query provides (mosaic#96, open). The only route
+    is one equality-filtered count per enum value, which is a different query.
+
+- id: q34
+  split: train
+  expect_rejection: "predicate"
+  rejection_reason: >-
+    Asks for a predicate-filtered reverse lookup as a SINGLE composed query. relatedTo accepts
+    no predicate on the referenced entity (mosaic#148, open), so this is answerable only as a
+    bounded lookup plus a client-side filter -- which is what q25 asserts. A plan claiming to do
+    it server-side in one call is wrong.
