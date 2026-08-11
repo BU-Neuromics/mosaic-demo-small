@@ -27,10 +27,11 @@ def _filters_to_gql(filters, filter_mode: str) -> str:
 
 def _to_camel(slot_name: str) -> str:
     """hippoSchema slot name -> GraphQL output field name (e.g. "brain_region" ->
-    "brainRegion"). Filter *values* must stay snake_case (mosaic#149) -- this conversion is
-    ONLY for output selection syntax, which is a different vocabulary. Keeping this
+    "brainRegion"). GraphQL output *selection* requires the camelCase form -- unlike filter
+    `field` values, which accept either spelling since mosaic#149/PR#150. Keeping this
     conversion in one place, rather than asking the planner to know both vocabularies, is
-    what stopped this exact confusion from becoming the planner's problem too."""
+    what stopped this confusion from becoming the planner's problem too. Idempotent, so an
+    already-camelCase name passes through unchanged."""
     head, *rest = slot_name.split("_")
     return head + "".join(word.capitalize() for word in rest)
 
@@ -49,7 +50,7 @@ def execute_plan(plan: QueryPlan, endpoint: str, hippo_schema: dict) -> dict:
 
 def _execute_filter_step(step: FilterStep, endpoint: str, hippo_schema: dict) -> dict:
     # Read the accessor name from hippoSchema -- never guess it (the same "don't guess a
-    # name, read it" discipline mosaic#149 exists to enforce elsewhere in this pipeline).
+    # name, read it" discipline that mosaic#149 taught this pipeline the hard way).
     accessor = hippo_schema[step.entity]["accessor_name"]
     fields = ["id"] + [_to_camel(f) for f in step.select_fields if f != "id"]
     if step.forward_relation:

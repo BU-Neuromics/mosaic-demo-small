@@ -13,19 +13,19 @@ assays.
 - **WHEN** querying `samples(filters: [{field: "sample_type", value:
   "tissue"}, {field: "brain_region", value: ["hippocampus",
   "frontal_cortex", "cerebellum", "brainstem"], op: IN}], filterMode: AND)`
-  (the `field` values are the LinkML slot names, verified live and
-  matching this repo's own already-verified benchmark question q05 — the
-  GraphQL-exposed camelCase names `sampleType`/`brainRegion` silently
-  return zero results instead; see the `exon-query-planner` and
-  `query-benchmark` capabilities for the normative requirement this drives)
+  (the `field` values are the LinkML slot names, as listed by `hippoSchema`
+  and matching this repo's benchmark question q05; since mosaic#149/PR#150
+  the camelCase spellings `sampleType`/`brainRegion` resolve identically,
+  and an unrecognized name raises `UNKNOWN_FILTER_FIELD` rather than
+  matching zero rows)
 - **THEN** it returns exactly the tissue samples whose `brainRegion` is one
   of the four specified regions, each resolving its `donor` field
 
 #### Scenario: Filtering donors by RHI history
 
 - **WHEN** querying `donors(filters: [{field: "history_of_rhi", value:
-  true}])` (verified live: the camelCase `historyOfRhi` form returns zero
-  results)
+  true}])` (verified live; since mosaic#149/PR#150 the camelCase
+  `historyOfRhi` form resolves to the same slot)
 - **THEN** it returns exactly the donors with a recorded history of
   repetitive head impacts, and the field is present (non-null) on every
   donor since it is required

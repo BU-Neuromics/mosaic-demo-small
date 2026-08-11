@@ -8,8 +8,10 @@ from typing import Optional, Union
 
 @dataclass
 class FieldFilter:
-    field: str  # MUST be a hippoSchema slot name (e.g. "sample_type"), never a GraphQL
-    #             camelCase field name (e.g. "sampleType") -- see mosaic#149.
+    field: str  # A field on the entity. Either the hippoSchema slot name ("sample_type")
+    #             or its camelCase spelling ("sampleType") is accepted upstream since
+    #             mosaic#149/PR#150; the validator resolves both through hippoSchema and
+    #             rejects anything else. Prefer slot names -- resolve, never guess.
     value: object
     op: str = "EQ"  # "EQ" | "IN" -- anything else is unsupported (mosaic#96)
 

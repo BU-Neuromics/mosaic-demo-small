@@ -73,9 +73,9 @@ PLAN_TOOL = {
                                     "properties": {
                                         "field": {
                                             "type": "string",
-                                            "description": "MUST be the hippoSchema slot "
-                                            "name (snake_case), never a GraphQL camelCase "
-                                            "field name.",
+                                            "description": "A field name from the schema "
+                                            "grounding. Use the slot name as listed there; "
+                                            "an unlisted name is rejected.",
                                         },
                                         "value": {},
                                         "op": {"type": "string", "enum": ["EQ", "IN"]},
@@ -135,7 +135,7 @@ PLAN_TOOL = {
 
 def build_grounding_context(hippo_schema: dict, capability_manifest: dict) -> str:
     """The ONLY source of field/entity names and capabilities the model may use."""
-    lines = ["## Live schema (hippoSchema) -- the ONLY valid filter field names per entity:"]
+    lines = ["## Live schema -- the ONLY field names that exist, per entity:"]
     for entity, info in sorted(hippo_schema.items()):
         slots = ", ".join(sorted(info["fields"]))
         lines.append(f"- {entity} (accessor: {info['accessor_name']}): {slots}")
@@ -202,7 +202,7 @@ def plan_query(instruction: str, hippo_schema: dict, capability_manifest: dict) 
         "emit_query_plan -- never respond with prose or raw GraphQL. Ground every field, "
         "entity, and relationship name STRICTLY in the schema and capability manifest given "
         "below; never guess a GraphQL camelCase field name for a filter (the wrong one "
-        "silently matches zero rows instead of erroring -- mosaic#149). If the instruction "
+        "is rejected outright by the server). If the instruction "
         "needs to know what references an already-identified entity (e.g. 'which workflows "
         "consumed this sample'), emit a related_lookup step scoped via source_step to the "
         "ids from an earlier step -- never propose scanning an entire entity table."

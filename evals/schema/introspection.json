@@ -1971,7 +1971,7 @@
                 {
                     "kind": "INPUT_OBJECT",
                     "name": "FilterInput",
-                    "description": "Field/value filter (SDK query filter). ``op`` defaults to EQ (equality); IN treats ``value`` as a list and matches when the field is a member of it (issue #102).",
+                    "description": "Field/value filter (SDK query filter). ``field`` is a LinkML slot name (snake_case, as listed by `hippoSchema`); the equivalent camelCase spelling exposed on the entity type is also accepted. An unrecognized name is an error, never an empty result (issue #149). ``op`` defaults to EQ (equality); IN treats ``value`` as a list and matches when the field is a member of it (issue #102).",
                     "fields": null,
                     "inputFields": [
                         {

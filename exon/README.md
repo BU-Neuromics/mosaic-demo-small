@@ -4,6 +4,18 @@ A schema-grounded NL query-composition assistant for this repo's Mosaic instance
 `openspec/changes/add-exon-query-planner/` (proposal.md, design.md) for the full design and
 rationale — this file documents what's actually built and what running it produced.
 
+## Upstream status (2026-08-05)
+
+- **mosaic#149 — FIXED** (`7669fac`/PR#150). Filter `field` now accepts both the LinkML slot
+  name and its camelCase spelling, and an unrecognized name raises `UNKNOWN_FILTER_FIELD`
+  instead of silently matching zero rows. Two new loud errors were added for fields that exist
+  but can't be filtered: multivalued references (use `relatedTo`) and computed provenance
+  fields (use `asOf`). The historical notes further down describe the pre-fix behaviour and are
+  kept because they explain why this codebase resolves names rather than guessing them.
+- **mosaic#148 — OPEN.** `relatedTo` still carries no predicate on the referenced entity, so
+  narrowing by e.g. `workflow_type` remains a bounded client-side filter, one call per
+  already-identified id.
+
 ## What this is
 
 Exon takes one natural-language instruction and returns a validated result from this repo's
@@ -21,19 +33,21 @@ instruction --[planner.py, LLM]--> QueryPlan --[validator.py]--> validated plan
 
 ## Modules
 
-- `schema.py` — fetches `hippoSchema` (the *only* source of correct filter field names —
-  GraphQL's own camelCase field names are the wrong vocabulary for a filter's `field`
-  argument; see mosaic#149) and loads the capability manifest.
+- `schema.py` — fetches `hippoSchema` (the source of field names and of the kind/multivalued
+  metadata the validator needs) and loads the capability manifest.
 - `ops.py` — the typed op catalog: `FilterStep` (a root list query, optionally with a forward
   single-valued-relation nested selection), `RelatedLookupStep` (a bounded reverse
   relationship-existence lookup via `relatedTo`, scoped to ids from an earlier step).
 - `validator.py` — rejects, never approximates: unknown entities/fields, unsupported filter
-  ops (mosaic#96), filter fields that aren't `hippoSchema` slots (mosaic#149), and
-  `related_lookup` steps not scoped to an earlier step's ids.
-- `executor.py` — runs a validated plan against the live GraphQL endpoint. Converts
-  `hippoSchema` slot names to GraphQL's camelCase *only* for output field selection — filter
-  values stay snake_case. (This distinction bit the executor itself once during development;
-  see "What actually happened" below.)
+  ops (mosaic#96), fields that exist but cannot be filtered on (multivalued references → use
+  `relatedTo`; computed provenance fields → use `asOf`), and `related_lookup` steps not scoped
+  to an earlier step's ids. Field names resolve through `hippoSchema` in either the slot-name
+  or camelCase spelling, both accepted upstream since mosaic#149/PR#150.
+- `executor.py` — runs a validated plan against the live GraphQL endpoint, paginating until
+  every matching record is retrieved. Converts slot names to camelCase for output *selection*
+  (which requires it); filter `field` values need no conversion since both spellings are
+  accepted. (This distinction bit the executor itself once during development; see "What
+  actually happened" below.)
 - `planner.py` — the LLM planner. Calls the model via `litellm` (provider-agnostic — see
   below), forcing structured output (`tool_choice`) so the model can only emit the typed op
   shapes above, never prose or raw GraphQL.

@@ -1,18 +1,28 @@
 ## 0. Prerequisite: reconcile with post-#150 upstream (scores are meaningless until this is done)
 
-- [ ] 0.1 Pull `../hippo` to `origin/main` (`3bda128` → `7669fac`); restart the served instance and
-      confirm live: `field: "sampleType"` now resolves, and an unknown field raises
-      `UNKNOWN_FILTER_FIELD` instead of returning `total: 0`.
-- [ ] 0.2 Fix `exon/validator.py`: accept either field-name spelling (resolved via `hippoSchema`),
-      still reject unknown names, newly reject filters on multivalued reference slots and on
-      computed/temporal fields.
-- [ ] 0.3 Refresh `evals/schema/*.json`; rewrite `capabilities.json`'s `known_gotcha` (#149 fixed),
-      keep `known_gotcha_2` (#148 open).
-- [ ] 0.4 Correct stale `#149`-as-open language in `exon/README.md` and in the open
-      `add-exon-query-planner` change, including its `small-demo-schema` scenario asserting
-      camelCase silently returns zero.
-- [ ] 0.5 Re-run the q24/q25 verifications to confirm no benchmark regression under the new
-      filter-resolution behaviour.
+- [x] 0.1 Pulled `../hippo` to `origin/main` — landed on `502991c` (one commit past the expected
+      `7669fac`; #152 was a CI-only fix). Restarted the served instance and verified all three new
+      behaviours live: `field: "sampleType"` → 278 (resolves), `field: "sample_type"` → 278
+      (unchanged), unknown field → `UNKNOWN_FILTER_FIELD` listing the valid slots.
+- [x] 0.2 Fixed `exon/validator.py`: resolves either spelling through `hippoSchema` via a
+      slot index built from the live schema (never a guessed transformation); still rejects unknown
+      names with the valid-slot list; newly rejects filters on multivalued reference slots (→ use
+      `related_lookup`) and on computed provenance fields (→ use `asOf`), plus multivalued
+      `forward_relation`. Verified with 10 assertions: 3 now-valid camelCase cases accepted, 7
+      invalid cases rejected with specific reasons.
+- [x] 0.3 Regenerated `evals/schema/{introspection,mosaic-domain-schema}.json` against the
+      restarted instance. Replaced `capabilities.json`'s stale `known_gotcha` with
+      `filter_field_vocabulary` (records #149 RESOLVED and what now happens instead) and
+      `unfilterable_fields` (the two new `UNFILTERABLE_FIELD` classes); `known_gotcha` now carries
+      only the still-open mosaic#148.
+- [x] 0.4 Corrected stale `#149`-as-open prose in `exon/{ops,schema,executor,planner}.py`, added an
+      "Upstream status" section to `exon/README.md`, and fixed the two `add-exon-query-planner`
+      spec-delta scenarios that asserted camelCase silently returns zero. Also relaxed the
+      over-strict field-name instruction the planner feeds the model. Both changes re-validate
+      `--strict`.
+- [x] 0.5 Re-verified the benchmark against the updated server: q05 = 50, q20 = 115, q24 =
+      3 samples → 9 workflows → 6 datasets (same 6 ids), q25 = 115 bounded calls → 45 samples with
+      an `rna_seq` workflow. **All match expected-results.json exactly — no regression.**
 
 ## 1. Capability probe
 

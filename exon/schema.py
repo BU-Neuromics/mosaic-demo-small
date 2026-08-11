@@ -1,8 +1,9 @@
 """Live schema grounding: hippoSchema + the capability manifest, fetched fresh every run.
 
-Never cache these across sessions and never assume field names from memory -- mosaic#149
-exists precisely because a plausible-looking assumption (the GraphQL camelCase field name)
-silently produces a wrong-but-valid-shaped answer instead of an error.
+Never cache these across sessions and never assume field names from memory. mosaic#149 (now
+fixed, PR#150) was exactly this hazard: a plausible-looking guess silently produced a
+wrong-but-valid-shaped answer. Unknown names are loud now, but the discipline stands -- resolve
+names from the live schema rather than guessing a transformation.
 """
 import json
 import urllib.request
@@ -33,8 +34,10 @@ HIPPO_SCHEMA_QUERY = """
 def fetch_hippo_schema(endpoint: str) -> dict:
     """{entity_name: {accessor_name, fields: {slot_name: field_info}}}.
 
-    This is the ONLY source of truth for filter field names (mosaic#149) -- never build a
-    filter from a GraphQL type's own `__type` field names.
+    The source of truth for field names. Since mosaic#149/PR#150 the server accepts both the
+    slot name and its camelCase spelling, but names are still resolved from here rather than
+    guessed -- and hippoSchema also carries the kind/multivalued metadata the validator needs
+    to reject unfilterable fields before execution.
     """
     data = graphql_query(endpoint, HIPPO_SCHEMA_QUERY)
     schema = {}

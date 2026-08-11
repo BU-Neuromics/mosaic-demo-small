@@ -46,11 +46,19 @@ silently executed or approximated.
 
 #### Scenario: Unrecognized filter field name is rejected before execution
 
-- **WHEN** a translated plan's filter op names a field not present in
-  `hippoSchema`'s slot list for that entity (e.g. a GraphQL-camelCase name
-  used by mistake)
-- **THEN** Exon rejects the plan before execution, rather than sending a
-  filter that would silently return an empty result
+- **WHEN** a translated plan's filter op names a field that resolves to no
+  slot on that entity under either accepted spelling
+- **THEN** Exon rejects the plan before execution with the list of valid
+  slots, rather than sending a filter the server would reject
+
+#### Scenario: A field that exists but cannot be filtered is rejected
+
+- **WHEN** a translated plan filters on a multivalued reference slot
+  (stored as relationship edges, not a column) or on a computed provenance
+  field such as `created_at`
+- **THEN** Exon rejects the plan before execution and names the supported
+  alternative — a `related_lookup` step for the former, the `asOf`
+  argument for the latter
 
 ### Requirement: Bounded relationship-existence traversal only
 
