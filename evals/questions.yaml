@@ -1,0 +1,332 @@
+# Capability benchmark for mosaic-demo-small's live GraphQL endpoint.
+#
+# Captured against a host-side `mosaic serve --config mosaic.yaml --graphql`
+# on the fixed `../hippo` checkout (commit ec59c90, unreleased past v0.12.1)
+# -- see README.md's "Two Mosaic builds in play" for why this isn't the
+# datahelix solo container. Each question's `graphql` field is the exact
+# query run to produce `expected-results.json`'s entry of the same id.
+#
+# `capability` is one of: filter | traversal | search | provenance |
+# pagination | not_indexed | blocked. `blocked` is reserved for tracked
+# upstream/platform gaps (see `blocked_by`); `not_indexed` is a
+# schema-authoring choice specific to this demo (a field with no search
+# index), not a platform limitation -- keep the two distinct so a benchmark
+# run's "% of unsupported questions correctly identified" doesn't count an
+# authoring decision as an upstream blocker.
+#
+# Entity ids referenced below (SMPL-0001, DNR-0068, WRKF-0245, DTST-0001,
+# accession SMP604876) are only stable under `generate.py --seed 0` (this
+# repo's documented default -- see README's "Regenerating from scratch").
+# Regenerating with a different seed invalidates `expected-results.json`.
+
+- id: q01
+  category: entity_filtering
+  question: How many donors are in the case cohort?
+  graphql: '{ donors(filters: [{field: "cohort", value: "case"}]) { total } }'
+  capability: filter
+
+- id: q02
+  category: entity_filtering
+  question: How many donors are in the case or at-risk cohorts combined?
+  graphql: '{ donors(filters: [{field: "cohort", value: ["case", "at_risk"], op: IN}]) { total } }'
+  capability: filter
+
+- id: q03
+  category: entity_filtering
+  question: How many donors are recorded as male?
+  graphql: '{ donors(filters: [{field: "sex", value: "male"}]) { total } }'
+  capability: filter
+
+- id: q04
+  category: entity_filtering
+  question: How many donors have an unknown recorded sex?
+  graphql: '{ donors(filters: [{field: "sex", value: "unknown"}]) { total } }'
+  capability: filter
+
+- id: q05
+  category: entity_filtering
+  question: How many donors have a documented history of repetitive head impacts (RHI)?
+  graphql: '{ donors(filters: [{field: "history_of_rhi", value: true}]) { total } }'
+  capability: filter
+
+- id: q06
+  category: entity_filtering
+  question: How many samples are blood samples?
+  graphql: '{ samples(filters: [{field: "sample_type", value: "blood"}]) { total } }'
+  capability: filter
+
+- id: q07
+  category: entity_filtering
+  question: How many samples are stored frozen?
+  graphql: '{ samples(filters: [{field: "storage_condition", value: "frozen"}]) { total } }'
+  capability: filter
+
+- id: q08
+  category: entity_filtering
+  question: How many samples are chemically fixed?
+  graphql: '{ samples(filters: [{field: "storage_condition", value: "fixed"}]) { total } }'
+  capability: filter
+
+- id: q09
+  category: entity_filtering
+  question: >-
+    Give me all brain tissue samples across the hippocampus, frontal
+    cortex, cerebellum, and brainstem regions.
+  graphql: >-
+    { samples(filters: [{field: "sample_type", value: "tissue"},
+    {field: "brain_region", value: ["hippocampus", "frontal_cortex",
+    "cerebellum", "brainstem"], op: IN}], filterMode: AND) { total } }
+  capability: filter
+  note: >-
+    The motivating tissue-request example's first leg (design.md); the
+    original ask also wants each region evenly represented ("one from 4
+    regions") -- not expressible as a single equality/IN filter, since
+    this platform has no group-by/stratified-sampling primitive
+    (mosaic#96, open). This question measures the filter only.
+
+- id: q10
+  category: entity_filtering
+  question: How many workflow runs completed successfully?
+  graphql: '{ workflows(filters: [{field: "status", value: "completed"}]) { total } }'
+  capability: filter
+
+- id: q11
+  category: entity_filtering
+  question: How many workflow runs failed?
+  graphql: '{ workflows(filters: [{field: "status", value: "failed"}]) { total } }'
+  capability: filter
+
+- id: q12
+  category: entity_filtering
+  question: How many RNA-seq workflow runs are there?
+  graphql: '{ workflows(filters: [{field: "workflow_type", value: "rna_seq"}]) { total } }'
+  capability: filter
+
+- id: q13
+  category: entity_filtering
+  question: How many datasets are under controlled access?
+  graphql: '{ datasets(filters: [{field: "access_level", value: "controlled"}]) { total } }'
+  capability: filter
+
+- id: q14
+  category: entity_filtering
+  question: How many datasets are publicly released?
+  graphql: '{ datasets(filters: [{field: "is_public", value: true}]) { total } }'
+  capability: filter
+
+- id: q15
+  category: entity_filtering
+  question: How many datasets are VCF files?
+  graphql: '{ datasets(filters: [{field: "dataset_type", value: "vcf"}]) { total } }'
+  capability: filter
+
+- id: q16
+  category: entity_filtering
+  question: How many datasets are either BAM or VCF files?
+  graphql: '{ datasets(filters: [{field: "dataset_type", value: ["bam", "vcf"], op: IN}]) { total } }'
+  capability: filter
+
+- id: q17
+  category: entity_filtering
+  question: Look up the sample with accession SMP604876.
+  graphql: '{ samples(filters: [{field: "accession", value: "SMP604876"}]) { total items { id } } }'
+  capability: filter
+  note: Exact-match lookup key (hippo_index:true), not full-text search.
+
+- id: q18
+  category: entity_filtering
+  question: Fetch sample SMPL-0001 by id.
+  graphql: '{ sample(id: "SMPL-0001") { id name accession } }'
+  capability: filter
+
+- id: q19
+  category: relationship_traversal
+  question: For sample SMPL-0001, who is the donor and what are their attributes?
+  graphql: '{ sample(id: "SMPL-0001") { id donor { id name cohort sex historyOfRhi } } }'
+  capability: traversal
+  note: Forward single-valued FK reference, resolved via nested selection.
+
+- id: q20
+  category: relationship_traversal
+  question: >-
+    For the tissue-request example, list each matching sample's donor
+    (cohort, sex, RHI history) alongside it.
+  graphql: >-
+    { samples(filters: [{field: "sample_type", value: "tissue"},
+    {field: "brain_region", value: ["hippocampus", "frontal_cortex",
+    "cerebellum", "brainstem"], op: IN}], filterMode: AND, limit: 100) {
+    total items { id brainRegion donor { id cohort sex historyOfRhi } } } }
+  capability: traversal
+  note: >-
+    total (115) exceeds the default page size (100) -- a complete answer
+    requires pagination (offset 100) for the remaining 15, not just this
+    single page. See expected-results.json's note for this id.
+
+- id: q21
+  category: relationship_traversal
+  question: Which samples did donor DNR-0068 contribute?
+  graphql: '{ samples(filters: [{field: "donor", value: "DNR-0068"}]) { total } }'
+  capability: traversal
+  note: >-
+    Reverse lookup on a single-valued FK reference via a root-level
+    equality filter on the child type -- Sample has no forward FK column
+    for "donor's samples", but this filter pattern answers it.
+
+- id: q22
+  category: relationship_traversal
+  question: Which datasets did workflow WRKF-0245 produce?
+  graphql: '{ datasets(filters: [{field: "produced_by", value: "WRKF-0245"}]) { total items { id } } }'
+  capability: traversal
+
+- id: q23
+  category: relationship_traversal
+  question: >-
+    For dataset DTST-0001, trace the full chain: which workflow produced
+    it, which samples that workflow consumed, and who each sample's donor
+    is.
+  graphql: >-
+    { dataset(id: "DTST-0001") { id producedBy { id inputSamples { id
+    donor { id name } } } } }
+  capability: traversal
+  note: Dataset -> Workflow -> Sample -> Donor, four hops via nested selection.
+
+- id: q24
+  category: relationship_traversal
+  question: >-
+    Starting from a donor, find their samples and the datasets produced
+    from those samples' workflows.
+  graphql: >-
+    (Not one query. Three bounded steps: (1) samples(filters:[{field:
+    "donor", value: $donorId}]) -- donor -> samples; (2) one
+    relatedTo(id: $sampleId, relationshipType: "input_samples") call per
+    sample from step 1 -- samples -> referencing workflows; (3) one
+    datasets(filters:[{field:"produced_by", value: $workflowId}]) call
+    per workflow from step 2 -- workflows -> datasets.)
+  capability: traversal
+  note: >-
+    Reclassified from `blocked` (mosaic#146 is now closed, merged
+    2026-08-01 as relatedTo). Verified against DNR-0001 (3 samples ->
+    3 bounded relatedTo calls -> 9 distinct referencing workflows -> 9
+    produced_by lookups -> 6 datasets: DTST-0096, DTST-0621, DTST-0008,
+    DTST-0200, DTST-0539, DTST-1169). Not a single composed query -- it's
+    N+M bounded calls, each scoped to an already-identified id, never an
+    unfiltered scan. mosaic#148 (relatedTo has no predicate argument) is
+    why step 2 can't also filter by workflow attributes in the same call;
+    it does not block correctness, only composability. See q34 for the
+    narrower case mosaic#148 actually blocks.
+
+- id: q25
+  category: relationship_traversal
+  question: >-
+    Does any RNA-seq dataset exist for the tissue-request example's
+    samples (i.e., do any of these samples appear as input to an
+    rna_seq-typed workflow)?
+  graphql: >-
+    (Not one query. One relatedTo(id: $sampleId, relationshipType:
+    "input_samples") call per sample in the 115-sample tissue-request
+    set, each filtered client-side by data.workflow_type == "rna_seq".)
+  capability: traversal
+  note: >-
+    Reclassified from `blocked` (mosaic#146 is now closed, merged
+    2026-08-01 as relatedTo). Verified live: 115 bounded relatedTo calls
+    (one per tissue-request sample, each scoped to that sample's own
+    relationship fan-out -- never an unfiltered scan of the Workflow
+    table) found 45/115 samples with at least one rna_seq-referencing
+    workflow (60 total sample/workflow matches, some samples matching
+    more than one). This matches the prior (forbidden, full-table-scan)
+    workaround's own reported 45/115 -- cross-validating both that number
+    and that the bounded-per-id pattern is correct. mosaic#148 (relatedTo
+    has no predicate argument) is why this took 115 calls instead of one
+    composed query; it does not make the question unanswerable.
+
+- id: q34
+  category: unsupported
+  question: >-
+    As a single composed query: which rna_seq-typed workflow(s) reference
+    sample SMPL-0032?
+  capability: blocked
+  blocked_by: [mosaic#148]
+  note: >-
+    The narrower gap mosaic#148 actually blocks: relatedTo(id, relationshipType)
+    accepts no predicate on the returned entities' own fields, so this
+    can only be answered as relatedTo(id: "SMPL-0032", relationshipType:
+    "input_samples") plus a client-side filter over that one call's own
+    (small) result -- never as one server-side-composed, predicate-filtered
+    query. This is answerable (see q24/q25), just not as a single query --
+    distinct from q32/q33's mosaic#96 aggregation gap.
+
+- id: q26
+  category: search
+  question: Search donor notes for "cohort-alpha:42".
+  graphql: '{ searchDonors(q: "cohort-alpha:42") { id name } }'
+  capability: search
+
+- id: q27
+  category: search
+  question: Search dataset descriptions for "recall-freeze".
+  graphql: '{ searchDatasets(q: "recall-freeze") { id name } }'
+  capability: search
+  note: >-
+    Both q26/q27 exercise mosaic#144's fix directly -- the seeded keywords
+    contain a colon and a hyphen respectively, which the pre-fix FTS5
+    MATCH passthrough would have mis-parsed as query syntax.
+
+- id: q28
+  category: search
+  question: Search samples for "tissue".
+  capability: not_indexed
+  graphql: '{ searchSamples(q: "tissue") { id } }'
+  note: >-
+    searchSamples exists on the schema (every entity type gets one) but no
+    Sample field is annotated hippo_search:fts5, so it always returns [].
+    Deliberately NOT `capability: blocked` -- that value is reserved for
+    tracked upstream/platform gaps (see design.md's target: "100% of
+    unsupported questions correctly identified as such" distinguishes
+    categories). This is a schema-authoring choice specific to this demo,
+    not a Mosaic limitation -- listed so a benchmark run distinguishes "no
+    results because nothing matched" from "no results because the field
+    isn't searchable."
+
+- id: q29
+  category: provenance_lifecycle
+  question: What is the provenance history for sample SMPL-0001?
+  graphql: '{ entityHistory(entityId: "SMPL-0001") { __typename } }'
+  capability: provenance
+
+- id: q30
+  category: provenance_lifecycle
+  question: Is sample SMPL-0001 currently available (not soft-deleted/superseded)?
+  graphql: '{ sample(id: "SMPL-0001") { id isAvailable } }'
+  capability: provenance
+
+- id: q31
+  category: pagination
+  question: >-
+    List every completed workflow (there are more than one page's worth).
+  graphql: '{ workflows(filters: [{field: "status", value: "completed"}], limit: 100, offset: 0) { total items { id } } }'
+  capability: pagination
+  note: >-
+    total is 840 against a default/requested page size of 100 -- a
+    complete answer requires 9 pages (offset 0, 100, 200, ... 800), never
+    just the first page's total field alone.
+
+- id: q32
+  category: unsupported
+  question: List donors older than 65 at death, sorted by age descending.
+  graphql: '{ donors(filters: [{field: "age_at_death", value: 65, op: GT}]) { total } }'
+  capability: blocked
+  blocked_by: [mosaic#96]
+  note: >-
+    FilterOp only has EQ and IN -- GT is rejected outright (confirmed:
+    "Value 'GT' does not exist in 'FilterOp' enum"). There is also no sort
+    argument on any list root query. Both are mosaic#96 (open).
+
+- id: q33
+  category: unsupported
+  question: How many donors are there per cohort (a facet count / group-by)?
+  capability: blocked
+  blocked_by: [mosaic#96]
+  note: >-
+    No aggregation/group-by root query exists. The only route today is one
+    equality-filtered count query per enum value (as q01/q02 do
+    individually), not a single grouped-count query.

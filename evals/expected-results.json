@@ -1,0 +1,1711 @@
+{
+  "_meta": {
+    "captured_against": "host-side `mosaic serve --config mosaic.yaml --graphql` on the fixed ../hippo checkout at commit ec59c90 (unreleased past v0.12.1) -- NOT the datahelix solo container. See README.md 'Two Mosaic builds in play'.",
+    "data_snapshot": "3600 records (300 donors / 900 samples / 1200 workflows / 1200 datasets), generate.py --seed 0"
+  },
+  "q01": {
+    "status": "ok",
+    "graphql": "{ donors(filters: [{field: \"cohort\", value: \"case\"}]) { total } }",
+    "response": {
+      "donors": {
+        "total": 104
+      }
+    }
+  },
+  "q02": {
+    "status": "ok",
+    "graphql": "{ donors(filters: [{field: \"cohort\", value: [\"case\", \"at_risk\"], op: IN}]) { total } }",
+    "response": {
+      "donors": {
+        "total": 175
+      }
+    }
+  },
+  "q03": {
+    "status": "ok",
+    "graphql": "{ donors(filters: [{field: \"sex\", value: \"male\"}]) { total } }",
+    "response": {
+      "donors": {
+        "total": 153
+      }
+    }
+  },
+  "q04": {
+    "status": "ok",
+    "graphql": "{ donors(filters: [{field: \"sex\", value: \"unknown\"}]) { total } }",
+    "response": {
+      "donors": {
+        "total": 12
+      }
+    }
+  },
+  "q05": {
+    "status": "ok",
+    "graphql": "{ donors(filters: [{field: \"history_of_rhi\", value: true}]) { total } }",
+    "response": {
+      "donors": {
+        "total": 50
+      }
+    }
+  },
+  "q06": {
+    "status": "ok",
+    "graphql": "{ samples(filters: [{field: \"sample_type\", value: \"blood\"}]) { total } }",
+    "response": {
+      "samples": {
+        "total": 364
+      }
+    }
+  },
+  "q07": {
+    "status": "ok",
+    "graphql": "{ samples(filters: [{field: \"storage_condition\", value: \"frozen\"}]) { total } }",
+    "response": {
+      "samples": {
+        "total": 506
+      }
+    }
+  },
+  "q08": {
+    "status": "ok",
+    "graphql": "{ samples(filters: [{field: \"storage_condition\", value: \"fixed\"}]) { total } }",
+    "response": {
+      "samples": {
+        "total": 129
+      }
+    }
+  },
+  "q09": {
+    "status": "ok",
+    "graphql": "{ samples(filters: [{field: \"sample_type\", value: \"tissue\"}, {field: \"brain_region\", value: [\"hippocampus\", \"frontal_cortex\", \"cerebellum\", \"brainstem\"], op: IN}], filterMode: AND) { total } }",
+    "response": {
+      "samples": {
+        "total": 115
+      }
+    }
+  },
+  "q10": {
+    "status": "ok",
+    "graphql": "{ workflows(filters: [{field: \"status\", value: \"completed\"}]) { total } }",
+    "response": {
+      "workflows": {
+        "total": 840
+      }
+    }
+  },
+  "q11": {
+    "status": "ok",
+    "graphql": "{ workflows(filters: [{field: \"status\", value: \"failed\"}]) { total } }",
+    "response": {
+      "workflows": {
+        "total": 119
+      }
+    }
+  },
+  "q12": {
+    "status": "ok",
+    "graphql": "{ workflows(filters: [{field: \"workflow_type\", value: \"rna_seq\"}]) { total } }",
+    "response": {
+      "workflows": {
+        "total": 186
+      }
+    }
+  },
+  "q13": {
+    "status": "ok",
+    "graphql": "{ datasets(filters: [{field: \"access_level\", value: \"controlled\"}]) { total } }",
+    "response": {
+      "datasets": {
+        "total": 688
+      }
+    }
+  },
+  "q14": {
+    "status": "ok",
+    "graphql": "{ datasets(filters: [{field: \"is_public\", value: true}]) { total } }",
+    "response": {
+      "datasets": {
+        "total": 219
+      }
+    }
+  },
+  "q15": {
+    "status": "ok",
+    "graphql": "{ datasets(filters: [{field: \"dataset_type\", value: \"vcf\"}]) { total } }",
+    "response": {
+      "datasets": {
+        "total": 310
+      }
+    }
+  },
+  "q16": {
+    "status": "ok",
+    "graphql": "{ datasets(filters: [{field: \"dataset_type\", value: [\"bam\", \"vcf\"], op: IN}]) { total } }",
+    "response": {
+      "datasets": {
+        "total": 668
+      }
+    }
+  },
+  "q17": {
+    "status": "ok",
+    "graphql": "{ samples(filters: [{field: \"accession\", value: \"SMP604876\"}]) { total items { id } } }",
+    "response": {
+      "samples": {
+        "total": 1,
+        "items": [
+          {
+            "id": "SMPL-0001"
+          }
+        ]
+      }
+    }
+  },
+  "q18": {
+    "status": "ok",
+    "graphql": "{ sample(id: \"SMPL-0001\") { id name accession } }",
+    "response": {
+      "sample": {
+        "id": "SMPL-0001",
+        "name": "Someone really",
+        "accession": "SMP604876"
+      }
+    }
+  },
+  "q19": {
+    "status": "ok",
+    "graphql": "{ sample(id: \"SMPL-0001\") { id donor { id name cohort sex historyOfRhi } } }",
+    "response": {
+      "sample": {
+        "id": "SMPL-0001",
+        "donor": {
+          "id": "DNR-0068",
+          "name": "Sara Davis",
+          "cohort": "at_risk",
+          "sex": "female",
+          "historyOfRhi": false
+        }
+      }
+    }
+  },
+  "q20": {
+    "status": "ok",
+    "graphql": "{ samples(filters: [{field: \"sample_type\", value: \"tissue\"}, {field: \"brain_region\", value: [\"hippocampus\", \"frontal_cortex\", \"cerebellum\", \"brainstem\"], op: IN}], filterMode: AND, limit: 100) { total items { id brainRegion donor { id cohort sex historyOfRhi } } } }",
+    "response": {
+      "samples": {
+        "total": 115,
+        "items": [
+          {
+            "id": "SMPL-0004",
+            "brainRegion": "hippocampus",
+            "donor": {
+              "id": "DNR-0174",
+              "cohort": "case",
+              "sex": "female",
+              "historyOfRhi": false
+            }
+          },
+          {
+            "id": "SMPL-0029",
+            "brainRegion": "cerebellum",
+            "donor": {
+              "id": "DNR-0154",
+              "cohort": "at_risk",
+              "sex": "female",
+              "historyOfRhi": false
+            }
+          },
+          {
+            "id": "SMPL-0030",
+            "brainRegion": "frontal_cortex",
+            "donor": {
+              "id": "DNR-0192",
+              "cohort": "case",
+              "sex": "female",
+              "historyOfRhi": false
+            }
+          },
+          {
+            "id": "SMPL-0031",
+            "brainRegion": "frontal_cortex",
+            "donor": {
+              "id": "DNR-0215",
+              "cohort": "case",
+              "sex": "male",
+              "historyOfRhi": false
+            }
+          },
+          {
+            "id": "SMPL-0032",
+            "brainRegion": "hippocampus",
+            "donor": {
+              "id": "DNR-0061",
+              "cohort": "at_risk",
+              "sex": "male",
+              "historyOfRhi": false
+            }
+          },
+          {
+            "id": "SMPL-0054",
+            "brainRegion": "hippocampus",
+            "donor": {
+              "id": "DNR-0266",
+              "cohort": "control",
+              "sex": "female",
+              "historyOfRhi": false
+            }
+          },
+          {
+            "id": "SMPL-0073",
+            "brainRegion": "brainstem",
+            "donor": {
+              "id": "DNR-0205",
+              "cohort": "case",
+              "sex": "female",
+              "historyOfRhi": false
+            }
+          },
+          {
+            "id": "SMPL-0081",
+            "brainRegion": "frontal_cortex",
+            "donor": {
+              "id": "DNR-0018",
+              "cohort": "at_risk",
+              "sex": "male",
+              "historyOfRhi": false
+            }
+          },
+          {
+            "id": "SMPL-0096",
+            "brainRegion": "cerebellum",
+            "donor": {
+              "id": "DNR-0217",
+              "cohort": "at_risk",
+              "sex": "male",
+              "historyOfRhi": false
+            }
+          },
+          {
+            "id": "SMPL-0104",
+            "brainRegion": "hippocampus",
+            "donor": {
+              "id": "DNR-0074",
+              "cohort": "control",
+              "sex": "male",
+              "historyOfRhi": false
+            }
+          },
+          {
+            "id": "SMPL-0113",
+            "brainRegion": "brainstem",
+            "donor": {
+              "id": "DNR-0063",
+              "cohort": "control",
+              "sex": "male",
+              "historyOfRhi": false
+            }
+          },
+          {
+            "id": "SMPL-0129",
+            "brainRegion": "frontal_cortex",
+            "donor": {
+              "id": "DNR-0279",
+              "cohort": "control",
+              "sex": "male",
+              "historyOfRhi": false
+            }
+          },
+          {
+            "id": "SMPL-0131",
+            "brainRegion": "brainstem",
+            "donor": {
+              "id": "DNR-0116",
+              "cohort": "case",
+              "sex": "male",
+              "historyOfRhi": false
+            }
+          },
+          {
+            "id": "SMPL-0133",
+            "brainRegion": "brainstem",
+            "donor": {
+              "id": "DNR-0279",
+              "cohort": "control",
+              "sex": "male",
+              "historyOfRhi": false
+            }
+          },
+          {
+            "id": "SMPL-0138",
+            "brainRegion": "hippocampus",
+            "donor": {
+              "id": "DNR-0183",
+              "cohort": "case",
+              "sex": "male",
+              "historyOfRhi": false
+            }
+          },
+          {
+            "id": "SMPL-0147",
+            "brainRegion": "hippocampus",
+            "donor": {
+              "id": "DNR-0277",
+              "cohort": "control",
+              "sex": "female",
+              "historyOfRhi": false
+            }
+          },
+          {
+            "id": "SMPL-0164",
+            "brainRegion": "brainstem",
+            "donor": {
+              "id": "DNR-0101",
+              "cohort": "control",
+              "sex": "female",
+              "historyOfRhi": false
+            }
+          },
+          {
+            "id": "SMPL-0171",
+            "brainRegion": "frontal_cortex",
+            "donor": {
+              "id": "DNR-0211",
+              "cohort": "control",
+              "sex": "female",
+              "historyOfRhi": false
+            }
+          },
+          {
+            "id": "SMPL-0176",
+            "brainRegion": "brainstem",
+            "donor": {
+              "id": "DNR-0174",
+              "cohort": "case",
+              "sex": "female",
+              "historyOfRhi": false
+            }
+          },
+          {
+            "id": "SMPL-0179",
+            "brainRegion": "hippocampus",
+            "donor": {
+              "id": "DNR-0224",
+              "cohort": "at_risk",
+              "sex": "unknown",
+              "historyOfRhi": false
+            }
+          },
+          {
+            "id": "SMPL-0201",
+            "brainRegion": "brainstem",
+            "donor": {
+              "id": "DNR-0193",
+              "cohort": "control",
+              "sex": "male",
+              "historyOfRhi": true
+            }
+          },
+          {
+            "id": "SMPL-0216",
+            "brainRegion": "cerebellum",
+            "donor": {
+              "id": "DNR-0267",
+              "cohort": "case",
+              "sex": "male",
+              "historyOfRhi": false
+            }
+          },
+          {
+            "id": "SMPL-0217",
+            "brainRegion": "cerebellum",
+            "donor": {
+              "id": "DNR-0108",
+              "cohort": "case",
+              "sex": "male",
+              "historyOfRhi": true
+            }
+          },
+          {
+            "id": "SMPL-0218",
+            "brainRegion": "cerebellum",
+            "donor": {
+              "id": "DNR-0170",
+              "cohort": "at_risk",
+              "sex": "male",
+              "historyOfRhi": false
+            }
+          },
+          {
+            "id": "SMPL-0219",
+            "brainRegion": "hippocampus",
+            "donor": {
+              "id": "DNR-0095",
+              "cohort": "case",
+              "sex": "male",
+              "historyOfRhi": false
+            }
+          },
+          {
+            "id": "SMPL-0235",
+            "brainRegion": "brainstem",
+            "donor": {
+              "id": "DNR-0047",
+              "cohort": "control",
+              "sex": "female",
+              "historyOfRhi": true
+            }
+          },
+          {
+            "id": "SMPL-0240",
+            "brainRegion": "frontal_cortex",
+            "donor": {
+              "id": "DNR-0119",
+              "cohort": "control",
+              "sex": "male",
+              "historyOfRhi": false
+            }
+          },
+          {
+            "id": "SMPL-0247",
+            "brainRegion": "brainstem",
+            "donor": {
+              "id": "DNR-0291",
+              "cohort": "control",
+              "sex": "male",
+              "historyOfRhi": false
+            }
+          },
+          {
+            "id": "SMPL-0264",
+            "brainRegion": "frontal_cortex",
+            "donor": {
+              "id": "DNR-0201",
+              "cohort": "control",
+              "sex": "female",
+              "historyOfRhi": false
+            }
+          },
+          {
+            "id": "SMPL-0267",
+            "brainRegion": "frontal_cortex",
+            "donor": {
+              "id": "DNR-0115",
+              "cohort": "control",
+              "sex": "female",
+              "historyOfRhi": true
+            }
+          },
+          {
+            "id": "SMPL-0297",
+            "brainRegion": "cerebellum",
+            "donor": {
+              "id": "DNR-0230",
+              "cohort": "case",
+              "sex": "male",
+              "historyOfRhi": false
+            }
+          },
+          {
+            "id": "SMPL-0306",
+            "brainRegion": "hippocampus",
+            "donor": {
+              "id": "DNR-0004",
+              "cohort": "case",
+              "sex": "female",
+              "historyOfRhi": false
+            }
+          },
+          {
+            "id": "SMPL-0309",
+            "brainRegion": "hippocampus",
+            "donor": {
+              "id": "DNR-0080",
+              "cohort": "at_risk",
+              "sex": "female",
+              "historyOfRhi": false
+            }
+          },
+          {
+            "id": "SMPL-0324",
+            "brainRegion": "frontal_cortex",
+            "donor": {
+              "id": "DNR-0202",
+              "cohort": "control",
+              "sex": "male",
+              "historyOfRhi": false
+            }
+          },
+          {
+            "id": "SMPL-0336",
+            "brainRegion": "hippocampus",
+            "donor": {
+              "id": "DNR-0216",
+              "cohort": "control",
+              "sex": "male",
+              "historyOfRhi": false
+            }
+          },
+          {
+            "id": "SMPL-0345",
+            "brainRegion": "cerebellum",
+            "donor": {
+              "id": "DNR-0060",
+              "cohort": "case",
+              "sex": "unknown",
+              "historyOfRhi": false
+            }
+          },
+          {
+            "id": "SMPL-0370",
+            "brainRegion": "cerebellum",
+            "donor": {
+              "id": "DNR-0152",
+              "cohort": "case",
+              "sex": "male",
+              "historyOfRhi": false
+            }
+          },
+          {
+            "id": "SMPL-0378",
+            "brainRegion": "brainstem",
+            "donor": {
+              "id": "DNR-0217",
+              "cohort": "at_risk",
+              "sex": "male",
+              "historyOfRhi": false
+            }
+          },
+          {
+            "id": "SMPL-0384",
+            "brainRegion": "hippocampus",
+            "donor": {
+              "id": "DNR-0196",
+              "cohort": "control",
+              "sex": "female",
+              "historyOfRhi": false
+            }
+          },
+          {
+            "id": "SMPL-0385",
+            "brainRegion": "brainstem",
+            "donor": {
+              "id": "DNR-0076",
+              "cohort": "case",
+              "sex": "female",
+              "historyOfRhi": false
+            }
+          },
+          {
+            "id": "SMPL-0387",
+            "brainRegion": "brainstem",
+            "donor": {
+              "id": "DNR-0038",
+              "cohort": "at_risk",
+              "sex": "male",
+              "historyOfRhi": false
+            }
+          },
+          {
+            "id": "SMPL-0398",
+            "brainRegion": "hippocampus",
+            "donor": {
+              "id": "DNR-0104",
+              "cohort": "control",
+              "sex": "female",
+              "historyOfRhi": false
+            }
+          },
+          {
+            "id": "SMPL-0402",
+            "brainRegion": "hippocampus",
+            "donor": {
+              "id": "DNR-0294",
+              "cohort": "control",
+              "sex": "male",
+              "historyOfRhi": false
+            }
+          },
+          {
+            "id": "SMPL-0413",
+            "brainRegion": "cerebellum",
+            "donor": {
+              "id": "DNR-0143",
+              "cohort": "at_risk",
+              "sex": "male",
+              "historyOfRhi": false
+            }
+          },
+          {
+            "id": "SMPL-0416",
+            "brainRegion": "frontal_cortex",
+            "donor": {
+              "id": "DNR-0263",
+              "cohort": "at_risk",
+              "sex": "female",
+              "historyOfRhi": true
+            }
+          },
+          {
+            "id": "SMPL-0420",
+            "brainRegion": "cerebellum",
+            "donor": {
+              "id": "DNR-0286",
+              "cohort": "control",
+              "sex": "male",
+              "historyOfRhi": false
+            }
+          },
+          {
+            "id": "SMPL-0426",
+            "brainRegion": "frontal_cortex",
+            "donor": {
+              "id": "DNR-0245",
+              "cohort": "at_risk",
+              "sex": "male",
+              "historyOfRhi": false
+            }
+          },
+          {
+            "id": "SMPL-0462",
+            "brainRegion": "hippocampus",
+            "donor": {
+              "id": "DNR-0078",
+              "cohort": "case",
+              "sex": "female",
+              "historyOfRhi": false
+            }
+          },
+          {
+            "id": "SMPL-0464",
+            "brainRegion": "frontal_cortex",
+            "donor": {
+              "id": "DNR-0043",
+              "cohort": "case",
+              "sex": "male",
+              "historyOfRhi": false
+            }
+          },
+          {
+            "id": "SMPL-0465",
+            "brainRegion": "brainstem",
+            "donor": {
+              "id": "DNR-0159",
+              "cohort": "control",
+              "sex": "male",
+              "historyOfRhi": false
+            }
+          },
+          {
+            "id": "SMPL-0466",
+            "brainRegion": "cerebellum",
+            "donor": {
+              "id": "DNR-0055",
+              "cohort": "control",
+              "sex": "male",
+              "historyOfRhi": false
+            }
+          },
+          {
+            "id": "SMPL-0511",
+            "brainRegion": "frontal_cortex",
+            "donor": {
+              "id": "DNR-0170",
+              "cohort": "at_risk",
+              "sex": "male",
+              "historyOfRhi": false
+            }
+          },
+          {
+            "id": "SMPL-0526",
+            "brainRegion": "brainstem",
+            "donor": {
+              "id": "DNR-0159",
+              "cohort": "control",
+              "sex": "male",
+              "historyOfRhi": false
+            }
+          },
+          {
+            "id": "SMPL-0530",
+            "brainRegion": "hippocampus",
+            "donor": {
+              "id": "DNR-0200",
+              "cohort": "control",
+              "sex": "male",
+              "historyOfRhi": false
+            }
+          },
+          {
+            "id": "SMPL-0543",
+            "brainRegion": "brainstem",
+            "donor": {
+              "id": "DNR-0137",
+              "cohort": "control",
+              "sex": "male",
+              "historyOfRhi": false
+            }
+          },
+          {
+            "id": "SMPL-0549",
+            "brainRegion": "cerebellum",
+            "donor": {
+              "id": "DNR-0071",
+              "cohort": "control",
+              "sex": "male",
+              "historyOfRhi": false
+            }
+          },
+          {
+            "id": "SMPL-0555",
+            "brainRegion": "brainstem",
+            "donor": {
+              "id": "DNR-0136",
+              "cohort": "control",
+              "sex": "male",
+              "historyOfRhi": false
+            }
+          },
+          {
+            "id": "SMPL-0558",
+            "brainRegion": "frontal_cortex",
+            "donor": {
+              "id": "DNR-0295",
+              "cohort": "at_risk",
+              "sex": "male",
+              "historyOfRhi": false
+            }
+          },
+          {
+            "id": "SMPL-0568",
+            "brainRegion": "cerebellum",
+            "donor": {
+              "id": "DNR-0005",
+              "cohort": "case",
+              "sex": "female",
+              "historyOfRhi": false
+            }
+          },
+          {
+            "id": "SMPL-0578",
+            "brainRegion": "frontal_cortex",
+            "donor": {
+              "id": "DNR-0005",
+              "cohort": "case",
+              "sex": "female",
+              "historyOfRhi": false
+            }
+          },
+          {
+            "id": "SMPL-0583",
+            "brainRegion": "cerebellum",
+            "donor": {
+              "id": "DNR-0139",
+              "cohort": "at_risk",
+              "sex": "female",
+              "historyOfRhi": false
+            }
+          },
+          {
+            "id": "SMPL-0586",
+            "brainRegion": "cerebellum",
+            "donor": {
+              "id": "DNR-0241",
+              "cohort": "control",
+              "sex": "male",
+              "historyOfRhi": false
+            }
+          },
+          {
+            "id": "SMPL-0587",
+            "brainRegion": "brainstem",
+            "donor": {
+              "id": "DNR-0241",
+              "cohort": "control",
+              "sex": "male",
+              "historyOfRhi": false
+            }
+          },
+          {
+            "id": "SMPL-0596",
+            "brainRegion": "frontal_cortex",
+            "donor": {
+              "id": "DNR-0194",
+              "cohort": "case",
+              "sex": "female",
+              "historyOfRhi": false
+            }
+          },
+          {
+            "id": "SMPL-0598",
+            "brainRegion": "hippocampus",
+            "donor": {
+              "id": "DNR-0192",
+              "cohort": "case",
+              "sex": "female",
+              "historyOfRhi": false
+            }
+          },
+          {
+            "id": "SMPL-0642",
+            "brainRegion": "hippocampus",
+            "donor": {
+              "id": "DNR-0216",
+              "cohort": "control",
+              "sex": "male",
+              "historyOfRhi": false
+            }
+          },
+          {
+            "id": "SMPL-0647",
+            "brainRegion": "brainstem",
+            "donor": {
+              "id": "DNR-0180",
+              "cohort": "case",
+              "sex": "female",
+              "historyOfRhi": true
+            }
+          },
+          {
+            "id": "SMPL-0649",
+            "brainRegion": "brainstem",
+            "donor": {
+              "id": "DNR-0069",
+              "cohort": "at_risk",
+              "sex": "male",
+              "historyOfRhi": false
+            }
+          },
+          {
+            "id": "SMPL-0653",
+            "brainRegion": "frontal_cortex",
+            "donor": {
+              "id": "DNR-0189",
+              "cohort": "control",
+              "sex": "male",
+              "historyOfRhi": true
+            }
+          },
+          {
+            "id": "SMPL-0659",
+            "brainRegion": "cerebellum",
+            "donor": {
+              "id": "DNR-0218",
+              "cohort": "control",
+              "sex": "male",
+              "historyOfRhi": true
+            }
+          },
+          {
+            "id": "SMPL-0662",
+            "brainRegion": "hippocampus",
+            "donor": {
+              "id": "DNR-0214",
+              "cohort": "control",
+              "sex": "male",
+              "historyOfRhi": false
+            }
+          },
+          {
+            "id": "SMPL-0677",
+            "brainRegion": "cerebellum",
+            "donor": {
+              "id": "DNR-0296",
+              "cohort": "control",
+              "sex": "male",
+              "historyOfRhi": false
+            }
+          },
+          {
+            "id": "SMPL-0694",
+            "brainRegion": "cerebellum",
+            "donor": {
+              "id": "DNR-0299",
+              "cohort": "at_risk",
+              "sex": "male",
+              "historyOfRhi": false
+            }
+          },
+          {
+            "id": "SMPL-0696",
+            "brainRegion": "brainstem",
+            "donor": {
+              "id": "DNR-0111",
+              "cohort": "case",
+              "sex": "male",
+              "historyOfRhi": true
+            }
+          },
+          {
+            "id": "SMPL-0697",
+            "brainRegion": "hippocampus",
+            "donor": {
+              "id": "DNR-0211",
+              "cohort": "control",
+              "sex": "female",
+              "historyOfRhi": false
+            }
+          },
+          {
+            "id": "SMPL-0701",
+            "brainRegion": "brainstem",
+            "donor": {
+              "id": "DNR-0277",
+              "cohort": "control",
+              "sex": "female",
+              "historyOfRhi": false
+            }
+          },
+          {
+            "id": "SMPL-0705",
+            "brainRegion": "cerebellum",
+            "donor": {
+              "id": "DNR-0172",
+              "cohort": "case",
+              "sex": "female",
+              "historyOfRhi": false
+            }
+          },
+          {
+            "id": "SMPL-0707",
+            "brainRegion": "hippocampus",
+            "donor": {
+              "id": "DNR-0198",
+              "cohort": "at_risk",
+              "sex": "male",
+              "historyOfRhi": false
+            }
+          },
+          {
+            "id": "SMPL-0708",
+            "brainRegion": "cerebellum",
+            "donor": {
+              "id": "DNR-0206",
+              "cohort": "case",
+              "sex": "female",
+              "historyOfRhi": false
+            }
+          },
+          {
+            "id": "SMPL-0715",
+            "brainRegion": "cerebellum",
+            "donor": {
+              "id": "DNR-0277",
+              "cohort": "control",
+              "sex": "female",
+              "historyOfRhi": false
+            }
+          },
+          {
+            "id": "SMPL-0717",
+            "brainRegion": "brainstem",
+            "donor": {
+              "id": "DNR-0084",
+              "cohort": "control",
+              "sex": "female",
+              "historyOfRhi": false
+            }
+          },
+          {
+            "id": "SMPL-0718",
+            "brainRegion": "brainstem",
+            "donor": {
+              "id": "DNR-0018",
+              "cohort": "at_risk",
+              "sex": "male",
+              "historyOfRhi": false
+            }
+          },
+          {
+            "id": "SMPL-0722",
+            "brainRegion": "brainstem",
+            "donor": {
+              "id": "DNR-0129",
+              "cohort": "case",
+              "sex": "unknown",
+              "historyOfRhi": false
+            }
+          },
+          {
+            "id": "SMPL-0723",
+            "brainRegion": "cerebellum",
+            "donor": {
+              "id": "DNR-0072",
+              "cohort": "case",
+              "sex": "female",
+              "historyOfRhi": false
+            }
+          },
+          {
+            "id": "SMPL-0727",
+            "brainRegion": "cerebellum",
+            "donor": {
+              "id": "DNR-0107",
+              "cohort": "case",
+              "sex": "female",
+              "historyOfRhi": false
+            }
+          },
+          {
+            "id": "SMPL-0730",
+            "brainRegion": "frontal_cortex",
+            "donor": {
+              "id": "DNR-0072",
+              "cohort": "case",
+              "sex": "female",
+              "historyOfRhi": false
+            }
+          },
+          {
+            "id": "SMPL-0745",
+            "brainRegion": "frontal_cortex",
+            "donor": {
+              "id": "DNR-0031",
+              "cohort": "control",
+              "sex": "female",
+              "historyOfRhi": true
+            }
+          },
+          {
+            "id": "SMPL-0747",
+            "brainRegion": "brainstem",
+            "donor": {
+              "id": "DNR-0156",
+              "cohort": "case",
+              "sex": "male",
+              "historyOfRhi": false
+            }
+          },
+          {
+            "id": "SMPL-0749",
+            "brainRegion": "cerebellum",
+            "donor": {
+              "id": "DNR-0266",
+              "cohort": "control",
+              "sex": "female",
+              "historyOfRhi": false
+            }
+          },
+          {
+            "id": "SMPL-0766",
+            "brainRegion": "cerebellum",
+            "donor": {
+              "id": "DNR-0174",
+              "cohort": "case",
+              "sex": "female",
+              "historyOfRhi": false
+            }
+          },
+          {
+            "id": "SMPL-0769",
+            "brainRegion": "brainstem",
+            "donor": {
+              "id": "DNR-0174",
+              "cohort": "case",
+              "sex": "female",
+              "historyOfRhi": false
+            }
+          },
+          {
+            "id": "SMPL-0771",
+            "brainRegion": "frontal_cortex",
+            "donor": {
+              "id": "DNR-0212",
+              "cohort": "at_risk",
+              "sex": "female",
+              "historyOfRhi": false
+            }
+          },
+          {
+            "id": "SMPL-0775",
+            "brainRegion": "cerebellum",
+            "donor": {
+              "id": "DNR-0193",
+              "cohort": "control",
+              "sex": "male",
+              "historyOfRhi": true
+            }
+          },
+          {
+            "id": "SMPL-0778",
+            "brainRegion": "frontal_cortex",
+            "donor": {
+              "id": "DNR-0128",
+              "cohort": "case",
+              "sex": "female",
+              "historyOfRhi": false
+            }
+          },
+          {
+            "id": "SMPL-0781",
+            "brainRegion": "frontal_cortex",
+            "donor": {
+              "id": "DNR-0271",
+              "cohort": "control",
+              "sex": "female",
+              "historyOfRhi": false
+            }
+          },
+          {
+            "id": "SMPL-0782",
+            "brainRegion": "frontal_cortex",
+            "donor": {
+              "id": "DNR-0061",
+              "cohort": "at_risk",
+              "sex": "male",
+              "historyOfRhi": false
+            }
+          },
+          {
+            "id": "SMPL-0788",
+            "brainRegion": "hippocampus",
+            "donor": {
+              "id": "DNR-0193",
+              "cohort": "control",
+              "sex": "male",
+              "historyOfRhi": true
+            }
+          },
+          {
+            "id": "SMPL-0795",
+            "brainRegion": "cerebellum",
+            "donor": {
+              "id": "DNR-0199",
+              "cohort": "case",
+              "sex": "male",
+              "historyOfRhi": false
+            }
+          },
+          {
+            "id": "SMPL-0799",
+            "brainRegion": "frontal_cortex",
+            "donor": {
+              "id": "DNR-0273",
+              "cohort": "control",
+              "sex": "male",
+              "historyOfRhi": false
+            }
+          },
+          {
+            "id": "SMPL-0802",
+            "brainRegion": "frontal_cortex",
+            "donor": {
+              "id": "DNR-0018",
+              "cohort": "at_risk",
+              "sex": "male",
+              "historyOfRhi": false
+            }
+          }
+        ]
+      }
+    }
+  },
+  "q21": {
+    "status": "ok",
+    "graphql": "{ samples(filters: [{field: \"donor\", value: \"DNR-0068\"}]) { total } }",
+    "response": {
+      "samples": {
+        "total": 3
+      }
+    }
+  },
+  "q22": {
+    "status": "ok",
+    "graphql": "{ datasets(filters: [{field: \"produced_by\", value: \"WRKF-0245\"}]) { total items { id } } }",
+    "response": {
+      "datasets": {
+        "total": 2,
+        "items": [
+          {
+            "id": "DTST-0001"
+          },
+          {
+            "id": "DTST-0162"
+          }
+        ]
+      }
+    }
+  },
+  "q23": {
+    "status": "ok",
+    "graphql": "{ dataset(id: \"DTST-0001\") { id producedBy { id inputSamples { id donor { id name } } } } }",
+    "response": {
+      "dataset": {
+        "id": "DTST-0001",
+        "producedBy": {
+          "id": "WRKF-0245",
+          "inputSamples": [
+            {
+              "id": "SMPL-0048",
+              "donor": {
+                "id": "DNR-0206",
+                "name": "Renee Glover"
+              }
+            },
+            {
+              "id": "SMPL-0091",
+              "donor": {
+                "id": "DNR-0210",
+                "name": "Rachel Thomas"
+              }
+            }
+          ]
+        }
+      }
+    }
+  },
+  "q24": {
+    "status": "ok",
+    "verified_against": "DNR-0001",
+    "steps": {
+      "1_donor_to_samples": {
+        "graphql": "{ samples(filters: [{field: \"donor\", value: \"DNR-0001\"}]) { total items { id } } }",
+        "result": [
+          "SMPL-0006",
+          "SMPL-0095",
+          "SMPL-0315"
+        ]
+      },
+      "2_samples_to_workflows_bounded_relatedTo": {
+        "graphql": "relatedTo(id: \"<sampleId>\", relationshipType: \"input_samples\") -- one call per sample from step 1",
+        "call_count": 3,
+        "result": [
+          "WRKF-0222",
+          "WRKF-0447",
+          "WRKF-0783",
+          "WRKF-0876",
+          "WRKF-0336",
+          "WRKF-0908",
+          "WRKF-1042",
+          "WRKF-0638",
+          "WRKF-0869"
+        ]
+      },
+      "3_workflows_to_datasets": {
+        "graphql": "{ datasets(filters: [{field: \"produced_by\", value: \"<workflowId>\"}]) { total items { id datasetType } } }",
+        "call_count": 9,
+        "result": [
+          "DTST-0096",
+          "DTST-0621",
+          "DTST-0008",
+          "DTST-0200",
+          "DTST-0539",
+          "DTST-1169"
+        ]
+      }
+    },
+    "final_result": [
+      "DTST-0096",
+      "DTST-0621",
+      "DTST-0008",
+      "DTST-0200",
+      "DTST-0539",
+      "DTST-1169"
+    ],
+    "note": "6 datasets, produced by 4 of the 9 referencing workflows (the other 5 produced none). Not a single composed query -- 3 + 9 = 12 bounded calls total, each scoped to an already-identified id."
+  },
+  "q25": {
+    "status": "ok",
+    "method": "one relatedTo(id, relationshipType: \"input_samples\") call per sample in the 115-sample tissue-request set, filtered client-side by data.workflow_type == \"rna_seq\"",
+    "call_count": 115,
+    "samples_with_rna_seq_workflow": 45,
+    "total_sample_workflow_matches": 60,
+    "result": "yes -- 45 of the 115 tissue-request samples have at least one rna_seq-typed referencing workflow",
+    "note": "Matches the prior (forbidden, full-table-scan) workaround's own reported 45/115 -- cross-validates both the number and the bounded-per-id pattern's correctness."
+  },
+  "q26": {
+    "status": "ok",
+    "graphql": "{ searchDonors(q: \"cohort-alpha:42\") { id name } }",
+    "response": {
+      "searchDonors": [
+        {
+          "id": "DNR-0001",
+          "name": "Michael Jones"
+        }
+      ]
+    }
+  },
+  "q27": {
+    "status": "ok",
+    "graphql": "{ searchDatasets(q: \"recall-freeze\") { id name } }",
+    "response": {
+      "searchDatasets": [
+        {
+          "id": "DTST-0001",
+          "name": "Proactive bandwidth-monitored intranet"
+        }
+      ]
+    }
+  },
+  "q28": {
+    "status": "not_indexed",
+    "graphql": "{ searchSamples(q: \"tissue\") { id } }",
+    "response": {
+      "searchSamples": []
+    }
+  },
+  "q29": {
+    "status": "ok",
+    "graphql": "{ entityHistory(entityId: \"SMPL-0001\") { __typename } }",
+    "response": {
+      "entityHistory": [
+        {
+          "__typename": "ProvenanceEntry"
+        }
+      ]
+    }
+  },
+  "q30": {
+    "status": "ok",
+    "graphql": "{ sample(id: \"SMPL-0001\") { id isAvailable } }",
+    "response": {
+      "sample": {
+        "id": "SMPL-0001",
+        "isAvailable": true
+      }
+    }
+  },
+  "q31": {
+    "status": "ok",
+    "graphql": "{ workflows(filters: [{field: \"status\", value: \"completed\"}], limit: 100, offset: 0) { total items { id } } }",
+    "response": {
+      "workflows": {
+        "total": 840,
+        "items": [
+          {
+            "id": "WRKF-0003"
+          },
+          {
+            "id": "WRKF-0004"
+          },
+          {
+            "id": "WRKF-0005"
+          },
+          {
+            "id": "WRKF-0007"
+          },
+          {
+            "id": "WRKF-0009"
+          },
+          {
+            "id": "WRKF-0010"
+          },
+          {
+            "id": "WRKF-0011"
+          },
+          {
+            "id": "WRKF-0012"
+          },
+          {
+            "id": "WRKF-0013"
+          },
+          {
+            "id": "WRKF-0015"
+          },
+          {
+            "id": "WRKF-0016"
+          },
+          {
+            "id": "WRKF-0017"
+          },
+          {
+            "id": "WRKF-0019"
+          },
+          {
+            "id": "WRKF-0020"
+          },
+          {
+            "id": "WRKF-0022"
+          },
+          {
+            "id": "WRKF-0024"
+          },
+          {
+            "id": "WRKF-0026"
+          },
+          {
+            "id": "WRKF-0028"
+          },
+          {
+            "id": "WRKF-0029"
+          },
+          {
+            "id": "WRKF-0030"
+          },
+          {
+            "id": "WRKF-0031"
+          },
+          {
+            "id": "WRKF-0033"
+          },
+          {
+            "id": "WRKF-0034"
+          },
+          {
+            "id": "WRKF-0035"
+          },
+          {
+            "id": "WRKF-0036"
+          },
+          {
+            "id": "WRKF-0038"
+          },
+          {
+            "id": "WRKF-0040"
+          },
+          {
+            "id": "WRKF-0041"
+          },
+          {
+            "id": "WRKF-0043"
+          },
+          {
+            "id": "WRKF-0044"
+          },
+          {
+            "id": "WRKF-0046"
+          },
+          {
+            "id": "WRKF-0047"
+          },
+          {
+            "id": "WRKF-0049"
+          },
+          {
+            "id": "WRKF-0050"
+          },
+          {
+            "id": "WRKF-0051"
+          },
+          {
+            "id": "WRKF-0054"
+          },
+          {
+            "id": "WRKF-0055"
+          },
+          {
+            "id": "WRKF-0056"
+          },
+          {
+            "id": "WRKF-0057"
+          },
+          {
+            "id": "WRKF-0058"
+          },
+          {
+            "id": "WRKF-0060"
+          },
+          {
+            "id": "WRKF-0061"
+          },
+          {
+            "id": "WRKF-0062"
+          },
+          {
+            "id": "WRKF-0065"
+          },
+          {
+            "id": "WRKF-0066"
+          },
+          {
+            "id": "WRKF-0068"
+          },
+          {
+            "id": "WRKF-0069"
+          },
+          {
+            "id": "WRKF-0070"
+          },
+          {
+            "id": "WRKF-0071"
+          },
+          {
+            "id": "WRKF-0074"
+          },
+          {
+            "id": "WRKF-0075"
+          },
+          {
+            "id": "WRKF-0080"
+          },
+          {
+            "id": "WRKF-0081"
+          },
+          {
+            "id": "WRKF-0083"
+          },
+          {
+            "id": "WRKF-0084"
+          },
+          {
+            "id": "WRKF-0085"
+          },
+          {
+            "id": "WRKF-0086"
+          },
+          {
+            "id": "WRKF-0087"
+          },
+          {
+            "id": "WRKF-0088"
+          },
+          {
+            "id": "WRKF-0090"
+          },
+          {
+            "id": "WRKF-0092"
+          },
+          {
+            "id": "WRKF-0094"
+          },
+          {
+            "id": "WRKF-0095"
+          },
+          {
+            "id": "WRKF-0096"
+          },
+          {
+            "id": "WRKF-0097"
+          },
+          {
+            "id": "WRKF-0098"
+          },
+          {
+            "id": "WRKF-0100"
+          },
+          {
+            "id": "WRKF-0101"
+          },
+          {
+            "id": "WRKF-0102"
+          },
+          {
+            "id": "WRKF-0104"
+          },
+          {
+            "id": "WRKF-0105"
+          },
+          {
+            "id": "WRKF-0106"
+          },
+          {
+            "id": "WRKF-0107"
+          },
+          {
+            "id": "WRKF-0110"
+          },
+          {
+            "id": "WRKF-0111"
+          },
+          {
+            "id": "WRKF-0114"
+          },
+          {
+            "id": "WRKF-0115"
+          },
+          {
+            "id": "WRKF-0116"
+          },
+          {
+            "id": "WRKF-0118"
+          },
+          {
+            "id": "WRKF-0119"
+          },
+          {
+            "id": "WRKF-0120"
+          },
+          {
+            "id": "WRKF-0122"
+          },
+          {
+            "id": "WRKF-0123"
+          },
+          {
+            "id": "WRKF-0124"
+          },
+          {
+            "id": "WRKF-0125"
+          },
+          {
+            "id": "WRKF-0126"
+          },
+          {
+            "id": "WRKF-0130"
+          },
+          {
+            "id": "WRKF-0131"
+          },
+          {
+            "id": "WRKF-0132"
+          },
+          {
+            "id": "WRKF-0133"
+          },
+          {
+            "id": "WRKF-0134"
+          },
+          {
+            "id": "WRKF-0135"
+          },
+          {
+            "id": "WRKF-0136"
+          },
+          {
+            "id": "WRKF-0138"
+          },
+          {
+            "id": "WRKF-0139"
+          },
+          {
+            "id": "WRKF-0140"
+          },
+          {
+            "id": "WRKF-0141"
+          },
+          {
+            "id": "WRKF-0142"
+          },
+          {
+            "id": "WRKF-0144"
+          },
+          {
+            "id": "WRKF-0146"
+          }
+        ]
+      }
+    }
+  },
+  "q32": {
+    "status": "blocked",
+    "graphql": "{ donors(filters: [{field: \"age_at_death\", value: 65, op: GT}]) { total } }",
+    "response": null,
+    "errors": [
+      {
+        "message": "Value 'GT' does not exist in 'FilterOp' enum.",
+        "locations": [
+          {
+            "line": 1,
+            "column": 59
+          }
+        ]
+      }
+    ],
+    "blocked_by": [
+      "mosaic#96"
+    ]
+  },
+  "q33": {
+    "status": "blocked",
+    "reason": "No aggregation/group-by root query exists. The only route today is one equality-filtered count query per enum value (as q01/q02 do individually), not a single grouped-count query.",
+    "blocked_by": [
+      "mosaic#96"
+    ]
+  },
+  "q34": {
+    "status": "blocked",
+    "reason": "relatedTo(id, relationshipType) accepts no predicate on the returned entities' own fields, so a single-composed-query answer isn't possible -- only relatedTo plus a client-side filter over that one call's own small result (see q25's method for the general pattern).",
+    "blocked_by": [
+      "mosaic#148"
+    ]
+  }
+}

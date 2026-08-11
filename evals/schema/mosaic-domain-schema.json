@@ -1,0 +1,605 @@
+{
+    "data": {
+        "hippoSchema": [
+            {
+                "name": "Dataset",
+                "accessorName": "datasets",
+                "description": "A data artifact produced by exactly one workflow run. Linked to its producing workflow via a single-valued reference (a plain FK column).",
+                "fields": [
+                    {
+                        "name": "name",
+                        "kind": "scalar",
+                        "range": "string",
+                        "role": "user",
+                        "required": true,
+                        "multivalued": false,
+                        "identifier": false,
+                        "description": "Human-readable label for this dataset.",
+                        "targetEntityType": null,
+                        "enumName": null,
+                        "enumValues": []
+                    },
+                    {
+                        "name": "produced_by",
+                        "kind": "reference",
+                        "range": "Workflow",
+                        "role": "user",
+                        "required": true,
+                        "multivalued": false,
+                        "identifier": false,
+                        "description": "The workflow run that produced this dataset (single-valued reference \u2014 a real FK column; forward-resolved and reverse-queryable via an equality filter on this field).",
+                        "targetEntityType": "Workflow",
+                        "enumName": null,
+                        "enumValues": []
+                    },
+                    {
+                        "name": "dataset_type",
+                        "kind": "enum",
+                        "range": "DatasetTypeEnum",
+                        "role": "user",
+                        "required": true,
+                        "multivalued": false,
+                        "identifier": false,
+                        "description": "Kind of data artifact (facet).",
+                        "targetEntityType": null,
+                        "enumName": "DatasetTypeEnum",
+                        "enumValues": [
+                            "bam",
+                            "vcf",
+                            "counts_matrix",
+                            "report"
+                        ]
+                    },
+                    {
+                        "name": "access_level",
+                        "kind": "enum",
+                        "range": "AccessLevelEnum",
+                        "role": "user",
+                        "required": true,
+                        "multivalued": false,
+                        "identifier": false,
+                        "description": "Data access tier (facet).",
+                        "targetEntityType": null,
+                        "enumName": "AccessLevelEnum",
+                        "enumValues": [
+                            "public",
+                            "controlled",
+                            "restricted"
+                        ]
+                    },
+                    {
+                        "name": "is_public",
+                        "kind": "scalar",
+                        "range": "boolean",
+                        "role": "user",
+                        "required": true,
+                        "multivalued": false,
+                        "identifier": false,
+                        "description": "Whether this dataset is publicly released (boolean facet).",
+                        "targetEntityType": null,
+                        "enumName": null,
+                        "enumValues": []
+                    },
+                    {
+                        "name": "description",
+                        "kind": "scalar",
+                        "range": "string",
+                        "role": "user",
+                        "required": false,
+                        "multivalued": false,
+                        "identifier": false,
+                        "description": "Free-text description. Full-text searchable \u2014 the other field used to exercise Aperture's search.",
+                        "targetEntityType": null,
+                        "enumName": null,
+                        "enumValues": []
+                    },
+                    {
+                        "name": "file_size_bytes",
+                        "kind": "scalar",
+                        "range": "float",
+                        "role": "user",
+                        "required": false,
+                        "multivalued": false,
+                        "identifier": false,
+                        "description": "Size of the underlying data artifact, in bytes. `float`, not `integer` \u2014 GraphQL's `Int` scalar is 32-bit signed, and file sizes here realistically range into the tens of gigabytes.",
+                        "targetEntityType": null,
+                        "enumName": null,
+                        "enumValues": []
+                    },
+                    {
+                        "name": "quality_metrics",
+                        "kind": "structured",
+                        "range": "QualityMetrics",
+                        "role": "user",
+                        "required": false,
+                        "multivalued": false,
+                        "identifier": false,
+                        "description": "Inlined quality-control metrics for this dataset (a value object, not its own entity \u2014 exercises the structured/JSON slot kind).",
+                        "targetEntityType": "QualityMetrics",
+                        "enumName": null,
+                        "enumValues": []
+                    },
+                    {
+                        "name": "id",
+                        "kind": "scalar",
+                        "range": "string",
+                        "role": "system",
+                        "required": true,
+                        "multivalued": false,
+                        "identifier": true,
+                        "description": "Stable primary key. UUID-typed (SDK-assigned on create; opaque to callers). Per sec9 \u00a79.5, the UUID invariant enables uniform polymorphic references across the system.",
+                        "targetEntityType": null,
+                        "enumName": null,
+                        "enumValues": []
+                    },
+                    {
+                        "name": "is_available",
+                        "kind": "scalar",
+                        "range": "boolean",
+                        "role": "system",
+                        "required": true,
+                        "multivalued": false,
+                        "identifier": false,
+                        "description": "Lifecycle flag. `true` means the entity participates in normal reads; `false` means it has been superseded, archived, deleted, distributed, or removed. The reason lives in provenance, not on the entity.",
+                        "targetEntityType": null,
+                        "enumName": null,
+                        "enumValues": []
+                    }
+                ],
+                "relationships": [
+                    {
+                        "field": "produced_by",
+                        "targetEntityType": "Workflow"
+                    }
+                ]
+            },
+            {
+                "name": "Donor",
+                "accessorName": "donors",
+                "description": "An individual who contributed one or more biological samples.",
+                "fields": [
+                    {
+                        "name": "name",
+                        "kind": "scalar",
+                        "range": "string",
+                        "role": "user",
+                        "required": true,
+                        "multivalued": false,
+                        "identifier": false,
+                        "description": "Human-readable label for this donor.",
+                        "targetEntityType": null,
+                        "enumName": null,
+                        "enumValues": []
+                    },
+                    {
+                        "name": "cohort",
+                        "kind": "enum",
+                        "range": "CohortEnum",
+                        "role": "user",
+                        "required": true,
+                        "multivalued": false,
+                        "identifier": false,
+                        "description": "Study cohort this donor belongs to (facet).",
+                        "targetEntityType": null,
+                        "enumName": "CohortEnum",
+                        "enumValues": [
+                            "control",
+                            "case",
+                            "at_risk"
+                        ]
+                    },
+                    {
+                        "name": "sex",
+                        "kind": "enum",
+                        "range": "SexEnum",
+                        "role": "user",
+                        "required": true,
+                        "multivalued": false,
+                        "identifier": false,
+                        "description": "Donor's recorded sex (facet).",
+                        "targetEntityType": null,
+                        "enumName": "SexEnum",
+                        "enumValues": [
+                            "male",
+                            "female",
+                            "unknown"
+                        ]
+                    },
+                    {
+                        "name": "age_at_death",
+                        "kind": "scalar",
+                        "range": "integer",
+                        "role": "user",
+                        "required": true,
+                        "multivalued": false,
+                        "identifier": false,
+                        "description": "Donor's age at death, in years.",
+                        "targetEntityType": null,
+                        "enumName": null,
+                        "enumValues": []
+                    },
+                    {
+                        "name": "history_of_rhi",
+                        "kind": "scalar",
+                        "range": "boolean",
+                        "role": "user",
+                        "required": true,
+                        "multivalued": false,
+                        "identifier": false,
+                        "description": "Whether this donor has a documented history of repetitive head impacts (RHI) (facet).",
+                        "targetEntityType": null,
+                        "enumName": null,
+                        "enumValues": []
+                    },
+                    {
+                        "name": "cause_of_death",
+                        "kind": "scalar",
+                        "range": "string",
+                        "role": "user",
+                        "required": false,
+                        "multivalued": false,
+                        "identifier": false,
+                        "description": "Free-text cause of death, when known (sparse \u2014 often unrecorded).",
+                        "targetEntityType": null,
+                        "enumName": null,
+                        "enumValues": []
+                    },
+                    {
+                        "name": "notes",
+                        "kind": "scalar",
+                        "range": "string",
+                        "role": "user",
+                        "required": false,
+                        "multivalued": false,
+                        "identifier": false,
+                        "description": "Free-text intake notes. Full-text searchable \u2014 one of the fields used to exercise Aperture's search.",
+                        "targetEntityType": null,
+                        "enumName": null,
+                        "enumValues": []
+                    },
+                    {
+                        "name": "id",
+                        "kind": "scalar",
+                        "range": "string",
+                        "role": "system",
+                        "required": true,
+                        "multivalued": false,
+                        "identifier": true,
+                        "description": "Stable primary key. UUID-typed (SDK-assigned on create; opaque to callers). Per sec9 \u00a79.5, the UUID invariant enables uniform polymorphic references across the system.",
+                        "targetEntityType": null,
+                        "enumName": null,
+                        "enumValues": []
+                    },
+                    {
+                        "name": "is_available",
+                        "kind": "scalar",
+                        "range": "boolean",
+                        "role": "system",
+                        "required": true,
+                        "multivalued": false,
+                        "identifier": false,
+                        "description": "Lifecycle flag. `true` means the entity participates in normal reads; `false` means it has been superseded, archived, deleted, distributed, or removed. The reason lives in provenance, not on the entity.",
+                        "targetEntityType": null,
+                        "enumName": null,
+                        "enumValues": []
+                    }
+                ],
+                "relationships": []
+            },
+            {
+                "name": "Sample",
+                "accessorName": "samples",
+                "description": "A biological specimen collected from a single donor. Linked to its donor via a single-valued reference (a plain FK column, filterable in both directions by equality).",
+                "fields": [
+                    {
+                        "name": "name",
+                        "kind": "scalar",
+                        "range": "string",
+                        "role": "user",
+                        "required": true,
+                        "multivalued": false,
+                        "identifier": false,
+                        "description": "Human-readable label for this sample.",
+                        "targetEntityType": null,
+                        "enumName": null,
+                        "enumValues": []
+                    },
+                    {
+                        "name": "donor",
+                        "kind": "reference",
+                        "range": "Donor",
+                        "role": "user",
+                        "required": true,
+                        "multivalued": false,
+                        "identifier": false,
+                        "description": "The donor this sample was collected from (single-valued reference \u2014 a real FK column; forward-resolved and reverse-queryable via an equality filter on this field).",
+                        "targetEntityType": "Donor",
+                        "enumName": null,
+                        "enumValues": []
+                    },
+                    {
+                        "name": "sample_type",
+                        "kind": "enum",
+                        "range": "SampleTypeEnum",
+                        "role": "user",
+                        "required": true,
+                        "multivalued": false,
+                        "identifier": false,
+                        "description": "Kind of biological material (facet).",
+                        "targetEntityType": null,
+                        "enumName": "SampleTypeEnum",
+                        "enumValues": [
+                            "blood",
+                            "tissue",
+                            "csf",
+                            "urine",
+                            "saliva"
+                        ]
+                    },
+                    {
+                        "name": "brain_region",
+                        "kind": "enum",
+                        "range": "BrainRegionEnum",
+                        "role": "user",
+                        "required": false,
+                        "multivalued": false,
+                        "identifier": false,
+                        "description": "Anatomical brain region this sample was collected from (facet). Sparse/optional \u2014 only meaningful for `sample_type: tissue` samples; most other sample types have no brain region.",
+                        "targetEntityType": null,
+                        "enumName": "BrainRegionEnum",
+                        "enumValues": [
+                            "hippocampus",
+                            "frontal_cortex",
+                            "cerebellum",
+                            "brainstem"
+                        ]
+                    },
+                    {
+                        "name": "storage_condition",
+                        "kind": "enum",
+                        "range": "StorageConditionEnum",
+                        "role": "user",
+                        "required": true,
+                        "multivalued": false,
+                        "identifier": false,
+                        "description": "How the sample is stored (facet).",
+                        "targetEntityType": null,
+                        "enumName": "StorageConditionEnum",
+                        "enumValues": [
+                            "frozen",
+                            "fresh",
+                            "fixed",
+                            "ambient"
+                        ]
+                    },
+                    {
+                        "name": "replicate_number",
+                        "kind": "scalar",
+                        "range": "integer",
+                        "role": "user",
+                        "required": true,
+                        "multivalued": false,
+                        "identifier": false,
+                        "description": "Which technical replicate this is for its donor/sample_type combination. Deliberately skewed \u2014 most samples are replicate 1.",
+                        "targetEntityType": null,
+                        "enumName": null,
+                        "enumValues": []
+                    },
+                    {
+                        "name": "accession",
+                        "kind": "scalar",
+                        "range": "string",
+                        "role": "user",
+                        "required": true,
+                        "multivalued": false,
+                        "identifier": false,
+                        "description": "Lab accession code. Exact-match lookup key, not meant for full-text search.",
+                        "targetEntityType": null,
+                        "enumName": null,
+                        "enumValues": []
+                    },
+                    {
+                        "name": "tags",
+                        "kind": "scalar",
+                        "range": "string",
+                        "role": "user",
+                        "required": false,
+                        "multivalued": true,
+                        "identifier": false,
+                        "description": "Free-form labels (e.g. batch or shipment tags); sparse and variable in count.",
+                        "targetEntityType": null,
+                        "enumName": null,
+                        "enumValues": []
+                    },
+                    {
+                        "name": "collected_at",
+                        "kind": "scalar",
+                        "range": "date",
+                        "role": "user",
+                        "required": false,
+                        "multivalued": false,
+                        "identifier": false,
+                        "description": "Date the sample was collected.",
+                        "targetEntityType": null,
+                        "enumName": null,
+                        "enumValues": []
+                    },
+                    {
+                        "name": "id",
+                        "kind": "scalar",
+                        "range": "string",
+                        "role": "system",
+                        "required": true,
+                        "multivalued": false,
+                        "identifier": true,
+                        "description": "Stable primary key. UUID-typed (SDK-assigned on create; opaque to callers). Per sec9 \u00a79.5, the UUID invariant enables uniform polymorphic references across the system.",
+                        "targetEntityType": null,
+                        "enumName": null,
+                        "enumValues": []
+                    },
+                    {
+                        "name": "is_available",
+                        "kind": "scalar",
+                        "range": "boolean",
+                        "role": "system",
+                        "required": true,
+                        "multivalued": false,
+                        "identifier": false,
+                        "description": "Lifecycle flag. `true` means the entity participates in normal reads; `false` means it has been superseded, archived, deleted, distributed, or removed. The reason lives in provenance, not on the entity.",
+                        "targetEntityType": null,
+                        "enumName": null,
+                        "enumValues": []
+                    }
+                ],
+                "relationships": [
+                    {
+                        "field": "donor",
+                        "targetEntityType": "Donor"
+                    }
+                ]
+            },
+            {
+                "name": "Workflow",
+                "accessorName": "workflows",
+                "description": "A computational or laboratory pipeline run that consumes one or more samples and produces a dataset. Consumes samples via a multivalued reference \u2014 stored in Mosaic's `relationships` table, forward-resolved only (no reverse \"which workflows consumed this sample\" query exists).",
+                "fields": [
+                    {
+                        "name": "name",
+                        "kind": "scalar",
+                        "range": "string",
+                        "role": "user",
+                        "required": true,
+                        "multivalued": false,
+                        "identifier": false,
+                        "description": "Human-readable label for this workflow run.",
+                        "targetEntityType": null,
+                        "enumName": null,
+                        "enumValues": []
+                    },
+                    {
+                        "name": "input_samples",
+                        "kind": "reference",
+                        "range": "Sample",
+                        "role": "user",
+                        "required": true,
+                        "multivalued": true,
+                        "identifier": false,
+                        "description": "Samples consumed by this workflow run (multivalued reference \u2014 a many-to-many edge; forward-resolved only).",
+                        "targetEntityType": "Sample",
+                        "enumName": null,
+                        "enumValues": []
+                    },
+                    {
+                        "name": "status",
+                        "kind": "enum",
+                        "range": "WorkflowStatusEnum",
+                        "role": "user",
+                        "required": true,
+                        "multivalued": false,
+                        "identifier": false,
+                        "description": "Current run status (facet). Heavily weighted toward completed.",
+                        "targetEntityType": null,
+                        "enumName": "WorkflowStatusEnum",
+                        "enumValues": [
+                            "completed",
+                            "failed",
+                            "running",
+                            "queued",
+                            "cancelled"
+                        ]
+                    },
+                    {
+                        "name": "workflow_type",
+                        "kind": "enum",
+                        "range": "WorkflowTypeEnum",
+                        "role": "user",
+                        "required": true,
+                        "multivalued": false,
+                        "identifier": false,
+                        "description": "Kind of pipeline run (facet).",
+                        "targetEntityType": null,
+                        "enumName": "WorkflowTypeEnum",
+                        "enumValues": [
+                            "alignment",
+                            "variant_calling",
+                            "qc",
+                            "quantification",
+                            "rna_seq"
+                        ]
+                    },
+                    {
+                        "name": "started_at",
+                        "kind": "scalar",
+                        "range": "datetime",
+                        "role": "user",
+                        "required": true,
+                        "multivalued": false,
+                        "identifier": false,
+                        "description": "When the workflow run started.",
+                        "targetEntityType": null,
+                        "enumName": null,
+                        "enumValues": []
+                    },
+                    {
+                        "name": "completed_at",
+                        "kind": "scalar",
+                        "range": "datetime",
+                        "role": "user",
+                        "required": false,
+                        "multivalued": false,
+                        "identifier": false,
+                        "description": "When the workflow run finished. Sparse \u2014 approximately null for runs still queued/running (an approximation, not an enforced correlation with `status`).",
+                        "targetEntityType": null,
+                        "enumName": null,
+                        "enumValues": []
+                    },
+                    {
+                        "name": "duration_hours",
+                        "kind": "scalar",
+                        "range": "float",
+                        "role": "user",
+                        "required": false,
+                        "multivalued": false,
+                        "identifier": false,
+                        "description": "Wall-clock duration of the run, in hours, once complete.",
+                        "targetEntityType": null,
+                        "enumName": null,
+                        "enumValues": []
+                    },
+                    {
+                        "name": "id",
+                        "kind": "scalar",
+                        "range": "string",
+                        "role": "system",
+                        "required": true,
+                        "multivalued": false,
+                        "identifier": true,
+                        "description": "Stable primary key. UUID-typed (SDK-assigned on create; opaque to callers). Per sec9 \u00a79.5, the UUID invariant enables uniform polymorphic references across the system.",
+                        "targetEntityType": null,
+                        "enumName": null,
+                        "enumValues": []
+                    },
+                    {
+                        "name": "is_available",
+                        "kind": "scalar",
+                        "range": "boolean",
+                        "role": "system",
+                        "required": true,
+                        "multivalued": false,
+                        "identifier": false,
+                        "description": "Lifecycle flag. `true` means the entity participates in normal reads; `false` means it has been superseded, archived, deleted, distributed, or removed. The reason lives in provenance, not on the entity.",
+                        "targetEntityType": null,
+                        "enumName": null,
+                        "enumValues": []
+                    }
+                ],
+                "relationships": [
+                    {
+                        "field": "input_samples",
+                        "targetEntityType": "Sample"
+                    }
+                ]
+            }
+        ]
+    }
+}
