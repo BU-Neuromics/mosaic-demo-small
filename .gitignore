@@ -12,3 +12,6 @@ __pycache__/
 
 # OS
 .DS_Store
+
+# Harness run artifacts (regenerate with `python -m exon.harness loop`)
+exon/harness/runs/
