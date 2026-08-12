@@ -196,12 +196,15 @@ def _truncation_detail(attempt) -> str:
     if total:
         parts.append(f"total_tokens={total}")
     parts.append(
-        "raise EXON_MAX_TOKENS if completion_tokens is at the ceiling (the model spent its whole "
-        "budget reasoning); raise EXON_OLLAMA_NUM_CTX if total_tokens is near num_ctx, since "
-        "Ollama counts prompt+completion together"
+        "if total_tokens is near num_ctx, raise EXON_OLLAMA_NUM_CTX (Ollama counts "
+        "prompt+completion together). Otherwise the completion budget bound: raise "
+        "EXON_MAX_TOKENS ONCE, and if the model simply consumes the larger budget too, this is "
+        "RUNAWAY GENERATION, not an insufficient budget -- measured on qwen2.5-coder:7b under "
+        "json_schema, 8192 and 16384 were both consumed in full on a one-filter question. The "
+        "fix there is a different output protocol or a smaller grounding, not a bigger number"
     )
     parts.append(
-        "either way this is a configuration limit, not something context wording can fix"
+        "either way this is a configuration/protocol limit, not something context wording can fix"
     )
     return " -- ".join(parts)
 
