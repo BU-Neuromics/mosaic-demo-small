@@ -178,6 +178,34 @@ def _describe_missing(plan, exp_steps) -> str:
     return f"expected {kinds}, got {got}"
 
 
+def _truncation_detail(attempt) -> str:
+    """Name the limit that ACTUALLY bound, not the one that usually does.
+
+    There are two independent ceilings and they fail identically (finish_reason=length), so a
+    generic "raise num_ctx" message sends people to change the wrong number. Measured on the
+    first real baseline: completion_tokens hit exactly 8192 (max_tokens) while total_tokens was
+    8932, nowhere near num_ctx=32768 -- the binding limit was the completion budget, and the
+    original message said the opposite.
+    """
+    usage = attempt.usage or {}
+    completion = usage.get("completion_tokens")
+    total = usage.get("total_tokens")
+    parts = ["finish_reason=length with no plan produced"]
+    if completion:
+        parts.append(f"completion_tokens={completion}")
+    if total:
+        parts.append(f"total_tokens={total}")
+    parts.append(
+        "raise EXON_MAX_TOKENS if completion_tokens is at the ceiling (the model spent its whole "
+        "budget reasoning); raise EXON_OLLAMA_NUM_CTX if total_tokens is near num_ctx, since "
+        "Ollama counts prompt+completion together"
+    )
+    parts.append(
+        "either way this is a configuration limit, not something context wording can fix"
+    )
+    return " -- ".join(parts)
+
+
 def grade_sample(
     attempt,
     case,
@@ -204,11 +232,7 @@ def grade_sample(
     if attempt.truncated:
         return SampleResult(
             outcome=FailureClass.TRUNCATED,
-            detail=(
-                "finish_reason=length with no plan produced -- raise num_ctx (Ollama counts "
-                "prompt+completion together, independently of max_tokens). This is a "
-                "configuration limit, not something the context wording can fix."
-            ),
+            detail=_truncation_detail(attempt),
             **base,
         )
 

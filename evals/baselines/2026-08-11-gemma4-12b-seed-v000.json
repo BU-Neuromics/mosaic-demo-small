@@ -1,0 +1,412 @@
+{
+  "iteration": 0,
+  "context_version": 0,
+  "fingerprint_id": "528ac2da8ae22796",
+  "model": "ollama_chat/gemma4:12b",
+  "protocol": "json_schema",
+  "wall_clock_s": 2550.971637999988,
+  "scores": {
+    "train": 0.0,
+    "holdout": 0.0,
+    "strict_train": 0,
+    "strict_holdout": 0,
+    "flaky": 0,
+    "total_tokens": 47103
+  },
+  "results": [
+    {
+      "case_id": "q01",
+      "split": "train",
+      "capability": "filter",
+      "pass_rate": 0.0,
+      "strict_pass": false,
+      "is_flaky": false,
+      "outcome_counts": {
+        "plan_unfaithful": 1,
+        "plan_invalid": 1
+      },
+      "samples": [
+        {
+          "case_id": "q01",
+          "sample_index": 0,
+          "outcome": "plan_unfaithful",
+          "detail": "step 0: filter cohort has value {'eq': 'case'} but the instruction says 'case'",
+          "plan_json": {
+            "steps": [
+              {
+                "step_type": "filter",
+                "entity": "Donor",
+                "filters": [
+                  {
+                    "field": "cohort",
+                    "value": {
+                      "eq": "case"
+                    },
+                    "op": "EQ"
+                  }
+                ],
+                "filter_mode": "AND",
+                "select_fields": [],
+                "forward_relation": null,
+                "limit": 100
+              },
+              {
+                "step_type": "related_lookup",
+                "source_step": 0,
+                "relationship_type": "count",
+                "client_filter": null
+              }
+            ]
+          },
+          "raw_content": "{\"steps\": [\n  {\n    \"step_type\": \"filter\",\n    \"entity\": \"Donor\",\n    \"filters\": [\n      {\n        \"field\": \"cohort\",\n        \"value\": {\n          \"eq\": \"case\"\n        }\n      }\n    ]\n  },\n  {\n    \"step_type\": \"related_lookup\",\n    \"source_step\": 0,\n    \"relationship_type\": \"count\"\n  }\n]}",
+          "usage": {
+            "completion_tokens": 111,
+            "prompt_tokens": 2712,
+            "total_tokens": 2823,
+            "completion_tokens_details": null,
+            "prompt_tokens_details": null
+          },
+          "latency_s": 137.33579924993683
+        },
+        {
+          "case_id": "q01",
+          "sample_index": 1,
+          "outcome": "plan_invalid",
+          "detail": "step 0: unknown entity 'donors' -- not present in live hippoSchema",
+          "plan_json": {
+            "steps": [
+              {
+                "step_type": "filter",
+                "entity": "donors",
+                "filters": [
+                  {
+                    "field": "cohort",
+                    "value": {
+                      "eq": "case"
+                    },
+                    "op": "EQ"
+                  }
+                ],
+                "filter_mode": "AND",
+                "select_fields": [],
+                "forward_relation": null,
+                "limit": 100
+              },
+              {
+                "step_type": "related_lookup",
+                "source_step": 0,
+                "relationship_type": "count",
+                "client_filter": null
+              }
+            ]
+          },
+          "raw_content": "{\"steps\": [{\"step_type\": \"filter\", \"entity\": \"donors\", \"filters\": [{\"field\": \"cohort\", \"value\": {\"eq\": \"case\"}}]}, {\"step_type\": \"related_lookup\", \"source_step\": 0, \"relationship_type\": \"count\"}]}",
+          "usage": {
+            "completion_tokens": 67,
+            "prompt_tokens": 3111,
+            "total_tokens": 3178,
+            "completion_tokens_details": null,
+            "prompt_tokens_details": null
+          },
+          "latency_s": 157.75320041703526
+        }
+      ]
+    },
+    {
+      "case_id": "q09",
+      "split": "train",
+      "capability": "filter",
+      "pass_rate": 0.0,
+      "strict_pass": false,
+      "is_flaky": false,
+      "outcome_counts": {
+        "plan_invalid": 2
+      },
+      "samples": [
+        {
+          "case_id": "q09",
+          "sample_index": 0,
+          "outcome": "plan_invalid",
+          "detail": "step 0: unknown entity 'samples' -- not present in live hippoSchema",
+          "plan_json": {
+            "steps": [
+              {
+                "step_type": "filter",
+                "entity": "samples",
+                "filters": [
+                  {
+                    "field": "sample_type",
+                    "value": {
+                      "eq": "tissue"
+                    },
+                    "op": "EQ"
+                  },
+                  {
+                    "field": "brain_region",
+                    "value": {
+                      "in": [
+                        "hippocampus",
+                        "frontal cortex",
+                        "cerebellum",
+                        "brainstem"
+                      ]
+                    },
+                    "op": "EQ"
+                  }
+                ],
+                "filter_mode": "AND",
+                "select_fields": [],
+                "forward_relation": null,
+                "limit": 100
+              }
+            ]
+          },
+          "raw_content": "{\"steps\": [{\"step_type\": \"filter\", \"entity\": \"samples\", \"filters\": [{\"field\": \"sample_type\", \"value\": {\"eq\": \"tissue\"}}, {\"field\": \"brain_region\", \"value\": {\"in\": [\"hippocampus\", \"frontal cortex\", \"cerebellum\", \"brainstem\"]}}]}]}",
+          "usage": {
+            "completion_tokens": 72,
+            "prompt_tokens": 1479,
+            "total_tokens": 1551,
+            "completion_tokens_details": null,
+            "prompt_tokens_details": null
+          },
+          "latency_s": 55.09031233401038
+        },
+        {
+          "case_id": "q09",
+          "sample_index": 1,
+          "outcome": "plan_invalid",
+          "detail": "step 0: unknown entity 'samples' -- not present in live hippoSchema",
+          "plan_json": {
+            "steps": [
+              {
+                "step_type": "filter",
+                "entity": "samples",
+                "filters": [
+                  {
+                    "field": "sample_type",
+                    "value": {
+                      "eq": "tissue"
+                    },
+                    "op": "EQ"
+                  },
+                  {
+                    "field": "brain_region",
+                    "value": {
+                      "in": [
+                        "hippocampus",
+                        "frontal cortex",
+                        "cerebellum",
+                        "brainstem"
+                      ]
+                    },
+                    "op": "EQ"
+                  }
+                ],
+                "filter_mode": "AND",
+                "select_fields": [],
+                "forward_relation": null,
+                "limit": 100
+              }
+            ]
+          },
+          "raw_content": "{\"steps\": [{\"step_type\": \"filter\", \"entity\": \"samples\", \"filters\": [{\"field\": \"sample_type\", \"value\": {\"eq\": \"tissue\"}}, {\"field\": \"brain_region\", \"value\": {\"in\": [\"hippocampus\", \"frontal cortex\", \"cerebellum\", \"brainstem\"]}}]}]}",
+          "usage": {
+            "completion_tokens": 72,
+            "prompt_tokens": 1479,
+            "total_tokens": 1551,
+            "completion_tokens_details": null,
+            "prompt_tokens_details": null
+          },
+          "latency_s": 53.922860875027254
+        }
+      ]
+    },
+    {
+      "case_id": "q21",
+      "split": "train",
+      "capability": "traversal",
+      "pass_rate": 0.0,
+      "strict_pass": false,
+      "is_flaky": false,
+      "outcome_counts": {
+        "truncated": 2
+      },
+      "samples": [
+        {
+          "case_id": "q21",
+          "sample_index": 0,
+          "outcome": "truncated",
+          "detail": "finish_reason=length with no plan produced -- raise num_ctx (Ollama counts prompt+completion together, independently of max_tokens). This is a configuration limit, not something the context wording can fix.",
+          "plan_json": null,
+          "raw_content": "",
+          "usage": {
+            "completion_tokens": 8192,
+            "prompt_tokens": 740,
+            "total_tokens": 8932,
+            "completion_tokens_details": null,
+            "prompt_tokens_details": null
+          },
+          "latency_s": 524.7371326250723
+        },
+        {
+          "case_id": "q21",
+          "sample_index": 1,
+          "outcome": "truncated",
+          "detail": "finish_reason=length with no plan produced -- raise num_ctx (Ollama counts prompt+completion together, independently of max_tokens). This is a configuration limit, not something the context wording can fix.",
+          "plan_json": null,
+          "raw_content": "",
+          "usage": {
+            "completion_tokens": 8192,
+            "prompt_tokens": 740,
+            "total_tokens": 8932,
+            "completion_tokens_details": null,
+            "prompt_tokens_details": null
+          },
+          "latency_s": 520.2546122079948
+        }
+      ]
+    },
+    {
+      "case_id": "q35",
+      "split": "train",
+      "capability": "traversal",
+      "pass_rate": 0.0,
+      "strict_pass": false,
+      "is_flaky": false,
+      "outcome_counts": {
+        "truncated": 2
+      },
+      "samples": [
+        {
+          "case_id": "q35",
+          "sample_index": 0,
+          "outcome": "truncated",
+          "detail": "finish_reason=length with no plan produced -- raise num_ctx (Ollama counts prompt+completion together, independently of max_tokens). This is a configuration limit, not something the context wording can fix.",
+          "plan_json": null,
+          "raw_content": "",
+          "usage": {
+            "completion_tokens": 8192,
+            "prompt_tokens": 771,
+            "total_tokens": 8963,
+            "completion_tokens_details": null,
+            "prompt_tokens_details": null
+          },
+          "latency_s": 523.127503167023
+        },
+        {
+          "case_id": "q35",
+          "sample_index": 1,
+          "outcome": "truncated",
+          "detail": "finish_reason=length with no plan produced -- raise num_ctx (Ollama counts prompt+completion together, independently of max_tokens). This is a configuration limit, not something the context wording can fix.",
+          "plan_json": null,
+          "raw_content": "",
+          "usage": {
+            "completion_tokens": 8192,
+            "prompt_tokens": 771,
+            "total_tokens": 8963,
+            "completion_tokens_details": null,
+            "prompt_tokens_details": null
+          },
+          "latency_s": 525.9959291670239
+        }
+      ]
+    },
+    {
+      "case_id": "q32",
+      "split": "train",
+      "capability": "blocked",
+      "pass_rate": 0.0,
+      "strict_pass": false,
+      "is_flaky": false,
+      "outcome_counts": {
+        "missing_rejection": 2
+      },
+      "samples": [
+        {
+          "case_id": "q32",
+          "sample_index": 0,
+          "outcome": "missing_rejection",
+          "detail": "produced an accepted plan for a question that cannot be answered: Needs a range op (GT) and a sort. FilterOp has only EQ/IN and no list query takes a sort argument (mosaic#96, open). The planner must refuse rather than silently degrade GT to EQ, which would return a confidently wrong answer.",
+          "plan_json": {
+            "steps": [
+              {
+                "step_type": "filter",
+                "entity": "Donor",
+                "filters": [
+                  {
+                    "field": "age_at_death",
+                    "value": {
+                      "gt": 65
+                    },
+                    "op": "EQ"
+                  }
+                ],
+                "filter_mode": "AND",
+                "select_fields": [],
+                "forward_relation": null,
+                "limit": 100
+              },
+              {
+                "step_type": "related_lookup",
+                "source_step": 0,
+                "relationship_type": "none",
+                "client_filter": null
+              }
+            ]
+          },
+          "raw_content": "{\"steps\": [{\"step_type\": \"filter\", \"entity\": \"Donor\", \"filters\": [{\"field\": \"age_at_death\", \"value\": { \"gt\": 65 } }]}, {\"step_type\": \"related_lookup\", \"source_step\": 0, \"relationship_type\": \"none\"}]}",
+          "usage": {
+            "completion_tokens": 74,
+            "prompt_tokens": 1031,
+            "total_tokens": 1105,
+            "completion_tokens_details": null,
+            "prompt_tokens_details": null
+          },
+          "latency_s": 27.972258666995913
+        },
+        {
+          "case_id": "q32",
+          "sample_index": 1,
+          "outcome": "missing_rejection",
+          "detail": "produced an accepted plan for a question that cannot be answered: Needs a range op (GT) and a sort. FilterOp has only EQ/IN and no list query takes a sort argument (mosaic#96, open). The planner must refuse rather than silently degrade GT to EQ, which would return a confidently wrong answer.",
+          "plan_json": {
+            "steps": [
+              {
+                "step_type": "filter",
+                "entity": "Donor",
+                "filters": [
+                  {
+                    "field": "age_at_death",
+                    "value": {
+                      "gt": 65
+                    },
+                    "op": "EQ"
+                  }
+                ],
+                "filter_mode": "AND",
+                "select_fields": [],
+                "forward_relation": null,
+                "limit": 100
+              },
+              {
+                "step_type": "related_lookup",
+                "source_step": 0,
+                "relationship_type": "none",
+                "client_filter": null
+              }
+            ]
+          },
+          "raw_content": "{\"steps\": [{\"step_type\": \"filter\", \"entity\": \"Donor\", \"filters\": [{\"field\": \"age_at_death\", \"value\": { \"gt\": 65 } }]}, {\"step_type\": \"related_lookup\", \"source_step\": 0, \"relationship_type\": \"none\"}]}",
+          "usage": {
+            "completion_tokens": 74,
+            "prompt_tokens": 1031,
+            "total_tokens": 1105,
+            "completion_tokens_details": null,
+            "prompt_tokens_details": null
+          },
+          "latency_s": 24.770301541895606
+        }
+      ]
+    }
+  ]
+}
