@@ -80,6 +80,10 @@ def seed_context(fingerprint: ModelFingerprint, *, num_ctx: int | None = None) -
         temperature=0.0,
         seed=0,
         num_ctx=num_ctx if num_ctx is not None else _working_num_ctx(fingerprint),
+        # Turn reasoning off where the model has such a mode: it otherwise burns the completion
+        # budget before emitting anything, which grades as TRUNCATED and looks like a format
+        # failure the context could fix. It cannot; this setting can.
+        think=False if getattr(fingerprint, "is_thinking_model", False) else None,
     )
     # Only spend the model's context on stop sequences it actually honours.
     if fingerprint.honours_stop_sequences:

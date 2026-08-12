@@ -83,6 +83,11 @@ class DecodeParams:
     num_ctx: int | None = None
     seed: int | None = 0
     stop: list = field(default_factory=list)
+    # Ollama-only. For a model with the `thinking` capability this is the single highest-impact
+    # setting there is: measured on gemma4:12b, the same request went from 2631 completion tokens
+    # with NO tool call (thinking on) to 135 tokens WITH the tool call (thinking off). Left as
+    # None for models that have no such mode.
+    think: bool | None = None
 
     def to_litellm_kwargs(self, model: str) -> dict:
         """Only params the provider actually accepts. num_ctx/top_k/repeat_penalty are
@@ -95,6 +100,8 @@ class DecodeParams:
         if self.stop:
             kw["stop"] = list(self.stop)
         if model.startswith("ollama"):
+            if self.think is not None:
+                kw["think"] = self.think
             if self.num_ctx is not None:
                 kw["num_ctx"] = self.num_ctx
             if self.top_k is not None:

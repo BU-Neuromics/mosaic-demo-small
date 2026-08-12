@@ -110,6 +110,7 @@ class ModelFingerprint:
     max_context_tokens: int | None
     recommended_protocol: str
     checks: dict
+    is_thinking_model: bool = False
     id: str = ""
 
     def __post_init__(self):
@@ -404,6 +405,29 @@ def _check_protocol_under_load(
     )
 
 
+def _ollama_capabilities(model: str) -> list:
+    """Ollama reports a `thinking` capability for reasoning models. Worth detecting explicitly
+    because such a model will otherwise spend its whole completion budget reasoning and never
+    emit the structured output -- the failure looks like a format problem and is not one."""
+    if not model.startswith("ollama"):
+        return []
+    try:
+        import urllib.request
+
+        tag = model.split("/", 1)[1]
+        base = os.environ.get("OLLAMA_API_BASE", "http://localhost:11434")
+        req = urllib.request.Request(
+            f"{base}/api/show",
+            data=json.dumps({"model": tag}).encode(),
+            headers={"content-type": "application/json"},
+            method="POST",
+        )
+        with urllib.request.urlopen(req, timeout=10) as r:
+            return json.load(r).get("capabilities") or []
+    except Exception:
+        return []
+
+
 def _context_window(model: str) -> int | None:
     """Best-effort. Guards against silently truncating the context -- a very common cause of
     'it worked yesterday'. None (with a warning) rather than a guess when unavailable."""
@@ -518,6 +542,14 @@ def probe_model(
     ctx = _context_window(model)
     log(f"  context window        : {ctx if ctx else 'unknown (warning)'}")
 
+    caps = _ollama_capabilities(model)
+    thinking = "thinking" in caps
+    if caps:
+        log(f"  ollama capabilities   : {caps}")
+    if thinking:
+        log("  -> THINKING MODEL: seeding think=false. Measured on gemma4:12b, leaving it on "
+            "cost 2631 completion tokens with no tool call vs 135 tokens with one.")
+
     fp = ModelFingerprint(
         model=model,
         honours_system_role=checks["system_role"].unanimous,
@@ -529,6 +561,7 @@ def probe_model(
         preamble_tendency=1.0 - checks["preamble"].rate,
         max_context_tokens=ctx,
         recommended_protocol=recommended.value,
+        is_thinking_model=thinking,
         checks={k: asdict(v) for k, v in checks.items()},
     )
     log(f"  -> protocol={fp.recommended_protocol} fingerprint={fp.id}")
