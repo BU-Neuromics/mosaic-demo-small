@@ -70,8 +70,9 @@ PLAN_TOOL = {
                             },
                             "entity": {
                                 "type": "string",
-                                "description": "Required for step_type=filter. Must be an "
-                                "entity name present in the live schema grounding.",
+                                "description": "Required for step_type=filter. The entity NAME "
+                                "exactly as listed in the schema grounding, e.g. \"Sample\" -- "
+                                "singular and capitalised, not a plural collection name.",
                             },
                             "filters": {
                                 "type": "array",
@@ -141,12 +142,21 @@ PLAN_TOOL = {
 
 
 def render_schema_slots(hippo_schema: dict) -> str:
-    """Placeholder renderer: the per-entity field listing. Substituted into the context
-    template at render time from LIVE introspection, never stored in the artifact."""
+    """Placeholder renderer: the per-entity field listing. Substituted into the context template
+    at render time from LIVE introspection, never stored in the artifact.
+
+    Deliberately does NOT show the GraphQL accessor name. It used to read
+    "- Sample (accessor: samples): ..." and two independent models -- gemma4:12b and
+    qwen2.5-coder:7b, different vendors and different output protocols -- both put the accessor
+    (`samples`) in the `entity` field, producing "unknown entity 'samples'". When unrelated
+    models fail identically the defect is in the grounding, not the model: it offered two names
+    and never said which one belongs where. The planner has no use for the accessor; only the
+    executor does, and it reads it straight from hippoSchema.
+    """
     lines = []
     for entity, info in sorted(hippo_schema.items()):
         slots = ", ".join(sorted(info["fields"]))
-        lines.append(f"- {entity} (accessor: {info['accessor_name']}): {slots}")
+        lines.append(f'- entity "{entity}" -- fields: {slots}')
     return "\n".join(lines)
 
 
@@ -193,7 +203,8 @@ def render_limitations(manifest: dict) -> str:
 # Default composition, used when no tuned context artifact is injected. The harness renders
 # the same three placeholders through a versioned template instead -- same renderers, so a
 # tuning gain reaches `python -m exon` unchanged.
-DEFAULT_GROUNDING_BODY = """## Live schema -- the ONLY field names that exist, per entity:
+DEFAULT_GROUNDING_BODY = """## Live schema -- the entities and fields that exist. Use these \
+names exactly; `entity` takes the quoted entity name:
 {{schema_slots}}
 
 ## Valid related_lookup relationship_type values (multivalued-reference SLOT NAMES, never a descriptive label):
