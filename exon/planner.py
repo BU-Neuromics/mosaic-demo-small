@@ -289,8 +289,16 @@ def request_plan(
         system, grounding = context
 
     kwargs = dict(decode_kwargs or {})
-    if model.startswith("ollama") and "num_ctx" not in kwargs:
-        kwargs["num_ctx"] = OLLAMA_NUM_CTX
+    if model.startswith("ollama"):
+        if "num_ctx" not in kwargs:
+            kwargs["num_ctx"] = OLLAMA_NUM_CTX
+        # Reasoning mode off by default for the product surface too. Measured on gemma4:12b:
+        # leaving it on cost 2631 completion tokens with NO tool call, against 135 tokens WITH
+        # one. The harness learned this via the probe; without it here, `python -m exon` would
+        # keep hitting the spiral the harness already diagnosed -- a tuning gain that never
+        # reaches the thing users actually run is worthless. Set EXON_THINK=1 to re-enable.
+        if "think" not in kwargs:
+            kwargs["think"] = os.environ.get("EXON_THINK", "").lower() in ("1", "true", "yes")
 
     messages = [
         {"role": "system", "content": system},
