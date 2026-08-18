@@ -23,7 +23,7 @@ from .runner import run_suite
 from .triage import build_bundle
 
 DEFAULT_ENDPOINT = os.environ.get("EXON_ENDPOINT", "http://localhost:8080/graphql")
-DEFAULT_MODEL = os.environ.get("EXON_MODEL", "ollama_chat/gemma4:12b")
+DEFAULT_MODEL = os.environ.get("EXON_MODEL", "bedrock/global.anthropic.claude-haiku-4-5-20251001-v1:0")
 FINGERPRINT_PATH = Path("evals/schema/fingerprint.json")
 MANIFEST_PATH = "evals/schema/capabilities.json"
 
@@ -128,7 +128,13 @@ def cmd_loop(args):
     cases = load_suite()
     fp = _load_or_probe(args.model, hs, m, skip_load_check=args.skip_load_check)
 
+    # new_run_dir() creates run_dir/{contexts,iterations}; an explicit --out never hit that path
+    # and had no test/run exercising it end-to-end until the first real --auto-refine run (task
+    # 8.4, previously blocked on a refiner credential) -- surfaced immediately as a crash on the
+    # very first write.
     run_dir = Path(args.out) if args.out else new_run_dir()
+    (run_dir / "contexts").mkdir(parents=True, exist_ok=True)
+    (run_dir / "iterations").mkdir(parents=True, exist_ok=True)
     seed = _seed_or_latest(fp, run_dir / "contexts")
     (run_dir / "fingerprint.json").write_text(json.dumps(fp.to_dict(), indent=2) + "\n")
 

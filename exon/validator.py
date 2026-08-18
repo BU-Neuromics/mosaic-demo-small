@@ -94,7 +94,24 @@ def _validate_filter_step(i: int, step: FilterStep, hippo_schema: dict) -> None:
             )
 
     for sf in step.select_fields:
-        _resolve_or_raise(i, step.entity, entity_fields, sf, "select_fields entry")
+        slot = _resolve_or_raise(i, step.entity, entity_fields, sf, "select_fields entry")
+        info = entity_fields[slot]
+        if info.get("kind") == "reference":
+            # A reference field returns an object type, which GraphQL requires a subfield
+            # selection for -- naming it here (as if it were a scalar) produces a plan that
+            # passes validation and then crashes the executor with a GraphQL syntax error
+            # ("must have a selection of subfields"). Observed live: the model does this even
+            # while ALSO correctly setting forward_relation for the same field.
+            hint = (
+                "use forward_relation to select fields on it"
+                if not info.get("multivalued")
+                else "use a related_lookup step (relatedTo) instead -- it cannot be selected "
+                     "as a nested object field"
+            )
+            raise ValidationError(
+                f"step {i}: {step.entity}.{slot} is a reference field and cannot appear in "
+                f"select_fields directly (it has no scalar value to return) -- {hint}"
+            )
 
     if step.forward_relation:
         rel_field = step.forward_relation.get("field")
@@ -115,7 +132,15 @@ def _validate_filter_step(i: int, step: FilterStep, hippo_schema: dict) -> None:
             )
         target_entity = info["targetEntityType"]
         target_fields = hippo_schema.get(target_entity, {}).get("fields", {})
-        for sf in step.forward_relation.get("select_fields", []):
+        rel_select_fields = step.forward_relation.get("select_fields", [])
+        if not rel_select_fields:
+            raise ValidationError(
+                f"step {i}: forward_relation on {rel_slot!r} has no select_fields -- GraphQL "
+                f"requires a non-empty subfield selection on a nested object field, so this "
+                f"would fail at execution rather than being caught here; name at least one "
+                f"{target_entity} field to return"
+            )
+        for sf in rel_select_fields:
             _resolve_or_raise(
                 i, target_entity, target_fields, sf, "forward_relation select_fields entry"
             )

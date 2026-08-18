@@ -56,7 +56,12 @@ art = ContextArtifact(
     protocol=OutputProtocol.TOOL_CALL, decode_params=DecodeParams(temperature=0, seed=0))
 
 subset = [c for c in CASES if c.id in ("q01", "q09", "q35", "q32")]
-run_suite(subset, art, HS, M, model="fake/model", samples_per_case=2,
+# "openai/..." so litellm's (real, not spied) get_supported_openai_params resolves a concrete
+# provider -- an unrecognized prefix returns None there, which DecodeParams now correctly reads
+# as "unproven, don't send" for seed (the same rule that caught the real Bedrock bug this test
+# suite predates). litellm.completion itself is fully monkeypatched below regardless -- no
+# network call is made under this model string either way.
+run_suite(subset, art, HS, M, model="openai/gpt-4o", samples_per_case=2,
           endpoint=ENDPOINT, max_workers=1, progress=False)
 
 check("every sample issued its own call", len(captured) == len(subset) * 2, str(len(captured)))

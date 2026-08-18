@@ -28,7 +28,7 @@ from ..context.template import (
 )
 from ..harness.probe import OutputProtocol
 
-REFINER_MODEL = os.environ.get("EXON_REFINER_MODEL", "anthropic/claude-opus-5-20251101")
+REFINER_MODEL = os.environ.get("EXON_REFINER_MODEL", "bedrock/global.anthropic.claude-haiku-4-5-20251001-v1:0")
 REFINER_MAX_TOKENS = int(os.environ.get("EXON_REFINER_MAX_TOKENS", "8192"))
 MAX_BLOCK_CHANGES = int(os.environ.get("EXON_MAX_BLOCK_CHANGES", "3"))
 MAX_EXEMPLARS = int(os.environ.get("EXON_MAX_EXEMPLARS", "8"))

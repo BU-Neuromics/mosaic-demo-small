@@ -26,6 +26,8 @@ from dataclasses import asdict, dataclass, field, replace
 from enum import Enum
 from pathlib import Path
 
+import litellm
+
 from ..harness.probe import OutputProtocol
 
 REQUIRED_PLACEHOLDERS = frozenset({"{{schema_slots}}", "{{relationship_types}}", "{{limitations}}"})
@@ -91,11 +93,19 @@ class DecodeParams:
 
     def to_litellm_kwargs(self, model: str) -> dict:
         """Only params the provider actually accepts. num_ctx/top_k/repeat_penalty are
-        Ollama-specific; sending them elsewhere is an error rather than a no-op."""
+        Ollama-specific; sending them elsewhere is an error rather than a no-op.
+
+        `seed` looked universal (Ollama and the never-yet-run cloud providers all took it
+        in the parameter list) until the first real Bedrock run made 100% of calls fail
+        with `UnsupportedParamsError` -- Bedrock's Claude rejects it outright. Checked via
+        litellm's own capability introspection rather than added to the hardcoded provider
+        list, since that's the same "don't assume, measure" rule the rest of this project
+        applies to the model itself, not just to Ollama-specific params."""
+        supported = set(litellm.get_supported_openai_params(model=model) or [])
         kw = {"temperature": self.temperature}
         if self.top_p is not None:
             kw["top_p"] = self.top_p
-        if self.seed is not None:
+        if self.seed is not None and "seed" in supported:
             kw["seed"] = self.seed
         if self.stop:
             kw["stop"] = list(self.stop)

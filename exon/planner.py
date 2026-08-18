@@ -21,7 +21,7 @@ import openai  # litellm normalizes all provider errors onto openai's exception 
 
 from .ops import FieldFilter, FilterStep, RelatedLookupStep, QueryPlan
 
-MODEL = os.environ.get("EXON_MODEL", "anthropic/claude-opus-5-20251101")
+MODEL = os.environ.get("EXON_MODEL", "bedrock/global.anthropic.claude-haiku-4-5-20251001-v1:0")
 MAX_TOKENS = int(os.environ.get("EXON_MAX_TOKENS", "8192"))
 # Ollama's default context window (num_ctx) is 4096 tokens *total* (prompt + completion),
 # independent of max_tokens -- a "thinking"-capable local model can burn through that on

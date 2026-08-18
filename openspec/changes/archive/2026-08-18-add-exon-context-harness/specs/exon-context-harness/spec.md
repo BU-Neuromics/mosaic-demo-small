@@ -59,6 +59,18 @@ addressed by the mechanism that actually fixes them.
 - **THEN** it is rejected, because hardcoding schema facts into the artifact defeats live
   introspection and reintroduces hallucinated field names
 
+#### Scenario: A decode parameter unsupported by the target provider is withheld, not sent
+
+- **WHEN** the artifact's decode parameters are rendered into the actual API call for the
+  target model
+- **THEN** a parameter the provider does not accept for that model is left out rather than sent
+  and left to error, checked via the provider's own capability introspection rather than a
+  hardcoded per-parameter provider list — the same rule this project already applies to the
+  model's own capabilities, not just to Ollama-specific parameters. Observed live: `seed`
+  is accepted by Ollama but rejected outright by Bedrock's Claude with a hard
+  `UnsupportedParamsError`, which failed 100% of calls in the first real run against a
+  Bedrock-hosted model until this was caught
+
 ### Requirement: Refinement arrives as bounded, attributable patches
 
 The harness SHALL accept context revisions only as patches limited to at most three block changes or

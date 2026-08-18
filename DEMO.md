@@ -3,7 +3,10 @@
 > **Run every command in this file from the repository root** (`mosaic-demo-small/`), which is
 > where this file lives. Paths like `evals/schema/capabilities.json` are relative to it.
 
-Last verified: 2026-08-14, against `../hippo@502991c` and `ollama_chat/gemma4:12b`.
+Last verified: 2026-08-18, against `../hippo@502991c` and
+`bedrock/global.anthropic.claude-haiku-4-5-20251001-v1:0` (the default moved off local Ollama
+this session, once a Bedrock credential became available — see "What does not work yet" below
+for what changed and what didn't).
 
 ---
 
@@ -28,14 +31,32 @@ Unsupported requests are refused with a reason rather than approximated.
 
 **What does not work yet — stated plainly**
 
-No local 7–12B model reaches a usable pass rate on the harder half of the suite. Multi-constraint
-and traversal questions currently drop a stated constraint or pick the wrong entity. Two specific
-fixes are queued for that (below); neither is a mystery.
+Switching off local Ollama and onto a real hosted model (Bedrock Claude Haiku 4.5) fixed the
+reliability half of the problem — no more dropped filters, no more ignored tool calls — but not
+the faithfulness half. First full-suite baseline against the new default: **train=0.33,
+holdout=0.50, strict=7/21**, across three distinct failure shapes:
 
-**Progress:** 36/40 tasks on the `add-exon-context-harness` OpenSpec change (validates `--strict`).
-Remaining: re-run the truncation-withholding check; the closed refinement loop (blocked — needs a
-refiner API credential); before/after reliability numbers (needs the former); and re-baselining
-gemma4 now that reasoning mode is disabled automatically.
+- **Value-vocabulary guessing** (the majority of failures): the model fills a filter with a value
+  paraphrased from the question's wording instead of the schema's real enum value —
+  `'brain tissue'` for `'tissue'`, `'at-risk'` for `'at_risk'`, `'chemically fixed'` for `'fixed'`.
+  Structurally valid, silently wrong. This project's own driving example (`q35`) fails exactly
+  this way now.
+- **Wrong entity on a reverse lookup** (`q21`): still queries `Donor` when asked which *samples*
+  a donor contributed — the same finding from the gemma4 run below, reproduced on a much
+  stronger model.
+- **Missing rejection** on all 3 capability-gap questions — the model accepts a plan for a
+  question that's genuinely unanswerable (mosaic#96/#148), where refusing is correct.
+
+Ran the closed refinement loop end-to-end for the first time (4 iterations, `--auto-refine`):
+train improved (0.33 → 0.43) but **holdout stayed flat at 0.50 — +0.00 improvement**, and the
+loop correctly rolled back rather than keep a context that only helped train. Honest reading:
+prose/block tuning alone didn't move the metric that matters here; the concrete next lever is
+grounding filter *values*, not just field names, in the live schema (below).
+
+**Progress:** `add-exon-context-harness` OpenSpec change — Section 8 (Verify) is now complete
+against the new default model, with one deviation stated on its own terms rather than glossed
+over: the original truncation-withholding check (8.2) doesn't reproduce anymore, because the
+auto-disable-reasoning fix (below) removed the condition that caused it. Ready to archive.
 
 ### What the harness found in its first afternoon
 
@@ -67,10 +88,14 @@ cd ~/Documents/schemas/mosaic-demo-small          # all commands run from here
 #   -H 'content-type: application/json' -d '{"query":"{__typename}"}')
 mosaic serve --config mosaic.yaml --graphql --port 8080
 
-export EXON_MODEL=ollama_chat/gemma4:12b
+export EXON_MODEL=bedrock/global.anthropic.claude-haiku-4-5-20251001-v1:0   # default if unset
 ```
 
-Requires `pip install -r exon/requirements.txt` (litellm) and Ollama running locally.
+Requires `pip install -r exon/requirements.txt` (litellm) and a Bedrock credential (an
+`AWS_BEARER_TOKEN_BEDROCK` bearer token, or standard AWS credentials via `aws configure`/env
+vars) — or set `EXON_MODEL`/`EXON_REFINER_MODEL` to any other `litellm`-supported provider
+(`anthropic/...`, `openai/...`, `ollama_chat/...` with Ollama running locally, etc.) with that
+provider's own credential.
 
 ---
 
@@ -102,7 +127,7 @@ python3 tests/test_runner_fake.py          #  6 checks: full loop with a fake mo
 
 ---
 
-## 2. Ask a question in English — about 1 minute each
+## 2. Ask a question in English — a few seconds each against the default hosted model
 
 ```bash
 python3 -m exon "How many donors are in the case cohort?"
@@ -115,8 +140,12 @@ python3 -m exon "Which samples did donor DNR-0068 contribute?"
 python3 -m exon "How many samples are stored frozen?"
 ```
 
-The flagship question — the one this project was built around. Expect it to be **less reliable**;
-that honesty is part of the demo:
+The flagship question — the one this project was built around. Expect it to run to completion
+with a structurally faithful plan (every filter, the donor lookup, and the RNA-seq check all
+present) but to return **`total: 0`, not 26** — the model currently fills `sample_type` with
+`"brain tissue"` (paraphrased from the question) instead of the schema's real value `"tissue"`.
+That silent-wrong-answer, not a crash or a dropped step, is exactly the failure mode this project
+exists to catch and surface, and it's the concrete next thing to fix (see the harness findings):
 
 ```bash
 python3 -m exon "Bring me back all of the brain tissue samples that we have for the hippocampus region, with the donor's cohort, sex, and RHI history, and also possibly any rnaSeq data associated with them"
@@ -185,39 +214,53 @@ curl -s localhost:8080/graphql -H 'content-type: application/json' \
 
 ---
 
-## 5. The harness measuring reliability — slow, and deliberately unflattering
+## 5. The harness measuring reliability — deliberately unflattering, fast against the hosted default
 
 ```bash
-python3 -m exon.harness run --samples 2 --split train
+python3 -m exon.harness run --samples 3
 ```
 
 Per-case pass rates plus a classified failure breakdown. **This will show failures.** That is the
-pass condition, not a defect: the spec states that a clean seed run would mean *the harness is
-wrong, not the planner*. Budget 20–40 minutes.
+pass condition, not a defect: a clean seed run would mean *the harness is wrong, not the
+planner*. Against the hosted default this is a few minutes for the full 29-case suite (it was
+20–40 minutes per partial pass on a local 12B model; budget for that instead if you point
+`EXON_MODEL`/`--model` at Ollama).
 
 ```bash
-python3 -m exon.harness probe        # capability fingerprint, ~10 min; prints the isolated-vs-loaded table
-python3 -m exon.harness loop --help  # the closed cycle (needs EXON_REFINER_MODEL + credential)
+python3 -m exon.harness probe                                  # capability fingerprint, ~1 min against the hosted default
+python3 -m exon.harness loop --auto-refine --max-iter 4         # the closed cycle -- EXON_REFINER_MODEL defaults to the same reachable model
 ```
 
 ---
 
 ## What to expect, so nothing surprises you
 
-- **Simple filter questions work.** Multi-constraint and traversal questions are where it drops a
-  stated constraint or picks the wrong entity.
-- **Every run takes minutes** on a local 12B model. The 9-second test suite is the demo that
-  respects an audience's time.
-- **If asked "is it reliable?"** — the accurate answer is: *not yet on a 7–12B local model, and we
-  can now say exactly why and where. On a frontier model it is one environment variable to find
-  out.*
+- **Simple filter questions work, fast, against the hosted default.** Multi-constraint and
+  traversal questions are where it currently guesses a filter *value* wrong, picks the wrong
+  entity on a reverse lookup, or (rarely, 3/29 questions) accepts a plan it should refuse.
+- **Every run against the hosted default finishes in seconds to low minutes**, not the 20–40
+  minutes a local 12B model needed. The 9-second test suite is still the demo that respects an
+  audience's time when you don't want to spend even that.
+- **If asked "is it reliable?"** — the accurate answer is: *a real hosted model (Bedrock Claude
+  Haiku 4.5) fixed the tool-call-compliance and dropped-filter problems the original local-model
+  run had. It did not fix instruction-faithfulness: it now gets the right field but sometimes the
+  wrong value, guessed from wording instead of the schema's real data. Measured, not assumed:
+  train 0.33/holdout 0.50 on the full suite, and 4 iterations of context tuning alone didn't move
+  holdout.*
 
-### The two next changes, already named by the measurements
+### The next change, named by the measurements
 
-1. A `CONSTRAINT` block requiring every constraint stated in the question to appear as a filter —
-   addresses q09/q35 silently dropping `sample_type='tissue'`.
-2. Clearer reverse-lookup presentation — q21 queried `Donor` when asked which *samples* a donor
-   contributed.
-
-Both are one-block context changes, applied and measured one at a time so a score movement stays
-attributable. Set `EXON_THINK=1` to re-enable reasoning mode and see the 19× difference directly.
+Ground filter **values**, not just field names, in the live schema — the grounding context lists
+`sample_type: tissue|blood|...` today only as a field name, never the values a field actually
+takes, and the model fills in a value from the question's own wording when it doesn't know
+better (`'brain tissue'`, `'at-risk'`, `'chemically fixed'` for `'tissue'`, `'at_risk'`,
+`'fixed'`). This is a one-block context change (an enum-values glossary derived from
+`hippoSchema`, same pattern as the existing relationship-type block), applied and measured on its
+own so a score movement stays attributable — exactly the loop's job, and exactly what 4 iterations
+of *other* prose changes didn't touch. Two smaller, already-diagnosed items remain from the
+original local-model run and still reproduce here: `q21` queries `Donor` when asked which
+*samples* a donor contributed (same finding, same fix, now confirmed on a much stronger model
+too), and `q32`/`q33`/`q34` need an explicit refusal exemplar rather than accepting an
+unanswerable question. `EXON_THINK=1` and the auto-disable-reasoning finding (19× fewer tokens,
+gemma4-specific) remain true and are documented in `exon/README.md`'s harness findings, but no
+longer affect the default path since it no longer targets a local Ollama model.

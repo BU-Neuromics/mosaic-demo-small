@@ -1,5 +1,8 @@
-## ADDED Requirements
+# exon-query-planner Specification
 
+## Purpose
+TBD - created by archiving change add-exon-query-planner. Update Purpose after archive.
+## Requirements
 ### Requirement: Schema-grounded natural-language query planning
 
 Exon SHALL translate one natural-language instruction into a typed query
@@ -60,6 +63,22 @@ silently executed or approximated.
   alternative — a `related_lookup` step for the former, the `asOf`
   argument for the latter
 
+#### Scenario: A reference field named directly in select_fields is rejected
+
+- **WHEN** a translated plan's `select_fields` (root or
+  `forward_relation`) names a reference-kind field directly, or a
+  `forward_relation` is present with no `select_fields` at all
+- **THEN** Exon rejects the plan before execution — a reference field has
+  no scalar value to return, and GraphQL requires a non-empty subfield
+  selection on a nested object field; the message points at
+  `forward_relation` (single-valued) or `related_lookup` (multivalued) as
+  the correct op. Observed live against `bedrock/global.anthropic.claude-
+  haiku-4-5-20251001-v1:0`: the model named a `donor` reference both in
+  plain `select_fields` and, separately, in a correctly-shaped
+  `forward_relation` for the same step — this would otherwise reach the
+  executor and fail with a GraphQL syntax error instead of being caught
+  here
+
 ### Requirement: Bounded relationship-existence traversal only
 
 Exon SHALL scope every reverse relationship-existence lookup (`relatedTo`)
@@ -75,3 +94,4 @@ scanning an entire entity table and matching client-side.
 - **THEN** Exon issues one `relatedTo` call per sample id in that set,
   filtering each call's own small result client-side by `workflow_type`,
   and never issues an unfiltered query across the full `Workflow` table
+

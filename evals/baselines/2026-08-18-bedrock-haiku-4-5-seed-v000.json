@@ -1,0 +1,4298 @@
+{
+  "iteration": 0,
+  "context_version": 0,
+  "fingerprint_id": "ad0674a3a231305a",
+  "model": "bedrock/global.anthropic.claude-haiku-4-5-20251001-v1:0",
+  "protocol": "tool_call",
+  "wall_clock_s": 28.762655249913223,
+  "scores": {
+    "train": 0.3333333333333333,
+    "holdout": 0.5,
+    "strict_train": 7,
+    "strict_holdout": 4,
+    "flaky": 0,
+    "total_tokens": 186600
+  },
+  "results": [
+    {
+      "case_id": "q01",
+      "split": "train",
+      "capability": "filter",
+      "pass_rate": 1.0,
+      "strict_pass": true,
+      "is_flaky": false,
+      "outcome_counts": {
+        "pass": 3
+      },
+      "samples": [
+        {
+          "case_id": "q01",
+          "sample_index": 0,
+          "outcome": "pass",
+          "detail": "",
+          "plan_json": {
+            "steps": [
+              {
+                "step_type": "filter",
+                "entity": "Donor",
+                "filters": [
+                  {
+                    "field": "cohort",
+                    "value": "case",
+                    "op": "EQ"
+                  }
+                ],
+                "filter_mode": "AND",
+                "select_fields": [
+                  "id"
+                ],
+                "forward_relation": null,
+                "limit": 100
+              }
+            ]
+          },
+          "raw_content": "",
+          "usage": {
+            "completion_tokens": 83,
+            "prompt_tokens": 1997,
+            "total_tokens": 2080,
+            "completion_tokens_details": "CompletionTokensDetailsWrapper(accepted_prediction_tokens=None, audio_tokens=None, reasoning_tokens=0, rejected_prediction_tokens=None, text_tokens=83, image_tokens=None, video_tokens=None)",
+            "prompt_tokens_details": "PromptTokensDetailsWrapper(audio_tokens=None, cache_write_tokens=0, cached_tokens=0, text_tokens=1997, image_tokens=None, video_tokens=None, cache_creation_tokens=0)",
+            "cache_creation_input_tokens": 0,
+            "cache_read_input_tokens": 0
+          },
+          "latency_s": 1.8368485410464928
+        },
+        {
+          "case_id": "q01",
+          "sample_index": 1,
+          "outcome": "pass",
+          "detail": "",
+          "plan_json": {
+            "steps": [
+              {
+                "step_type": "filter",
+                "entity": "Donor",
+                "filters": [
+                  {
+                    "field": "cohort",
+                    "value": "case",
+                    "op": "EQ"
+                  }
+                ],
+                "filter_mode": "AND",
+                "select_fields": [
+                  "id"
+                ],
+                "forward_relation": null,
+                "limit": 100
+              }
+            ]
+          },
+          "raw_content": "",
+          "usage": {
+            "completion_tokens": 83,
+            "prompt_tokens": 1997,
+            "total_tokens": 2080,
+            "completion_tokens_details": "CompletionTokensDetailsWrapper(accepted_prediction_tokens=None, audio_tokens=None, reasoning_tokens=0, rejected_prediction_tokens=None, text_tokens=83, image_tokens=None, video_tokens=None)",
+            "prompt_tokens_details": "PromptTokensDetailsWrapper(audio_tokens=None, cache_write_tokens=0, cached_tokens=0, text_tokens=1997, image_tokens=None, video_tokens=None, cache_creation_tokens=0)",
+            "cache_creation_input_tokens": 0,
+            "cache_read_input_tokens": 0
+          },
+          "latency_s": 1.8680901669431478
+        },
+        {
+          "case_id": "q01",
+          "sample_index": 2,
+          "outcome": "pass",
+          "detail": "",
+          "plan_json": {
+            "steps": [
+              {
+                "step_type": "filter",
+                "entity": "Donor",
+                "filters": [
+                  {
+                    "field": "cohort",
+                    "value": "case",
+                    "op": "EQ"
+                  }
+                ],
+                "filter_mode": "AND",
+                "select_fields": [
+                  "id"
+                ],
+                "forward_relation": null,
+                "limit": 100
+              }
+            ]
+          },
+          "raw_content": "",
+          "usage": {
+            "completion_tokens": 83,
+            "prompt_tokens": 1997,
+            "total_tokens": 2080,
+            "completion_tokens_details": "CompletionTokensDetailsWrapper(accepted_prediction_tokens=None, audio_tokens=None, reasoning_tokens=0, rejected_prediction_tokens=None, text_tokens=83, image_tokens=None, video_tokens=None)",
+            "prompt_tokens_details": "PromptTokensDetailsWrapper(audio_tokens=None, cache_write_tokens=0, cached_tokens=0, text_tokens=1997, image_tokens=None, video_tokens=None, cache_creation_tokens=0)",
+            "cache_creation_input_tokens": 0,
+            "cache_read_input_tokens": 0
+          },
+          "latency_s": 1.8236694590887055
+        }
+      ]
+    },
+    {
+      "case_id": "q02",
+      "split": "train",
+      "capability": "filter",
+      "pass_rate": 0.0,
+      "strict_pass": false,
+      "is_flaky": false,
+      "outcome_counts": {
+        "plan_unfaithful": 3
+      },
+      "samples": [
+        {
+          "case_id": "q02",
+          "sample_index": 0,
+          "outcome": "plan_unfaithful",
+          "detail": "step 0: filter cohort has value ['case', 'at-risk'] but the instruction says ['case', 'at_risk']",
+          "plan_json": {
+            "steps": [
+              {
+                "step_type": "filter",
+                "entity": "Donor",
+                "filters": [
+                  {
+                    "field": "cohort",
+                    "value": [
+                      "case",
+                      "at-risk"
+                    ],
+                    "op": "IN"
+                  }
+                ],
+                "filter_mode": "AND",
+                "select_fields": [
+                  "id"
+                ],
+                "forward_relation": null,
+                "limit": 100
+              }
+            ]
+          },
+          "raw_content": "",
+          "usage": {
+            "completion_tokens": 115,
+            "prompt_tokens": 2002,
+            "total_tokens": 2117,
+            "completion_tokens_details": "CompletionTokensDetailsWrapper(accepted_prediction_tokens=None, audio_tokens=None, reasoning_tokens=0, rejected_prediction_tokens=None, text_tokens=115, image_tokens=None, video_tokens=None)",
+            "prompt_tokens_details": "PromptTokensDetailsWrapper(audio_tokens=None, cache_write_tokens=0, cached_tokens=0, text_tokens=2002, image_tokens=None, video_tokens=None, cache_creation_tokens=0)",
+            "cache_creation_input_tokens": 0,
+            "cache_read_input_tokens": 0
+          },
+          "latency_s": 2.124820291996002
+        },
+        {
+          "case_id": "q02",
+          "sample_index": 1,
+          "outcome": "plan_unfaithful",
+          "detail": "step 0: filter cohort has value ['case', 'at-risk'] but the instruction says ['case', 'at_risk']",
+          "plan_json": {
+            "steps": [
+              {
+                "step_type": "filter",
+                "entity": "Donor",
+                "filters": [
+                  {
+                    "field": "cohort",
+                    "value": [
+                      "case",
+                      "at-risk"
+                    ],
+                    "op": "IN"
+                  }
+                ],
+                "filter_mode": "AND",
+                "select_fields": [
+                  "id"
+                ],
+                "forward_relation": null,
+                "limit": 100
+              }
+            ]
+          },
+          "raw_content": "",
+          "usage": {
+            "completion_tokens": 115,
+            "prompt_tokens": 2002,
+            "total_tokens": 2117,
+            "completion_tokens_details": "CompletionTokensDetailsWrapper(accepted_prediction_tokens=None, audio_tokens=None, reasoning_tokens=0, rejected_prediction_tokens=None, text_tokens=115, image_tokens=None, video_tokens=None)",
+            "prompt_tokens_details": "PromptTokensDetailsWrapper(audio_tokens=None, cache_write_tokens=0, cached_tokens=0, text_tokens=2002, image_tokens=None, video_tokens=None, cache_creation_tokens=0)",
+            "cache_creation_input_tokens": 0,
+            "cache_read_input_tokens": 0
+          },
+          "latency_s": 2.467940333066508
+        },
+        {
+          "case_id": "q02",
+          "sample_index": 2,
+          "outcome": "plan_unfaithful",
+          "detail": "step 0: filter cohort has value ['case', 'at-risk'] but the instruction says ['case', 'at_risk']",
+          "plan_json": {
+            "steps": [
+              {
+                "step_type": "filter",
+                "entity": "Donor",
+                "filters": [
+                  {
+                    "field": "cohort",
+                    "value": [
+                      "case",
+                      "at-risk"
+                    ],
+                    "op": "IN"
+                  }
+                ],
+                "filter_mode": "AND",
+                "select_fields": [
+                  "id"
+                ],
+                "forward_relation": null,
+                "limit": 100
+              }
+            ]
+          },
+          "raw_content": "",
+          "usage": {
+            "completion_tokens": 115,
+            "prompt_tokens": 2002,
+            "total_tokens": 2117,
+            "completion_tokens_details": "CompletionTokensDetailsWrapper(accepted_prediction_tokens=None, audio_tokens=None, reasoning_tokens=0, rejected_prediction_tokens=None, text_tokens=115, image_tokens=None, video_tokens=None)",
+            "prompt_tokens_details": "PromptTokensDetailsWrapper(audio_tokens=None, cache_write_tokens=0, cached_tokens=0, text_tokens=2002, image_tokens=None, video_tokens=None, cache_creation_tokens=0)",
+            "cache_creation_input_tokens": 0,
+            "cache_read_input_tokens": 0
+          },
+          "latency_s": 3.5873789999168366
+        }
+      ]
+    },
+    {
+      "case_id": "q03",
+      "split": "holdout",
+      "capability": "filter",
+      "pass_rate": 1.0,
+      "strict_pass": true,
+      "is_flaky": false,
+      "outcome_counts": {
+        "pass": 3
+      },
+      "samples": [
+        {
+          "case_id": "q03",
+          "sample_index": 0,
+          "outcome": "pass",
+          "detail": "",
+          "plan_json": {
+            "steps": [
+              {
+                "step_type": "filter",
+                "entity": "Donor",
+                "filters": [
+                  {
+                    "field": "sex",
+                    "value": "male",
+                    "op": "EQ"
+                  }
+                ],
+                "filter_mode": "AND",
+                "select_fields": [
+                  "id"
+                ],
+                "forward_relation": null,
+                "limit": 100
+              }
+            ]
+          },
+          "raw_content": "",
+          "usage": {
+            "completion_tokens": 82,
+            "prompt_tokens": 1995,
+            "total_tokens": 2077,
+            "completion_tokens_details": "CompletionTokensDetailsWrapper(accepted_prediction_tokens=None, audio_tokens=None, reasoning_tokens=0, rejected_prediction_tokens=None, text_tokens=82, image_tokens=None, video_tokens=None)",
+            "prompt_tokens_details": "PromptTokensDetailsWrapper(audio_tokens=None, cache_write_tokens=0, cached_tokens=0, text_tokens=1995, image_tokens=None, video_tokens=None, cache_creation_tokens=0)",
+            "cache_creation_input_tokens": 0,
+            "cache_read_input_tokens": 0
+          },
+          "latency_s": 1.7834387499606237
+        },
+        {
+          "case_id": "q03",
+          "sample_index": 1,
+          "outcome": "pass",
+          "detail": "",
+          "plan_json": {
+            "steps": [
+              {
+                "step_type": "filter",
+                "entity": "Donor",
+                "filters": [
+                  {
+                    "field": "sex",
+                    "value": "male",
+                    "op": "EQ"
+                  }
+                ],
+                "filter_mode": "AND",
+                "select_fields": [
+                  "id"
+                ],
+                "forward_relation": null,
+                "limit": 100
+              }
+            ]
+          },
+          "raw_content": "",
+          "usage": {
+            "completion_tokens": 82,
+            "prompt_tokens": 1995,
+            "total_tokens": 2077,
+            "completion_tokens_details": "CompletionTokensDetailsWrapper(accepted_prediction_tokens=None, audio_tokens=None, reasoning_tokens=0, rejected_prediction_tokens=None, text_tokens=82, image_tokens=None, video_tokens=None)",
+            "prompt_tokens_details": "PromptTokensDetailsWrapper(audio_tokens=None, cache_write_tokens=0, cached_tokens=0, text_tokens=1995, image_tokens=None, video_tokens=None, cache_creation_tokens=0)",
+            "cache_creation_input_tokens": 0,
+            "cache_read_input_tokens": 0
+          },
+          "latency_s": 1.5707455839728937
+        },
+        {
+          "case_id": "q03",
+          "sample_index": 2,
+          "outcome": "pass",
+          "detail": "",
+          "plan_json": {
+            "steps": [
+              {
+                "step_type": "filter",
+                "entity": "Donor",
+                "filters": [
+                  {
+                    "field": "sex",
+                    "value": "male",
+                    "op": "EQ"
+                  }
+                ],
+                "filter_mode": "AND",
+                "select_fields": [
+                  "id"
+                ],
+                "forward_relation": null,
+                "limit": 100
+              }
+            ]
+          },
+          "raw_content": "",
+          "usage": {
+            "completion_tokens": 82,
+            "prompt_tokens": 1995,
+            "total_tokens": 2077,
+            "completion_tokens_details": "CompletionTokensDetailsWrapper(accepted_prediction_tokens=None, audio_tokens=None, reasoning_tokens=0, rejected_prediction_tokens=None, text_tokens=82, image_tokens=None, video_tokens=None)",
+            "prompt_tokens_details": "PromptTokensDetailsWrapper(audio_tokens=None, cache_write_tokens=0, cached_tokens=0, text_tokens=1995, image_tokens=None, video_tokens=None, cache_creation_tokens=0)",
+            "cache_creation_input_tokens": 0,
+            "cache_read_input_tokens": 0
+          },
+          "latency_s": 2.596518624923192
+        }
+      ]
+    },
+    {
+      "case_id": "q04",
+      "split": "train",
+      "capability": "filter",
+      "pass_rate": 1.0,
+      "strict_pass": true,
+      "is_flaky": false,
+      "outcome_counts": {
+        "pass": 3
+      },
+      "samples": [
+        {
+          "case_id": "q04",
+          "sample_index": 0,
+          "outcome": "pass",
+          "detail": "",
+          "plan_json": {
+            "steps": [
+              {
+                "step_type": "filter",
+                "entity": "Donor",
+                "filters": [
+                  {
+                    "field": "sex",
+                    "value": "unknown",
+                    "op": "EQ"
+                  }
+                ],
+                "filter_mode": "AND",
+                "select_fields": [
+                  "id"
+                ],
+                "forward_relation": null,
+                "limit": 100
+              }
+            ]
+          },
+          "raw_content": "",
+          "usage": {
+            "completion_tokens": 110,
+            "prompt_tokens": 1996,
+            "total_tokens": 2106,
+            "completion_tokens_details": "CompletionTokensDetailsWrapper(accepted_prediction_tokens=None, audio_tokens=None, reasoning_tokens=0, rejected_prediction_tokens=None, text_tokens=110, image_tokens=None, video_tokens=None)",
+            "prompt_tokens_details": "PromptTokensDetailsWrapper(audio_tokens=None, cache_write_tokens=0, cached_tokens=0, text_tokens=1996, image_tokens=None, video_tokens=None, cache_creation_tokens=0)",
+            "cache_creation_input_tokens": 0,
+            "cache_read_input_tokens": 0
+          },
+          "latency_s": 1.9528451249934733
+        },
+        {
+          "case_id": "q04",
+          "sample_index": 1,
+          "outcome": "pass",
+          "detail": "",
+          "plan_json": {
+            "steps": [
+              {
+                "step_type": "filter",
+                "entity": "Donor",
+                "filters": [
+                  {
+                    "field": "sex",
+                    "value": "unknown",
+                    "op": "EQ"
+                  }
+                ],
+                "filter_mode": "AND",
+                "select_fields": [
+                  "id"
+                ],
+                "forward_relation": null,
+                "limit": 100
+              }
+            ]
+          },
+          "raw_content": "",
+          "usage": {
+            "completion_tokens": 110,
+            "prompt_tokens": 1996,
+            "total_tokens": 2106,
+            "completion_tokens_details": "CompletionTokensDetailsWrapper(accepted_prediction_tokens=None, audio_tokens=None, reasoning_tokens=0, rejected_prediction_tokens=None, text_tokens=110, image_tokens=None, video_tokens=None)",
+            "prompt_tokens_details": "PromptTokensDetailsWrapper(audio_tokens=None, cache_write_tokens=0, cached_tokens=0, text_tokens=1996, image_tokens=None, video_tokens=None, cache_creation_tokens=0)",
+            "cache_creation_input_tokens": 0,
+            "cache_read_input_tokens": 0
+          },
+          "latency_s": 2.2084514580201358
+        },
+        {
+          "case_id": "q04",
+          "sample_index": 2,
+          "outcome": "pass",
+          "detail": "",
+          "plan_json": {
+            "steps": [
+              {
+                "step_type": "filter",
+                "entity": "Donor",
+                "filters": [
+                  {
+                    "field": "sex",
+                    "value": "unknown",
+                    "op": "EQ"
+                  }
+                ],
+                "filter_mode": "AND",
+                "select_fields": [
+                  "id"
+                ],
+                "forward_relation": null,
+                "limit": 100
+              }
+            ]
+          },
+          "raw_content": "",
+          "usage": {
+            "completion_tokens": 110,
+            "prompt_tokens": 1996,
+            "total_tokens": 2106,
+            "completion_tokens_details": "CompletionTokensDetailsWrapper(accepted_prediction_tokens=None, audio_tokens=None, reasoning_tokens=0, rejected_prediction_tokens=None, text_tokens=110, image_tokens=None, video_tokens=None)",
+            "prompt_tokens_details": "PromptTokensDetailsWrapper(audio_tokens=None, cache_write_tokens=0, cached_tokens=0, text_tokens=1996, image_tokens=None, video_tokens=None, cache_creation_tokens=0)",
+            "cache_creation_input_tokens": 0,
+            "cache_read_input_tokens": 0
+          },
+          "latency_s": 1.7353324589785188
+        }
+      ]
+    },
+    {
+      "case_id": "q05",
+      "split": "train",
+      "capability": "filter",
+      "pass_rate": 1.0,
+      "strict_pass": true,
+      "is_flaky": false,
+      "outcome_counts": {
+        "pass": 3
+      },
+      "samples": [
+        {
+          "case_id": "q05",
+          "sample_index": 0,
+          "outcome": "pass",
+          "detail": "",
+          "plan_json": {
+            "steps": [
+              {
+                "step_type": "filter",
+                "entity": "Donor",
+                "filters": [
+                  {
+                    "field": "history_of_rhi",
+                    "value": true,
+                    "op": "EQ"
+                  }
+                ],
+                "filter_mode": "AND",
+                "select_fields": [
+                  "id"
+                ],
+                "forward_relation": null,
+                "limit": 100
+              }
+            ]
+          },
+          "raw_content": "",
+          "usage": {
+            "completion_tokens": 113,
+            "prompt_tokens": 2004,
+            "total_tokens": 2117,
+            "completion_tokens_details": "CompletionTokensDetailsWrapper(accepted_prediction_tokens=None, audio_tokens=None, reasoning_tokens=0, rejected_prediction_tokens=None, text_tokens=113, image_tokens=None, video_tokens=None)",
+            "prompt_tokens_details": "PromptTokensDetailsWrapper(audio_tokens=None, cache_write_tokens=0, cached_tokens=0, text_tokens=2004, image_tokens=None, video_tokens=None, cache_creation_tokens=0)",
+            "cache_creation_input_tokens": 0,
+            "cache_read_input_tokens": 0
+          },
+          "latency_s": 1.8759232079610229
+        },
+        {
+          "case_id": "q05",
+          "sample_index": 1,
+          "outcome": "pass",
+          "detail": "",
+          "plan_json": {
+            "steps": [
+              {
+                "step_type": "filter",
+                "entity": "Donor",
+                "filters": [
+                  {
+                    "field": "history_of_rhi",
+                    "value": true,
+                    "op": "EQ"
+                  }
+                ],
+                "filter_mode": "AND",
+                "select_fields": [
+                  "id"
+                ],
+                "forward_relation": null,
+                "limit": 100
+              }
+            ]
+          },
+          "raw_content": "",
+          "usage": {
+            "completion_tokens": 113,
+            "prompt_tokens": 2004,
+            "total_tokens": 2117,
+            "completion_tokens_details": "CompletionTokensDetailsWrapper(accepted_prediction_tokens=None, audio_tokens=None, reasoning_tokens=0, rejected_prediction_tokens=None, text_tokens=113, image_tokens=None, video_tokens=None)",
+            "prompt_tokens_details": "PromptTokensDetailsWrapper(audio_tokens=None, cache_write_tokens=0, cached_tokens=0, text_tokens=2004, image_tokens=None, video_tokens=None, cache_creation_tokens=0)",
+            "cache_creation_input_tokens": 0,
+            "cache_read_input_tokens": 0
+          },
+          "latency_s": 1.636747083044611
+        },
+        {
+          "case_id": "q05",
+          "sample_index": 2,
+          "outcome": "pass",
+          "detail": "",
+          "plan_json": {
+            "steps": [
+              {
+                "step_type": "filter",
+                "entity": "Donor",
+                "filters": [
+                  {
+                    "field": "history_of_rhi",
+                    "value": true,
+                    "op": "EQ"
+                  }
+                ],
+                "filter_mode": "AND",
+                "select_fields": [
+                  "id"
+                ],
+                "forward_relation": null,
+                "limit": 100
+              }
+            ]
+          },
+          "raw_content": "",
+          "usage": {
+            "completion_tokens": 113,
+            "prompt_tokens": 2004,
+            "total_tokens": 2117,
+            "completion_tokens_details": "CompletionTokensDetailsWrapper(accepted_prediction_tokens=None, audio_tokens=None, reasoning_tokens=0, rejected_prediction_tokens=None, text_tokens=113, image_tokens=None, video_tokens=None)",
+            "prompt_tokens_details": "PromptTokensDetailsWrapper(audio_tokens=None, cache_write_tokens=0, cached_tokens=0, text_tokens=2004, image_tokens=None, video_tokens=None, cache_creation_tokens=0)",
+            "cache_creation_input_tokens": 0,
+            "cache_read_input_tokens": 0
+          },
+          "latency_s": 1.529469458037056
+        }
+      ]
+    },
+    {
+      "case_id": "q06",
+      "split": "holdout",
+      "capability": "filter",
+      "pass_rate": 1.0,
+      "strict_pass": true,
+      "is_flaky": false,
+      "outcome_counts": {
+        "pass": 3
+      },
+      "samples": [
+        {
+          "case_id": "q06",
+          "sample_index": 0,
+          "outcome": "pass",
+          "detail": "",
+          "plan_json": {
+            "steps": [
+              {
+                "step_type": "filter",
+                "entity": "Sample",
+                "filters": [
+                  {
+                    "field": "sample_type",
+                    "value": "blood",
+                    "op": "EQ"
+                  }
+                ],
+                "filter_mode": "AND",
+                "select_fields": [
+                  "id"
+                ],
+                "forward_relation": null,
+                "limit": 100
+              }
+            ]
+          },
+          "raw_content": "",
+          "usage": {
+            "completion_tokens": 83,
+            "prompt_tokens": 1994,
+            "total_tokens": 2077,
+            "completion_tokens_details": "CompletionTokensDetailsWrapper(accepted_prediction_tokens=None, audio_tokens=None, reasoning_tokens=0, rejected_prediction_tokens=None, text_tokens=83, image_tokens=None, video_tokens=None)",
+            "prompt_tokens_details": "PromptTokensDetailsWrapper(audio_tokens=None, cache_write_tokens=0, cached_tokens=0, text_tokens=1994, image_tokens=None, video_tokens=None, cache_creation_tokens=0)",
+            "cache_creation_input_tokens": 0,
+            "cache_read_input_tokens": 0
+          },
+          "latency_s": 2.647135499981232
+        },
+        {
+          "case_id": "q06",
+          "sample_index": 1,
+          "outcome": "pass",
+          "detail": "",
+          "plan_json": {
+            "steps": [
+              {
+                "step_type": "filter",
+                "entity": "Sample",
+                "filters": [
+                  {
+                    "field": "sample_type",
+                    "value": "blood",
+                    "op": "EQ"
+                  }
+                ],
+                "filter_mode": "AND",
+                "select_fields": [
+                  "id"
+                ],
+                "forward_relation": null,
+                "limit": 100
+              }
+            ]
+          },
+          "raw_content": "",
+          "usage": {
+            "completion_tokens": 83,
+            "prompt_tokens": 1994,
+            "total_tokens": 2077,
+            "completion_tokens_details": "CompletionTokensDetailsWrapper(accepted_prediction_tokens=None, audio_tokens=None, reasoning_tokens=0, rejected_prediction_tokens=None, text_tokens=83, image_tokens=None, video_tokens=None)",
+            "prompt_tokens_details": "PromptTokensDetailsWrapper(audio_tokens=None, cache_write_tokens=0, cached_tokens=0, text_tokens=1994, image_tokens=None, video_tokens=None, cache_creation_tokens=0)",
+            "cache_creation_input_tokens": 0,
+            "cache_read_input_tokens": 0
+          },
+          "latency_s": 2.0110122500918806
+        },
+        {
+          "case_id": "q06",
+          "sample_index": 2,
+          "outcome": "pass",
+          "detail": "",
+          "plan_json": {
+            "steps": [
+              {
+                "step_type": "filter",
+                "entity": "Sample",
+                "filters": [
+                  {
+                    "field": "sample_type",
+                    "value": "blood",
+                    "op": "EQ"
+                  }
+                ],
+                "filter_mode": "AND",
+                "select_fields": [
+                  "id"
+                ],
+                "forward_relation": null,
+                "limit": 100
+              }
+            ]
+          },
+          "raw_content": "",
+          "usage": {
+            "completion_tokens": 83,
+            "prompt_tokens": 1994,
+            "total_tokens": 2077,
+            "completion_tokens_details": "CompletionTokensDetailsWrapper(accepted_prediction_tokens=None, audio_tokens=None, reasoning_tokens=0, rejected_prediction_tokens=None, text_tokens=83, image_tokens=None, video_tokens=None)",
+            "prompt_tokens_details": "PromptTokensDetailsWrapper(audio_tokens=None, cache_write_tokens=0, cached_tokens=0, text_tokens=1994, image_tokens=None, video_tokens=None, cache_creation_tokens=0)",
+            "cache_creation_input_tokens": 0,
+            "cache_read_input_tokens": 0
+          },
+          "latency_s": 1.948667332995683
+        }
+      ]
+    },
+    {
+      "case_id": "q07",
+      "split": "train",
+      "capability": "filter",
+      "pass_rate": 1.0,
+      "strict_pass": true,
+      "is_flaky": false,
+      "outcome_counts": {
+        "pass": 3
+      },
+      "samples": [
+        {
+          "case_id": "q07",
+          "sample_index": 0,
+          "outcome": "pass",
+          "detail": "",
+          "plan_json": {
+            "steps": [
+              {
+                "step_type": "filter",
+                "entity": "Sample",
+                "filters": [
+                  {
+                    "field": "storage_condition",
+                    "value": "frozen",
+                    "op": "EQ"
+                  }
+                ],
+                "filter_mode": "AND",
+                "select_fields": [
+                  "id"
+                ],
+                "forward_relation": null,
+                "limit": 100
+              }
+            ]
+          },
+          "raw_content": "",
+          "usage": {
+            "completion_tokens": 111,
+            "prompt_tokens": 1994,
+            "total_tokens": 2105,
+            "completion_tokens_details": "CompletionTokensDetailsWrapper(accepted_prediction_tokens=None, audio_tokens=None, reasoning_tokens=0, rejected_prediction_tokens=None, text_tokens=111, image_tokens=None, video_tokens=None)",
+            "prompt_tokens_details": "PromptTokensDetailsWrapper(audio_tokens=None, cache_write_tokens=0, cached_tokens=0, text_tokens=1994, image_tokens=None, video_tokens=None, cache_creation_tokens=0)",
+            "cache_creation_input_tokens": 0,
+            "cache_read_input_tokens": 0
+          },
+          "latency_s": 1.9149122079834342
+        },
+        {
+          "case_id": "q07",
+          "sample_index": 1,
+          "outcome": "pass",
+          "detail": "",
+          "plan_json": {
+            "steps": [
+              {
+                "step_type": "filter",
+                "entity": "Sample",
+                "filters": [
+                  {
+                    "field": "storage_condition",
+                    "value": "frozen",
+                    "op": "EQ"
+                  }
+                ],
+                "filter_mode": "AND",
+                "select_fields": [
+                  "id"
+                ],
+                "forward_relation": null,
+                "limit": 100
+              }
+            ]
+          },
+          "raw_content": "",
+          "usage": {
+            "completion_tokens": 111,
+            "prompt_tokens": 1994,
+            "total_tokens": 2105,
+            "completion_tokens_details": "CompletionTokensDetailsWrapper(accepted_prediction_tokens=None, audio_tokens=None, reasoning_tokens=0, rejected_prediction_tokens=None, text_tokens=111, image_tokens=None, video_tokens=None)",
+            "prompt_tokens_details": "PromptTokensDetailsWrapper(audio_tokens=None, cache_write_tokens=0, cached_tokens=0, text_tokens=1994, image_tokens=None, video_tokens=None, cache_creation_tokens=0)",
+            "cache_creation_input_tokens": 0,
+            "cache_read_input_tokens": 0
+          },
+          "latency_s": 1.7859464579960331
+        },
+        {
+          "case_id": "q07",
+          "sample_index": 2,
+          "outcome": "pass",
+          "detail": "",
+          "plan_json": {
+            "steps": [
+              {
+                "step_type": "filter",
+                "entity": "Sample",
+                "filters": [
+                  {
+                    "field": "storage_condition",
+                    "value": "frozen",
+                    "op": "EQ"
+                  }
+                ],
+                "filter_mode": "AND",
+                "select_fields": [
+                  "id"
+                ],
+                "forward_relation": null,
+                "limit": 100
+              }
+            ]
+          },
+          "raw_content": "",
+          "usage": {
+            "completion_tokens": 111,
+            "prompt_tokens": 1994,
+            "total_tokens": 2105,
+            "completion_tokens_details": "CompletionTokensDetailsWrapper(accepted_prediction_tokens=None, audio_tokens=None, reasoning_tokens=0, rejected_prediction_tokens=None, text_tokens=111, image_tokens=None, video_tokens=None)",
+            "prompt_tokens_details": "PromptTokensDetailsWrapper(audio_tokens=None, cache_write_tokens=0, cached_tokens=0, text_tokens=1994, image_tokens=None, video_tokens=None, cache_creation_tokens=0)",
+            "cache_creation_input_tokens": 0,
+            "cache_read_input_tokens": 0
+          },
+          "latency_s": 1.2802180419676006
+        }
+      ]
+    },
+    {
+      "case_id": "q08",
+      "split": "train",
+      "capability": "filter",
+      "pass_rate": 0.0,
+      "strict_pass": false,
+      "is_flaky": false,
+      "outcome_counts": {
+        "plan_unfaithful": 3
+      },
+      "samples": [
+        {
+          "case_id": "q08",
+          "sample_index": 0,
+          "outcome": "plan_unfaithful",
+          "detail": "step 0: filter storage_condition has value 'chemically fixed' but the instruction says 'fixed'",
+          "plan_json": {
+            "steps": [
+              {
+                "step_type": "filter",
+                "entity": "Sample",
+                "filters": [
+                  {
+                    "field": "storage_condition",
+                    "value": "chemically fixed",
+                    "op": "EQ"
+                  }
+                ],
+                "filter_mode": "AND",
+                "select_fields": [
+                  "id"
+                ],
+                "forward_relation": null,
+                "limit": 100
+              }
+            ]
+          },
+          "raw_content": "",
+          "usage": {
+            "completion_tokens": 113,
+            "prompt_tokens": 1995,
+            "total_tokens": 2108,
+            "completion_tokens_details": "CompletionTokensDetailsWrapper(accepted_prediction_tokens=None, audio_tokens=None, reasoning_tokens=0, rejected_prediction_tokens=None, text_tokens=113, image_tokens=None, video_tokens=None)",
+            "prompt_tokens_details": "PromptTokensDetailsWrapper(audio_tokens=None, cache_write_tokens=0, cached_tokens=0, text_tokens=1995, image_tokens=None, video_tokens=None, cache_creation_tokens=0)",
+            "cache_creation_input_tokens": 0,
+            "cache_read_input_tokens": 0
+          },
+          "latency_s": 1.558075207984075
+        },
+        {
+          "case_id": "q08",
+          "sample_index": 1,
+          "outcome": "plan_unfaithful",
+          "detail": "step 0: filter storage_condition has value 'chemically fixed' but the instruction says 'fixed'",
+          "plan_json": {
+            "steps": [
+              {
+                "step_type": "filter",
+                "entity": "Sample",
+                "filters": [
+                  {
+                    "field": "storage_condition",
+                    "value": "chemically fixed",
+                    "op": "EQ"
+                  }
+                ],
+                "filter_mode": "AND",
+                "select_fields": [
+                  "id"
+                ],
+                "forward_relation": null,
+                "limit": 100
+              }
+            ]
+          },
+          "raw_content": "",
+          "usage": {
+            "completion_tokens": 113,
+            "prompt_tokens": 1995,
+            "total_tokens": 2108,
+            "completion_tokens_details": "CompletionTokensDetailsWrapper(accepted_prediction_tokens=None, audio_tokens=None, reasoning_tokens=0, rejected_prediction_tokens=None, text_tokens=113, image_tokens=None, video_tokens=None)",
+            "prompt_tokens_details": "PromptTokensDetailsWrapper(audio_tokens=None, cache_write_tokens=0, cached_tokens=0, text_tokens=1995, image_tokens=None, video_tokens=None, cache_creation_tokens=0)",
+            "cache_creation_input_tokens": 0,
+            "cache_read_input_tokens": 0
+          },
+          "latency_s": 1.4334209579974413
+        },
+        {
+          "case_id": "q08",
+          "sample_index": 2,
+          "outcome": "plan_unfaithful",
+          "detail": "step 0: filter storage_condition has value 'chemically fixed' but the instruction says 'fixed'",
+          "plan_json": {
+            "steps": [
+              {
+                "step_type": "filter",
+                "entity": "Sample",
+                "filters": [
+                  {
+                    "field": "storage_condition",
+                    "value": "chemically fixed",
+                    "op": "EQ"
+                  }
+                ],
+                "filter_mode": "AND",
+                "select_fields": [
+                  "id"
+                ],
+                "forward_relation": null,
+                "limit": 100
+              }
+            ]
+          },
+          "raw_content": "",
+          "usage": {
+            "completion_tokens": 113,
+            "prompt_tokens": 1995,
+            "total_tokens": 2108,
+            "completion_tokens_details": "CompletionTokensDetailsWrapper(accepted_prediction_tokens=None, audio_tokens=None, reasoning_tokens=0, rejected_prediction_tokens=None, text_tokens=113, image_tokens=None, video_tokens=None)",
+            "prompt_tokens_details": "PromptTokensDetailsWrapper(audio_tokens=None, cache_write_tokens=0, cached_tokens=0, text_tokens=1995, image_tokens=None, video_tokens=None, cache_creation_tokens=0)",
+            "cache_creation_input_tokens": 0,
+            "cache_read_input_tokens": 0
+          },
+          "latency_s": 1.4722792920656502
+        }
+      ]
+    },
+    {
+      "case_id": "q09",
+      "split": "train",
+      "capability": "filter",
+      "pass_rate": 0.0,
+      "strict_pass": false,
+      "is_flaky": false,
+      "outcome_counts": {
+        "plan_invalid": 3
+      },
+      "samples": [
+        {
+          "case_id": "q09",
+          "sample_index": 0,
+          "outcome": "plan_invalid",
+          "detail": "step 0: Sample.donor is a reference field and cannot appear in select_fields directly (it has no scalar value to return) -- use forward_relation to select fields on it",
+          "plan_json": {
+            "steps": [
+              {
+                "step_type": "filter",
+                "entity": "Sample",
+                "filters": [
+                  {
+                    "field": "brain_region",
+                    "value": [
+                      "hippocampus",
+                      "frontal cortex",
+                      "cerebellum",
+                      "brainstem"
+                    ],
+                    "op": "IN"
+                  },
+                  {
+                    "field": "sample_type",
+                    "value": "brain tissue",
+                    "op": "EQ"
+                  }
+                ],
+                "filter_mode": "AND",
+                "select_fields": [
+                  "id",
+                  "name",
+                  "accession",
+                  "brain_region",
+                  "sample_type",
+                  "donor",
+                  "collected_at",
+                  "storage_condition",
+                  "replicate_number",
+                  "tags",
+                  "is_available"
+                ],
+                "forward_relation": null,
+                "limit": 100
+              }
+            ]
+          },
+          "raw_content": "",
+          "usage": {
+            "completion_tokens": 217,
+            "prompt_tokens": 2015,
+            "total_tokens": 2232,
+            "completion_tokens_details": "CompletionTokensDetailsWrapper(accepted_prediction_tokens=None, audio_tokens=None, reasoning_tokens=0, rejected_prediction_tokens=None, text_tokens=217, image_tokens=None, video_tokens=None)",
+            "prompt_tokens_details": "PromptTokensDetailsWrapper(audio_tokens=None, cache_write_tokens=0, cached_tokens=0, text_tokens=2015, image_tokens=None, video_tokens=None, cache_creation_tokens=0)",
+            "cache_creation_input_tokens": 0,
+            "cache_read_input_tokens": 0
+          },
+          "latency_s": 2.6556370409671217
+        },
+        {
+          "case_id": "q09",
+          "sample_index": 1,
+          "outcome": "plan_invalid",
+          "detail": "step 0: Sample.donor is a reference field and cannot appear in select_fields directly (it has no scalar value to return) -- use forward_relation to select fields on it",
+          "plan_json": {
+            "steps": [
+              {
+                "step_type": "filter",
+                "entity": "Sample",
+                "filters": [
+                  {
+                    "field": "brain_region",
+                    "value": [
+                      "hippocampus",
+                      "frontal cortex",
+                      "cerebellum",
+                      "brainstem"
+                    ],
+                    "op": "IN"
+                  },
+                  {
+                    "field": "sample_type",
+                    "value": "brain tissue",
+                    "op": "EQ"
+                  }
+                ],
+                "filter_mode": "AND",
+                "select_fields": [
+                  "id",
+                  "name",
+                  "accession",
+                  "brain_region",
+                  "sample_type",
+                  "donor",
+                  "collected_at",
+                  "storage_condition",
+                  "replicate_number",
+                  "tags",
+                  "is_available"
+                ],
+                "forward_relation": null,
+                "limit": 100
+              }
+            ]
+          },
+          "raw_content": "",
+          "usage": {
+            "completion_tokens": 217,
+            "prompt_tokens": 2015,
+            "total_tokens": 2232,
+            "completion_tokens_details": "CompletionTokensDetailsWrapper(accepted_prediction_tokens=None, audio_tokens=None, reasoning_tokens=0, rejected_prediction_tokens=None, text_tokens=217, image_tokens=None, video_tokens=None)",
+            "prompt_tokens_details": "PromptTokensDetailsWrapper(audio_tokens=None, cache_write_tokens=0, cached_tokens=0, text_tokens=2015, image_tokens=None, video_tokens=None, cache_creation_tokens=0)",
+            "cache_creation_input_tokens": 0,
+            "cache_read_input_tokens": 0
+          },
+          "latency_s": 2.2480926659191027
+        },
+        {
+          "case_id": "q09",
+          "sample_index": 2,
+          "outcome": "plan_invalid",
+          "detail": "step 0: Sample.donor is a reference field and cannot appear in select_fields directly (it has no scalar value to return) -- use forward_relation to select fields on it",
+          "plan_json": {
+            "steps": [
+              {
+                "step_type": "filter",
+                "entity": "Sample",
+                "filters": [
+                  {
+                    "field": "brain_region",
+                    "value": [
+                      "hippocampus",
+                      "frontal cortex",
+                      "cerebellum",
+                      "brainstem"
+                    ],
+                    "op": "IN"
+                  },
+                  {
+                    "field": "sample_type",
+                    "value": "brain tissue",
+                    "op": "EQ"
+                  }
+                ],
+                "filter_mode": "AND",
+                "select_fields": [
+                  "id",
+                  "name",
+                  "accession",
+                  "brain_region",
+                  "sample_type",
+                  "donor",
+                  "collected_at",
+                  "storage_condition",
+                  "replicate_number",
+                  "tags",
+                  "is_available"
+                ],
+                "forward_relation": null,
+                "limit": 100
+              }
+            ]
+          },
+          "raw_content": "",
+          "usage": {
+            "completion_tokens": 217,
+            "prompt_tokens": 2015,
+            "total_tokens": 2232,
+            "completion_tokens_details": "CompletionTokensDetailsWrapper(accepted_prediction_tokens=None, audio_tokens=None, reasoning_tokens=0, rejected_prediction_tokens=None, text_tokens=217, image_tokens=None, video_tokens=None)",
+            "prompt_tokens_details": "PromptTokensDetailsWrapper(audio_tokens=None, cache_write_tokens=0, cached_tokens=0, text_tokens=2015, image_tokens=None, video_tokens=None, cache_creation_tokens=0)",
+            "cache_creation_input_tokens": 0,
+            "cache_read_input_tokens": 0
+          },
+          "latency_s": 2.215509000001475
+        }
+      ]
+    },
+    {
+      "case_id": "q10",
+      "split": "train",
+      "capability": "filter",
+      "pass_rate": 1.0,
+      "strict_pass": true,
+      "is_flaky": false,
+      "outcome_counts": {
+        "pass": 3
+      },
+      "samples": [
+        {
+          "case_id": "q10",
+          "sample_index": 0,
+          "outcome": "pass",
+          "detail": "",
+          "plan_json": {
+            "steps": [
+              {
+                "step_type": "filter",
+                "entity": "Workflow",
+                "filters": [
+                  {
+                    "field": "status",
+                    "value": "completed",
+                    "op": "EQ"
+                  }
+                ],
+                "filter_mode": "AND",
+                "select_fields": [
+                  "id"
+                ],
+                "forward_relation": null,
+                "limit": 100
+              }
+            ]
+          },
+          "raw_content": "",
+          "usage": {
+            "completion_tokens": 82,
+            "prompt_tokens": 1994,
+            "total_tokens": 2076,
+            "completion_tokens_details": "CompletionTokensDetailsWrapper(accepted_prediction_tokens=None, audio_tokens=None, reasoning_tokens=0, rejected_prediction_tokens=None, text_tokens=82, image_tokens=None, video_tokens=None)",
+            "prompt_tokens_details": "PromptTokensDetailsWrapper(audio_tokens=None, cache_write_tokens=0, cached_tokens=0, text_tokens=1994, image_tokens=None, video_tokens=None, cache_creation_tokens=0)",
+            "cache_creation_input_tokens": 0,
+            "cache_read_input_tokens": 0
+          },
+          "latency_s": 2.120453582960181
+        },
+        {
+          "case_id": "q10",
+          "sample_index": 1,
+          "outcome": "pass",
+          "detail": "",
+          "plan_json": {
+            "steps": [
+              {
+                "step_type": "filter",
+                "entity": "Workflow",
+                "filters": [
+                  {
+                    "field": "status",
+                    "value": "completed",
+                    "op": "EQ"
+                  }
+                ],
+                "filter_mode": "AND",
+                "select_fields": [
+                  "id"
+                ],
+                "forward_relation": null,
+                "limit": 100
+              }
+            ]
+          },
+          "raw_content": "",
+          "usage": {
+            "completion_tokens": 82,
+            "prompt_tokens": 1994,
+            "total_tokens": 2076,
+            "completion_tokens_details": "CompletionTokensDetailsWrapper(accepted_prediction_tokens=None, audio_tokens=None, reasoning_tokens=0, rejected_prediction_tokens=None, text_tokens=82, image_tokens=None, video_tokens=None)",
+            "prompt_tokens_details": "PromptTokensDetailsWrapper(audio_tokens=None, cache_write_tokens=0, cached_tokens=0, text_tokens=1994, image_tokens=None, video_tokens=None, cache_creation_tokens=0)",
+            "cache_creation_input_tokens": 0,
+            "cache_read_input_tokens": 0
+          },
+          "latency_s": 2.6140292909694836
+        },
+        {
+          "case_id": "q10",
+          "sample_index": 2,
+          "outcome": "pass",
+          "detail": "",
+          "plan_json": {
+            "steps": [
+              {
+                "step_type": "filter",
+                "entity": "Workflow",
+                "filters": [
+                  {
+                    "field": "status",
+                    "value": "completed",
+                    "op": "EQ"
+                  }
+                ],
+                "filter_mode": "AND",
+                "select_fields": [
+                  "id"
+                ],
+                "forward_relation": null,
+                "limit": 100
+              }
+            ]
+          },
+          "raw_content": "",
+          "usage": {
+            "completion_tokens": 82,
+            "prompt_tokens": 1994,
+            "total_tokens": 2076,
+            "completion_tokens_details": "CompletionTokensDetailsWrapper(accepted_prediction_tokens=None, audio_tokens=None, reasoning_tokens=0, rejected_prediction_tokens=None, text_tokens=82, image_tokens=None, video_tokens=None)",
+            "prompt_tokens_details": "PromptTokensDetailsWrapper(audio_tokens=None, cache_write_tokens=0, cached_tokens=0, text_tokens=1994, image_tokens=None, video_tokens=None, cache_creation_tokens=0)",
+            "cache_creation_input_tokens": 0,
+            "cache_read_input_tokens": 0
+          },
+          "latency_s": 1.5242939579766244
+        }
+      ]
+    },
+    {
+      "case_id": "q11",
+      "split": "holdout",
+      "capability": "filter",
+      "pass_rate": 1.0,
+      "strict_pass": true,
+      "is_flaky": false,
+      "outcome_counts": {
+        "pass": 3
+      },
+      "samples": [
+        {
+          "case_id": "q11",
+          "sample_index": 0,
+          "outcome": "pass",
+          "detail": "",
+          "plan_json": {
+            "steps": [
+              {
+                "step_type": "filter",
+                "entity": "Workflow",
+                "filters": [
+                  {
+                    "field": "status",
+                    "value": "failed",
+                    "op": "EQ"
+                  }
+                ],
+                "filter_mode": "AND",
+                "select_fields": [
+                  "id"
+                ],
+                "forward_relation": null,
+                "limit": 100
+              }
+            ]
+          },
+          "raw_content": "",
+          "usage": {
+            "completion_tokens": 110,
+            "prompt_tokens": 1993,
+            "total_tokens": 2103,
+            "completion_tokens_details": "CompletionTokensDetailsWrapper(accepted_prediction_tokens=None, audio_tokens=None, reasoning_tokens=0, rejected_prediction_tokens=None, text_tokens=110, image_tokens=None, video_tokens=None)",
+            "prompt_tokens_details": "PromptTokensDetailsWrapper(audio_tokens=None, cache_write_tokens=0, cached_tokens=0, text_tokens=1993, image_tokens=None, video_tokens=None, cache_creation_tokens=0)",
+            "cache_creation_input_tokens": 0,
+            "cache_read_input_tokens": 0
+          },
+          "latency_s": 1.588692917022854
+        },
+        {
+          "case_id": "q11",
+          "sample_index": 1,
+          "outcome": "pass",
+          "detail": "",
+          "plan_json": {
+            "steps": [
+              {
+                "step_type": "filter",
+                "entity": "Workflow",
+                "filters": [
+                  {
+                    "field": "status",
+                    "value": "failed",
+                    "op": "EQ"
+                  }
+                ],
+                "filter_mode": "AND",
+                "select_fields": [
+                  "id"
+                ],
+                "forward_relation": null,
+                "limit": 100
+              }
+            ]
+          },
+          "raw_content": "",
+          "usage": {
+            "completion_tokens": 110,
+            "prompt_tokens": 1993,
+            "total_tokens": 2103,
+            "completion_tokens_details": "CompletionTokensDetailsWrapper(accepted_prediction_tokens=None, audio_tokens=None, reasoning_tokens=0, rejected_prediction_tokens=None, text_tokens=110, image_tokens=None, video_tokens=None)",
+            "prompt_tokens_details": "PromptTokensDetailsWrapper(audio_tokens=None, cache_write_tokens=0, cached_tokens=0, text_tokens=1993, image_tokens=None, video_tokens=None, cache_creation_tokens=0)",
+            "cache_creation_input_tokens": 0,
+            "cache_read_input_tokens": 0
+          },
+          "latency_s": 1.7127297499682754
+        },
+        {
+          "case_id": "q11",
+          "sample_index": 2,
+          "outcome": "pass",
+          "detail": "",
+          "plan_json": {
+            "steps": [
+              {
+                "step_type": "filter",
+                "entity": "Workflow",
+                "filters": [
+                  {
+                    "field": "status",
+                    "value": "failed",
+                    "op": "EQ"
+                  }
+                ],
+                "filter_mode": "AND",
+                "select_fields": [
+                  "id"
+                ],
+                "forward_relation": null,
+                "limit": 100
+              }
+            ]
+          },
+          "raw_content": "",
+          "usage": {
+            "completion_tokens": 110,
+            "prompt_tokens": 1993,
+            "total_tokens": 2103,
+            "completion_tokens_details": "CompletionTokensDetailsWrapper(accepted_prediction_tokens=None, audio_tokens=None, reasoning_tokens=0, rejected_prediction_tokens=None, text_tokens=110, image_tokens=None, video_tokens=None)",
+            "prompt_tokens_details": "PromptTokensDetailsWrapper(audio_tokens=None, cache_write_tokens=0, cached_tokens=0, text_tokens=1993, image_tokens=None, video_tokens=None, cache_creation_tokens=0)",
+            "cache_creation_input_tokens": 0,
+            "cache_read_input_tokens": 0
+          },
+          "latency_s": 1.4999479999532923
+        }
+      ]
+    },
+    {
+      "case_id": "q12",
+      "split": "train",
+      "capability": "filter",
+      "pass_rate": 0.0,
+      "strict_pass": false,
+      "is_flaky": false,
+      "outcome_counts": {
+        "plan_unfaithful": 3
+      },
+      "samples": [
+        {
+          "case_id": "q12",
+          "sample_index": 0,
+          "outcome": "plan_unfaithful",
+          "detail": "step 0: filter workflow_type has value 'RNA-seq' but the instruction says 'rna_seq'",
+          "plan_json": {
+            "steps": [
+              {
+                "step_type": "filter",
+                "entity": "Workflow",
+                "filters": [
+                  {
+                    "field": "workflow_type",
+                    "value": "RNA-seq",
+                    "op": "EQ"
+                  }
+                ],
+                "filter_mode": "AND",
+                "select_fields": [
+                  "id"
+                ],
+                "forward_relation": null,
+                "limit": 100
+              }
+            ]
+          },
+          "raw_content": "",
+          "usage": {
+            "completion_tokens": 86,
+            "prompt_tokens": 1997,
+            "total_tokens": 2083,
+            "completion_tokens_details": "CompletionTokensDetailsWrapper(accepted_prediction_tokens=None, audio_tokens=None, reasoning_tokens=0, rejected_prediction_tokens=None, text_tokens=86, image_tokens=None, video_tokens=None)",
+            "prompt_tokens_details": "PromptTokensDetailsWrapper(audio_tokens=None, cache_write_tokens=0, cached_tokens=0, text_tokens=1997, image_tokens=None, video_tokens=None, cache_creation_tokens=0)",
+            "cache_creation_input_tokens": 0,
+            "cache_read_input_tokens": 0
+          },
+          "latency_s": 1.5379015830112621
+        },
+        {
+          "case_id": "q12",
+          "sample_index": 1,
+          "outcome": "plan_unfaithful",
+          "detail": "step 0: filter workflow_type has value 'RNA-seq' but the instruction says 'rna_seq'",
+          "plan_json": {
+            "steps": [
+              {
+                "step_type": "filter",
+                "entity": "Workflow",
+                "filters": [
+                  {
+                    "field": "workflow_type",
+                    "value": "RNA-seq",
+                    "op": "EQ"
+                  }
+                ],
+                "filter_mode": "AND",
+                "select_fields": [
+                  "id"
+                ],
+                "forward_relation": null,
+                "limit": 100
+              }
+            ]
+          },
+          "raw_content": "",
+          "usage": {
+            "completion_tokens": 86,
+            "prompt_tokens": 1997,
+            "total_tokens": 2083,
+            "completion_tokens_details": "CompletionTokensDetailsWrapper(accepted_prediction_tokens=None, audio_tokens=None, reasoning_tokens=0, rejected_prediction_tokens=None, text_tokens=86, image_tokens=None, video_tokens=None)",
+            "prompt_tokens_details": "PromptTokensDetailsWrapper(audio_tokens=None, cache_write_tokens=0, cached_tokens=0, text_tokens=1997, image_tokens=None, video_tokens=None, cache_creation_tokens=0)",
+            "cache_creation_input_tokens": 0,
+            "cache_read_input_tokens": 0
+          },
+          "latency_s": 1.617439791909419
+        },
+        {
+          "case_id": "q12",
+          "sample_index": 2,
+          "outcome": "plan_unfaithful",
+          "detail": "step 0: filter workflow_type has value 'RNA-seq' but the instruction says 'rna_seq'",
+          "plan_json": {
+            "steps": [
+              {
+                "step_type": "filter",
+                "entity": "Workflow",
+                "filters": [
+                  {
+                    "field": "workflow_type",
+                    "value": "RNA-seq",
+                    "op": "EQ"
+                  }
+                ],
+                "filter_mode": "AND",
+                "select_fields": [
+                  "id"
+                ],
+                "forward_relation": null,
+                "limit": 100
+              }
+            ]
+          },
+          "raw_content": "",
+          "usage": {
+            "completion_tokens": 86,
+            "prompt_tokens": 1997,
+            "total_tokens": 2083,
+            "completion_tokens_details": "CompletionTokensDetailsWrapper(accepted_prediction_tokens=None, audio_tokens=None, reasoning_tokens=0, rejected_prediction_tokens=None, text_tokens=86, image_tokens=None, video_tokens=None)",
+            "prompt_tokens_details": "PromptTokensDetailsWrapper(audio_tokens=None, cache_write_tokens=0, cached_tokens=0, text_tokens=1997, image_tokens=None, video_tokens=None, cache_creation_tokens=0)",
+            "cache_creation_input_tokens": 0,
+            "cache_read_input_tokens": 0
+          },
+          "latency_s": 1.476245833095163
+        }
+      ]
+    },
+    {
+      "case_id": "q13",
+      "split": "train",
+      "capability": "filter",
+      "pass_rate": 1.0,
+      "strict_pass": true,
+      "is_flaky": false,
+      "outcome_counts": {
+        "pass": 3
+      },
+      "samples": [
+        {
+          "case_id": "q13",
+          "sample_index": 0,
+          "outcome": "pass",
+          "detail": "",
+          "plan_json": {
+            "steps": [
+              {
+                "step_type": "filter",
+                "entity": "Dataset",
+                "filters": [
+                  {
+                    "field": "access_level",
+                    "value": "controlled",
+                    "op": "EQ"
+                  }
+                ],
+                "filter_mode": "AND",
+                "select_fields": [
+                  "id"
+                ],
+                "forward_relation": null,
+                "limit": 100
+              }
+            ]
+          },
+          "raw_content": "",
+          "usage": {
+            "completion_tokens": 83,
+            "prompt_tokens": 1995,
+            "total_tokens": 2078,
+            "completion_tokens_details": "CompletionTokensDetailsWrapper(accepted_prediction_tokens=None, audio_tokens=None, reasoning_tokens=0, rejected_prediction_tokens=None, text_tokens=83, image_tokens=None, video_tokens=None)",
+            "prompt_tokens_details": "PromptTokensDetailsWrapper(audio_tokens=None, cache_write_tokens=0, cached_tokens=0, text_tokens=1995, image_tokens=None, video_tokens=None, cache_creation_tokens=0)",
+            "cache_creation_input_tokens": 0,
+            "cache_read_input_tokens": 0
+          },
+          "latency_s": 1.5898452919209376
+        },
+        {
+          "case_id": "q13",
+          "sample_index": 1,
+          "outcome": "pass",
+          "detail": "",
+          "plan_json": {
+            "steps": [
+              {
+                "step_type": "filter",
+                "entity": "Dataset",
+                "filters": [
+                  {
+                    "field": "access_level",
+                    "value": "controlled",
+                    "op": "EQ"
+                  }
+                ],
+                "filter_mode": "AND",
+                "select_fields": [
+                  "id"
+                ],
+                "forward_relation": null,
+                "limit": 100
+              }
+            ]
+          },
+          "raw_content": "",
+          "usage": {
+            "completion_tokens": 83,
+            "prompt_tokens": 1995,
+            "total_tokens": 2078,
+            "completion_tokens_details": "CompletionTokensDetailsWrapper(accepted_prediction_tokens=None, audio_tokens=None, reasoning_tokens=0, rejected_prediction_tokens=None, text_tokens=83, image_tokens=None, video_tokens=None)",
+            "prompt_tokens_details": "PromptTokensDetailsWrapper(audio_tokens=None, cache_write_tokens=0, cached_tokens=0, text_tokens=1995, image_tokens=None, video_tokens=None, cache_creation_tokens=0)",
+            "cache_creation_input_tokens": 0,
+            "cache_read_input_tokens": 0
+          },
+          "latency_s": 1.4939639170188457
+        },
+        {
+          "case_id": "q13",
+          "sample_index": 2,
+          "outcome": "pass",
+          "detail": "",
+          "plan_json": {
+            "steps": [
+              {
+                "step_type": "filter",
+                "entity": "Dataset",
+                "filters": [
+                  {
+                    "field": "access_level",
+                    "value": "controlled",
+                    "op": "EQ"
+                  }
+                ],
+                "filter_mode": "AND",
+                "select_fields": [
+                  "id"
+                ],
+                "forward_relation": null,
+                "limit": 100
+              }
+            ]
+          },
+          "raw_content": "",
+          "usage": {
+            "completion_tokens": 83,
+            "prompt_tokens": 1995,
+            "total_tokens": 2078,
+            "completion_tokens_details": "CompletionTokensDetailsWrapper(accepted_prediction_tokens=None, audio_tokens=None, reasoning_tokens=0, rejected_prediction_tokens=None, text_tokens=83, image_tokens=None, video_tokens=None)",
+            "prompt_tokens_details": "PromptTokensDetailsWrapper(audio_tokens=None, cache_write_tokens=0, cached_tokens=0, text_tokens=1995, image_tokens=None, video_tokens=None, cache_creation_tokens=0)",
+            "cache_creation_input_tokens": 0,
+            "cache_read_input_tokens": 0
+          },
+          "latency_s": 1.7719132920028642
+        }
+      ]
+    },
+    {
+      "case_id": "q14",
+      "split": "holdout",
+      "capability": "filter",
+      "pass_rate": 1.0,
+      "strict_pass": true,
+      "is_flaky": false,
+      "outcome_counts": {
+        "pass": 3
+      },
+      "samples": [
+        {
+          "case_id": "q14",
+          "sample_index": 0,
+          "outcome": "pass",
+          "detail": "",
+          "plan_json": {
+            "steps": [
+              {
+                "step_type": "filter",
+                "entity": "Dataset",
+                "filters": [
+                  {
+                    "field": "is_public",
+                    "value": true,
+                    "op": "EQ"
+                  }
+                ],
+                "filter_mode": "AND",
+                "select_fields": [
+                  "id"
+                ],
+                "forward_relation": null,
+                "limit": 100
+              }
+            ]
+          },
+          "raw_content": "",
+          "usage": {
+            "completion_tokens": 82,
+            "prompt_tokens": 1994,
+            "total_tokens": 2076,
+            "completion_tokens_details": "CompletionTokensDetailsWrapper(accepted_prediction_tokens=None, audio_tokens=None, reasoning_tokens=0, rejected_prediction_tokens=None, text_tokens=82, image_tokens=None, video_tokens=None)",
+            "prompt_tokens_details": "PromptTokensDetailsWrapper(audio_tokens=None, cache_write_tokens=0, cached_tokens=0, text_tokens=1994, image_tokens=None, video_tokens=None, cache_creation_tokens=0)",
+            "cache_creation_input_tokens": 0,
+            "cache_read_input_tokens": 0
+          },
+          "latency_s": 1.5599649999057874
+        },
+        {
+          "case_id": "q14",
+          "sample_index": 1,
+          "outcome": "pass",
+          "detail": "",
+          "plan_json": {
+            "steps": [
+              {
+                "step_type": "filter",
+                "entity": "Dataset",
+                "filters": [
+                  {
+                    "field": "is_public",
+                    "value": true,
+                    "op": "EQ"
+                  }
+                ],
+                "filter_mode": "AND",
+                "select_fields": [
+                  "id"
+                ],
+                "forward_relation": null,
+                "limit": 100
+              }
+            ]
+          },
+          "raw_content": "",
+          "usage": {
+            "completion_tokens": 82,
+            "prompt_tokens": 1994,
+            "total_tokens": 2076,
+            "completion_tokens_details": "CompletionTokensDetailsWrapper(accepted_prediction_tokens=None, audio_tokens=None, reasoning_tokens=0, rejected_prediction_tokens=None, text_tokens=82, image_tokens=None, video_tokens=None)",
+            "prompt_tokens_details": "PromptTokensDetailsWrapper(audio_tokens=None, cache_write_tokens=0, cached_tokens=0, text_tokens=1994, image_tokens=None, video_tokens=None, cache_creation_tokens=0)",
+            "cache_creation_input_tokens": 0,
+            "cache_read_input_tokens": 0
+          },
+          "latency_s": 1.4496381250210106
+        },
+        {
+          "case_id": "q14",
+          "sample_index": 2,
+          "outcome": "pass",
+          "detail": "",
+          "plan_json": {
+            "steps": [
+              {
+                "step_type": "filter",
+                "entity": "Dataset",
+                "filters": [
+                  {
+                    "field": "is_public",
+                    "value": true,
+                    "op": "EQ"
+                  }
+                ],
+                "filter_mode": "AND",
+                "select_fields": [
+                  "id"
+                ],
+                "forward_relation": null,
+                "limit": 100
+              }
+            ]
+          },
+          "raw_content": "",
+          "usage": {
+            "completion_tokens": 82,
+            "prompt_tokens": 1994,
+            "total_tokens": 2076,
+            "completion_tokens_details": "CompletionTokensDetailsWrapper(accepted_prediction_tokens=None, audio_tokens=None, reasoning_tokens=0, rejected_prediction_tokens=None, text_tokens=82, image_tokens=None, video_tokens=None)",
+            "prompt_tokens_details": "PromptTokensDetailsWrapper(audio_tokens=None, cache_write_tokens=0, cached_tokens=0, text_tokens=1994, image_tokens=None, video_tokens=None, cache_creation_tokens=0)",
+            "cache_creation_input_tokens": 0,
+            "cache_read_input_tokens": 0
+          },
+          "latency_s": 1.4663471248932183
+        }
+      ]
+    },
+    {
+      "case_id": "q15",
+      "split": "train",
+      "capability": "filter",
+      "pass_rate": 0.0,
+      "strict_pass": false,
+      "is_flaky": false,
+      "outcome_counts": {
+        "plan_unfaithful": 3
+      },
+      "samples": [
+        {
+          "case_id": "q15",
+          "sample_index": 0,
+          "outcome": "plan_unfaithful",
+          "detail": "step 0: filter dataset_type has value 'VCF' but the instruction says 'vcf'",
+          "plan_json": {
+            "steps": [
+              {
+                "step_type": "filter",
+                "entity": "Dataset",
+                "filters": [
+                  {
+                    "field": "dataset_type",
+                    "value": "VCF",
+                    "op": "EQ"
+                  }
+                ],
+                "filter_mode": "AND",
+                "select_fields": [
+                  "id"
+                ],
+                "forward_relation": null,
+                "limit": 100
+              }
+            ]
+          },
+          "raw_content": "",
+          "usage": {
+            "completion_tokens": 85,
+            "prompt_tokens": 1996,
+            "total_tokens": 2081,
+            "completion_tokens_details": "CompletionTokensDetailsWrapper(accepted_prediction_tokens=None, audio_tokens=None, reasoning_tokens=0, rejected_prediction_tokens=None, text_tokens=85, image_tokens=None, video_tokens=None)",
+            "prompt_tokens_details": "PromptTokensDetailsWrapper(audio_tokens=None, cache_write_tokens=0, cached_tokens=0, text_tokens=1996, image_tokens=None, video_tokens=None, cache_creation_tokens=0)",
+            "cache_creation_input_tokens": 0,
+            "cache_read_input_tokens": 0
+          },
+          "latency_s": 1.4712161670904607
+        },
+        {
+          "case_id": "q15",
+          "sample_index": 1,
+          "outcome": "plan_unfaithful",
+          "detail": "step 0: filter dataset_type has value 'VCF' but the instruction says 'vcf'",
+          "plan_json": {
+            "steps": [
+              {
+                "step_type": "filter",
+                "entity": "Dataset",
+                "filters": [
+                  {
+                    "field": "dataset_type",
+                    "value": "VCF",
+                    "op": "EQ"
+                  }
+                ],
+                "filter_mode": "AND",
+                "select_fields": [
+                  "id"
+                ],
+                "forward_relation": null,
+                "limit": 100
+              }
+            ]
+          },
+          "raw_content": "",
+          "usage": {
+            "completion_tokens": 85,
+            "prompt_tokens": 1996,
+            "total_tokens": 2081,
+            "completion_tokens_details": "CompletionTokensDetailsWrapper(accepted_prediction_tokens=None, audio_tokens=None, reasoning_tokens=0, rejected_prediction_tokens=None, text_tokens=85, image_tokens=None, video_tokens=None)",
+            "prompt_tokens_details": "PromptTokensDetailsWrapper(audio_tokens=None, cache_write_tokens=0, cached_tokens=0, text_tokens=1996, image_tokens=None, video_tokens=None, cache_creation_tokens=0)",
+            "cache_creation_input_tokens": 0,
+            "cache_read_input_tokens": 0
+          },
+          "latency_s": 1.9775028750300407
+        },
+        {
+          "case_id": "q15",
+          "sample_index": 2,
+          "outcome": "plan_unfaithful",
+          "detail": "step 0: filter dataset_type has value 'VCF' but the instruction says 'vcf'",
+          "plan_json": {
+            "steps": [
+              {
+                "step_type": "filter",
+                "entity": "Dataset",
+                "filters": [
+                  {
+                    "field": "dataset_type",
+                    "value": "VCF",
+                    "op": "EQ"
+                  }
+                ],
+                "filter_mode": "AND",
+                "select_fields": [
+                  "id"
+                ],
+                "forward_relation": null,
+                "limit": 100
+              }
+            ]
+          },
+          "raw_content": "",
+          "usage": {
+            "completion_tokens": 85,
+            "prompt_tokens": 1996,
+            "total_tokens": 2081,
+            "completion_tokens_details": "CompletionTokensDetailsWrapper(accepted_prediction_tokens=None, audio_tokens=None, reasoning_tokens=0, rejected_prediction_tokens=None, text_tokens=85, image_tokens=None, video_tokens=None)",
+            "prompt_tokens_details": "PromptTokensDetailsWrapper(audio_tokens=None, cache_write_tokens=0, cached_tokens=0, text_tokens=1996, image_tokens=None, video_tokens=None, cache_creation_tokens=0)",
+            "cache_creation_input_tokens": 0,
+            "cache_read_input_tokens": 0
+          },
+          "latency_s": 1.4242776250466704
+        }
+      ]
+    },
+    {
+      "case_id": "q16",
+      "split": "train",
+      "capability": "filter",
+      "pass_rate": 0.0,
+      "strict_pass": false,
+      "is_flaky": false,
+      "outcome_counts": {
+        "plan_unfaithful": 3
+      },
+      "samples": [
+        {
+          "case_id": "q16",
+          "sample_index": 0,
+          "outcome": "plan_unfaithful",
+          "detail": "step 0: filter dataset_type has value ['BAM', 'VCF'] but the instruction says ['bam', 'vcf']",
+          "plan_json": {
+            "steps": [
+              {
+                "step_type": "filter",
+                "entity": "Dataset",
+                "filters": [
+                  {
+                    "field": "dataset_type",
+                    "value": [
+                      "BAM",
+                      "VCF"
+                    ],
+                    "op": "IN"
+                  }
+                ],
+                "filter_mode": "AND",
+                "select_fields": [
+                  "id"
+                ],
+                "forward_relation": null,
+                "limit": 100
+              }
+            ]
+          },
+          "raw_content": "",
+          "usage": {
+            "completion_tokens": 116,
+            "prompt_tokens": 2000,
+            "total_tokens": 2116,
+            "completion_tokens_details": "CompletionTokensDetailsWrapper(accepted_prediction_tokens=None, audio_tokens=None, reasoning_tokens=0, rejected_prediction_tokens=None, text_tokens=116, image_tokens=None, video_tokens=None)",
+            "prompt_tokens_details": "PromptTokensDetailsWrapper(audio_tokens=None, cache_write_tokens=0, cached_tokens=0, text_tokens=2000, image_tokens=None, video_tokens=None, cache_creation_tokens=0)",
+            "cache_creation_input_tokens": 0,
+            "cache_read_input_tokens": 0
+          },
+          "latency_s": 1.5242506250506267
+        },
+        {
+          "case_id": "q16",
+          "sample_index": 1,
+          "outcome": "plan_unfaithful",
+          "detail": "step 0: filter dataset_type has value ['BAM', 'VCF'] but the instruction says ['bam', 'vcf']",
+          "plan_json": {
+            "steps": [
+              {
+                "step_type": "filter",
+                "entity": "Dataset",
+                "filters": [
+                  {
+                    "field": "dataset_type",
+                    "value": [
+                      "BAM",
+                      "VCF"
+                    ],
+                    "op": "IN"
+                  }
+                ],
+                "filter_mode": "AND",
+                "select_fields": [
+                  "id"
+                ],
+                "forward_relation": null,
+                "limit": 100
+              }
+            ]
+          },
+          "raw_content": "",
+          "usage": {
+            "completion_tokens": 116,
+            "prompt_tokens": 2000,
+            "total_tokens": 2116,
+            "completion_tokens_details": "CompletionTokensDetailsWrapper(accepted_prediction_tokens=None, audio_tokens=None, reasoning_tokens=0, rejected_prediction_tokens=None, text_tokens=116, image_tokens=None, video_tokens=None)",
+            "prompt_tokens_details": "PromptTokensDetailsWrapper(audio_tokens=None, cache_write_tokens=0, cached_tokens=0, text_tokens=2000, image_tokens=None, video_tokens=None, cache_creation_tokens=0)",
+            "cache_creation_input_tokens": 0,
+            "cache_read_input_tokens": 0
+          },
+          "latency_s": 1.323055166983977
+        },
+        {
+          "case_id": "q16",
+          "sample_index": 2,
+          "outcome": "plan_unfaithful",
+          "detail": "step 0: filter dataset_type has value ['BAM', 'VCF'] but the instruction says ['bam', 'vcf']",
+          "plan_json": {
+            "steps": [
+              {
+                "step_type": "filter",
+                "entity": "Dataset",
+                "filters": [
+                  {
+                    "field": "dataset_type",
+                    "value": [
+                      "BAM",
+                      "VCF"
+                    ],
+                    "op": "IN"
+                  }
+                ],
+                "filter_mode": "AND",
+                "select_fields": [
+                  "id"
+                ],
+                "forward_relation": null,
+                "limit": 100
+              }
+            ]
+          },
+          "raw_content": "",
+          "usage": {
+            "completion_tokens": 116,
+            "prompt_tokens": 2000,
+            "total_tokens": 2116,
+            "completion_tokens_details": "CompletionTokensDetailsWrapper(accepted_prediction_tokens=None, audio_tokens=None, reasoning_tokens=0, rejected_prediction_tokens=None, text_tokens=116, image_tokens=None, video_tokens=None)",
+            "prompt_tokens_details": "PromptTokensDetailsWrapper(audio_tokens=None, cache_write_tokens=0, cached_tokens=0, text_tokens=2000, image_tokens=None, video_tokens=None, cache_creation_tokens=0)",
+            "cache_creation_input_tokens": 0,
+            "cache_read_input_tokens": 0
+          },
+          "latency_s": 1.6237627919763327
+        }
+      ]
+    },
+    {
+      "case_id": "q17",
+      "split": "train",
+      "capability": "filter",
+      "pass_rate": 0.0,
+      "strict_pass": false,
+      "is_flaky": false,
+      "outcome_counts": {
+        "plan_invalid": 3
+      },
+      "samples": [
+        {
+          "case_id": "q17",
+          "sample_index": 0,
+          "outcome": "plan_invalid",
+          "detail": "step 0: Sample.donor is a reference field and cannot appear in select_fields directly (it has no scalar value to return) -- use forward_relation to select fields on it",
+          "plan_json": {
+            "steps": [
+              {
+                "step_type": "filter",
+                "entity": "Sample",
+                "filters": [
+                  {
+                    "field": "accession",
+                    "value": "SMP604876",
+                    "op": "EQ"
+                  }
+                ],
+                "filter_mode": "AND",
+                "select_fields": [
+                  "id",
+                  "accession",
+                  "name",
+                  "brain_region",
+                  "donor",
+                  "sample_type",
+                  "replicate_number",
+                  "collected_at",
+                  "storage_condition",
+                  "tags",
+                  "is_available"
+                ],
+                "forward_relation": null,
+                "limit": 100
+              }
+            ]
+          },
+          "raw_content": "",
+          "usage": {
+            "completion_tokens": 129,
+            "prompt_tokens": 1999,
+            "total_tokens": 2128,
+            "completion_tokens_details": "CompletionTokensDetailsWrapper(accepted_prediction_tokens=None, audio_tokens=None, reasoning_tokens=0, rejected_prediction_tokens=None, text_tokens=129, image_tokens=None, video_tokens=None)",
+            "prompt_tokens_details": "PromptTokensDetailsWrapper(audio_tokens=None, cache_write_tokens=0, cached_tokens=0, text_tokens=1999, image_tokens=None, video_tokens=None, cache_creation_tokens=0)",
+            "cache_creation_input_tokens": 0,
+            "cache_read_input_tokens": 0
+          },
+          "latency_s": 1.838949750061147
+        },
+        {
+          "case_id": "q17",
+          "sample_index": 1,
+          "outcome": "plan_invalid",
+          "detail": "step 0: Sample.donor is a reference field and cannot appear in select_fields directly (it has no scalar value to return) -- use forward_relation to select fields on it",
+          "plan_json": {
+            "steps": [
+              {
+                "step_type": "filter",
+                "entity": "Sample",
+                "filters": [
+                  {
+                    "field": "accession",
+                    "value": "SMP604876",
+                    "op": "EQ"
+                  }
+                ],
+                "filter_mode": "AND",
+                "select_fields": [
+                  "id",
+                  "accession",
+                  "name",
+                  "brain_region",
+                  "donor",
+                  "sample_type",
+                  "replicate_number",
+                  "collected_at",
+                  "storage_condition",
+                  "tags",
+                  "is_available"
+                ],
+                "forward_relation": null,
+                "limit": 100
+              }
+            ]
+          },
+          "raw_content": "",
+          "usage": {
+            "completion_tokens": 129,
+            "prompt_tokens": 1999,
+            "total_tokens": 2128,
+            "completion_tokens_details": "CompletionTokensDetailsWrapper(accepted_prediction_tokens=None, audio_tokens=None, reasoning_tokens=0, rejected_prediction_tokens=None, text_tokens=129, image_tokens=None, video_tokens=None)",
+            "prompt_tokens_details": "PromptTokensDetailsWrapper(audio_tokens=None, cache_write_tokens=0, cached_tokens=0, text_tokens=1999, image_tokens=None, video_tokens=None, cache_creation_tokens=0)",
+            "cache_creation_input_tokens": 0,
+            "cache_read_input_tokens": 0
+          },
+          "latency_s": 1.5659608750138432
+        },
+        {
+          "case_id": "q17",
+          "sample_index": 2,
+          "outcome": "plan_invalid",
+          "detail": "step 0: Sample.donor is a reference field and cannot appear in select_fields directly (it has no scalar value to return) -- use forward_relation to select fields on it",
+          "plan_json": {
+            "steps": [
+              {
+                "step_type": "filter",
+                "entity": "Sample",
+                "filters": [
+                  {
+                    "field": "accession",
+                    "value": "SMP604876",
+                    "op": "EQ"
+                  }
+                ],
+                "filter_mode": "AND",
+                "select_fields": [
+                  "id",
+                  "accession",
+                  "name",
+                  "brain_region",
+                  "donor",
+                  "sample_type",
+                  "replicate_number",
+                  "collected_at",
+                  "storage_condition",
+                  "tags",
+                  "is_available"
+                ],
+                "forward_relation": null,
+                "limit": 100
+              }
+            ]
+          },
+          "raw_content": "",
+          "usage": {
+            "completion_tokens": 129,
+            "prompt_tokens": 1999,
+            "total_tokens": 2128,
+            "completion_tokens_details": "CompletionTokensDetailsWrapper(accepted_prediction_tokens=None, audio_tokens=None, reasoning_tokens=0, rejected_prediction_tokens=None, text_tokens=129, image_tokens=None, video_tokens=None)",
+            "prompt_tokens_details": "PromptTokensDetailsWrapper(audio_tokens=None, cache_write_tokens=0, cached_tokens=0, text_tokens=1999, image_tokens=None, video_tokens=None, cache_creation_tokens=0)",
+            "cache_creation_input_tokens": 0,
+            "cache_read_input_tokens": 0
+          },
+          "latency_s": 1.899238875019364
+        }
+      ]
+    },
+    {
+      "case_id": "q18",
+      "split": "holdout",
+      "capability": "filter",
+      "pass_rate": 0.0,
+      "strict_pass": false,
+      "is_flaky": false,
+      "outcome_counts": {
+        "plan_invalid": 3
+      },
+      "samples": [
+        {
+          "case_id": "q18",
+          "sample_index": 0,
+          "outcome": "plan_invalid",
+          "detail": "step 0: Sample.donor is a reference field and cannot appear in select_fields directly (it has no scalar value to return) -- use forward_relation to select fields on it",
+          "plan_json": {
+            "steps": [
+              {
+                "step_type": "filter",
+                "entity": "Sample",
+                "filters": [
+                  {
+                    "field": "id",
+                    "value": "SMPL-0001",
+                    "op": "EQ"
+                  }
+                ],
+                "filter_mode": "AND",
+                "select_fields": [
+                  "id",
+                  "accession",
+                  "brain_region",
+                  "collected_at",
+                  "donor",
+                  "is_available",
+                  "name",
+                  "replicate_number",
+                  "sample_type",
+                  "storage_condition",
+                  "tags"
+                ],
+                "forward_relation": null,
+                "limit": 100
+              }
+            ]
+          },
+          "raw_content": "",
+          "usage": {
+            "completion_tokens": 130,
+            "prompt_tokens": 2000,
+            "total_tokens": 2130,
+            "completion_tokens_details": "CompletionTokensDetailsWrapper(accepted_prediction_tokens=None, audio_tokens=None, reasoning_tokens=0, rejected_prediction_tokens=None, text_tokens=130, image_tokens=None, video_tokens=None)",
+            "prompt_tokens_details": "PromptTokensDetailsWrapper(audio_tokens=None, cache_write_tokens=0, cached_tokens=0, text_tokens=2000, image_tokens=None, video_tokens=None, cache_creation_tokens=0)",
+            "cache_creation_input_tokens": 0,
+            "cache_read_input_tokens": 0
+          },
+          "latency_s": 1.7096481249900535
+        },
+        {
+          "case_id": "q18",
+          "sample_index": 1,
+          "outcome": "plan_invalid",
+          "detail": "step 0: Sample.donor is a reference field and cannot appear in select_fields directly (it has no scalar value to return) -- use forward_relation to select fields on it",
+          "plan_json": {
+            "steps": [
+              {
+                "step_type": "filter",
+                "entity": "Sample",
+                "filters": [
+                  {
+                    "field": "id",
+                    "value": "SMPL-0001",
+                    "op": "EQ"
+                  }
+                ],
+                "filter_mode": "AND",
+                "select_fields": [
+                  "id",
+                  "accession",
+                  "brain_region",
+                  "collected_at",
+                  "donor",
+                  "is_available",
+                  "name",
+                  "replicate_number",
+                  "sample_type",
+                  "storage_condition",
+                  "tags"
+                ],
+                "forward_relation": null,
+                "limit": 100
+              }
+            ]
+          },
+          "raw_content": "",
+          "usage": {
+            "completion_tokens": 130,
+            "prompt_tokens": 2000,
+            "total_tokens": 2130,
+            "completion_tokens_details": "CompletionTokensDetailsWrapper(accepted_prediction_tokens=None, audio_tokens=None, reasoning_tokens=0, rejected_prediction_tokens=None, text_tokens=130, image_tokens=None, video_tokens=None)",
+            "prompt_tokens_details": "PromptTokensDetailsWrapper(audio_tokens=None, cache_write_tokens=0, cached_tokens=0, text_tokens=2000, image_tokens=None, video_tokens=None, cache_creation_tokens=0)",
+            "cache_creation_input_tokens": 0,
+            "cache_read_input_tokens": 0
+          },
+          "latency_s": 2.012754915980622
+        },
+        {
+          "case_id": "q18",
+          "sample_index": 2,
+          "outcome": "plan_invalid",
+          "detail": "step 0: Sample.donor is a reference field and cannot appear in select_fields directly (it has no scalar value to return) -- use forward_relation to select fields on it",
+          "plan_json": {
+            "steps": [
+              {
+                "step_type": "filter",
+                "entity": "Sample",
+                "filters": [
+                  {
+                    "field": "id",
+                    "value": "SMPL-0001",
+                    "op": "EQ"
+                  }
+                ],
+                "filter_mode": "AND",
+                "select_fields": [
+                  "id",
+                  "accession",
+                  "brain_region",
+                  "collected_at",
+                  "donor",
+                  "is_available",
+                  "name",
+                  "replicate_number",
+                  "sample_type",
+                  "storage_condition",
+                  "tags"
+                ],
+                "forward_relation": null,
+                "limit": 100
+              }
+            ]
+          },
+          "raw_content": "",
+          "usage": {
+            "completion_tokens": 130,
+            "prompt_tokens": 2000,
+            "total_tokens": 2130,
+            "completion_tokens_details": "CompletionTokensDetailsWrapper(accepted_prediction_tokens=None, audio_tokens=None, reasoning_tokens=0, rejected_prediction_tokens=None, text_tokens=130, image_tokens=None, video_tokens=None)",
+            "prompt_tokens_details": "PromptTokensDetailsWrapper(audio_tokens=None, cache_write_tokens=0, cached_tokens=0, text_tokens=2000, image_tokens=None, video_tokens=None, cache_creation_tokens=0)",
+            "cache_creation_input_tokens": 0,
+            "cache_read_input_tokens": 0
+          },
+          "latency_s": 1.8992661249358207
+        }
+      ]
+    },
+    {
+      "case_id": "q19",
+      "split": "train",
+      "capability": "traversal",
+      "pass_rate": 0.0,
+      "strict_pass": false,
+      "is_flaky": false,
+      "outcome_counts": {
+        "plan_invalid": 3
+      },
+      "samples": [
+        {
+          "case_id": "q19",
+          "sample_index": 0,
+          "outcome": "plan_invalid",
+          "detail": "step 0: Sample.donor is a reference field and cannot appear in select_fields directly (it has no scalar value to return) -- use forward_relation to select fields on it",
+          "plan_json": {
+            "steps": [
+              {
+                "step_type": "filter",
+                "entity": "Sample",
+                "filters": [
+                  {
+                    "field": "id",
+                    "value": "SMPL-0001",
+                    "op": "EQ"
+                  }
+                ],
+                "filter_mode": "AND",
+                "select_fields": [
+                  "id",
+                  "donor"
+                ],
+                "forward_relation": {
+                  "field": "donor",
+                  "select_fields": [
+                    "id",
+                    "age_at_death",
+                    "cause_of_death",
+                    "cohort",
+                    "history_of_rhi",
+                    "name",
+                    "notes",
+                    "sex",
+                    "is_available"
+                  ]
+                },
+                "limit": 100
+              }
+            ]
+          },
+          "raw_content": "",
+          "usage": {
+            "completion_tokens": 186,
+            "prompt_tokens": 2006,
+            "total_tokens": 2192,
+            "completion_tokens_details": "CompletionTokensDetailsWrapper(accepted_prediction_tokens=None, audio_tokens=None, reasoning_tokens=0, rejected_prediction_tokens=None, text_tokens=186, image_tokens=None, video_tokens=None)",
+            "prompt_tokens_details": "PromptTokensDetailsWrapper(audio_tokens=None, cache_write_tokens=0, cached_tokens=0, text_tokens=2006, image_tokens=None, video_tokens=None, cache_creation_tokens=0)",
+            "cache_creation_input_tokens": 0,
+            "cache_read_input_tokens": 0
+          },
+          "latency_s": 1.9700694580096751
+        },
+        {
+          "case_id": "q19",
+          "sample_index": 1,
+          "outcome": "plan_invalid",
+          "detail": "step 0: Sample.donor is a reference field and cannot appear in select_fields directly (it has no scalar value to return) -- use forward_relation to select fields on it",
+          "plan_json": {
+            "steps": [
+              {
+                "step_type": "filter",
+                "entity": "Sample",
+                "filters": [
+                  {
+                    "field": "id",
+                    "value": "SMPL-0001",
+                    "op": "EQ"
+                  }
+                ],
+                "filter_mode": "AND",
+                "select_fields": [
+                  "id",
+                  "donor"
+                ],
+                "forward_relation": {
+                  "field": "donor",
+                  "select_fields": [
+                    "id",
+                    "age_at_death",
+                    "cause_of_death",
+                    "cohort",
+                    "history_of_rhi",
+                    "name",
+                    "notes",
+                    "sex",
+                    "is_available"
+                  ]
+                },
+                "limit": 100
+              }
+            ]
+          },
+          "raw_content": "",
+          "usage": {
+            "completion_tokens": 186,
+            "prompt_tokens": 2006,
+            "total_tokens": 2192,
+            "completion_tokens_details": "CompletionTokensDetailsWrapper(accepted_prediction_tokens=None, audio_tokens=None, reasoning_tokens=0, rejected_prediction_tokens=None, text_tokens=186, image_tokens=None, video_tokens=None)",
+            "prompt_tokens_details": "PromptTokensDetailsWrapper(audio_tokens=None, cache_write_tokens=0, cached_tokens=0, text_tokens=2006, image_tokens=None, video_tokens=None, cache_creation_tokens=0)",
+            "cache_creation_input_tokens": 0,
+            "cache_read_input_tokens": 0
+          },
+          "latency_s": 1.8954700840404257
+        },
+        {
+          "case_id": "q19",
+          "sample_index": 2,
+          "outcome": "plan_invalid",
+          "detail": "step 0: Sample.donor is a reference field and cannot appear in select_fields directly (it has no scalar value to return) -- use forward_relation to select fields on it",
+          "plan_json": {
+            "steps": [
+              {
+                "step_type": "filter",
+                "entity": "Sample",
+                "filters": [
+                  {
+                    "field": "id",
+                    "value": "SMPL-0001",
+                    "op": "EQ"
+                  }
+                ],
+                "filter_mode": "AND",
+                "select_fields": [
+                  "id",
+                  "donor"
+                ],
+                "forward_relation": {
+                  "field": "donor",
+                  "select_fields": [
+                    "id",
+                    "age_at_death",
+                    "cause_of_death",
+                    "cohort",
+                    "history_of_rhi",
+                    "name",
+                    "notes",
+                    "sex",
+                    "is_available"
+                  ]
+                },
+                "limit": 100
+              }
+            ]
+          },
+          "raw_content": "",
+          "usage": {
+            "completion_tokens": 186,
+            "prompt_tokens": 2006,
+            "total_tokens": 2192,
+            "completion_tokens_details": "CompletionTokensDetailsWrapper(accepted_prediction_tokens=None, audio_tokens=None, reasoning_tokens=0, rejected_prediction_tokens=None, text_tokens=186, image_tokens=None, video_tokens=None)",
+            "prompt_tokens_details": "PromptTokensDetailsWrapper(audio_tokens=None, cache_write_tokens=0, cached_tokens=0, text_tokens=2006, image_tokens=None, video_tokens=None, cache_creation_tokens=0)",
+            "cache_creation_input_tokens": 0,
+            "cache_read_input_tokens": 0
+          },
+          "latency_s": 2.228330875048414
+        }
+      ]
+    },
+    {
+      "case_id": "q21",
+      "split": "train",
+      "capability": "traversal",
+      "pass_rate": 0.0,
+      "strict_pass": false,
+      "is_flaky": false,
+      "outcome_counts": {
+        "plan_unfaithful": 3
+      },
+      "samples": [
+        {
+          "case_id": "q21",
+          "sample_index": 0,
+          "outcome": "plan_unfaithful",
+          "detail": "step 0: queries 'Donor' but the question is about 'Sample'",
+          "plan_json": {
+            "steps": [
+              {
+                "step_type": "filter",
+                "entity": "Donor",
+                "filters": [
+                  {
+                    "field": "id",
+                    "value": "DNR-0068",
+                    "op": "EQ"
+                  }
+                ],
+                "filter_mode": "AND",
+                "select_fields": [
+                  "id"
+                ],
+                "forward_relation": null,
+                "limit": 100
+              },
+              {
+                "step_type": "related_lookup",
+                "source_step": 0,
+                "relationship_type": "donor",
+                "client_filter": null
+              }
+            ]
+          },
+          "raw_content": "",
+          "usage": {
+            "completion_tokens": 185,
+            "prompt_tokens": 1999,
+            "total_tokens": 2184,
+            "completion_tokens_details": "CompletionTokensDetailsWrapper(accepted_prediction_tokens=None, audio_tokens=None, reasoning_tokens=0, rejected_prediction_tokens=None, text_tokens=185, image_tokens=None, video_tokens=None)",
+            "prompt_tokens_details": "PromptTokensDetailsWrapper(audio_tokens=None, cache_write_tokens=0, cached_tokens=0, text_tokens=1999, image_tokens=None, video_tokens=None, cache_creation_tokens=0)",
+            "cache_creation_input_tokens": 0,
+            "cache_read_input_tokens": 0
+          },
+          "latency_s": 2.0755184160079807
+        },
+        {
+          "case_id": "q21",
+          "sample_index": 1,
+          "outcome": "plan_unfaithful",
+          "detail": "step 0: queries 'Donor' but the question is about 'Sample'",
+          "plan_json": {
+            "steps": [
+              {
+                "step_type": "filter",
+                "entity": "Donor",
+                "filters": [
+                  {
+                    "field": "id",
+                    "value": "DNR-0068",
+                    "op": "EQ"
+                  }
+                ],
+                "filter_mode": "AND",
+                "select_fields": [
+                  "id"
+                ],
+                "forward_relation": null,
+                "limit": 100
+              },
+              {
+                "step_type": "related_lookup",
+                "source_step": 0,
+                "relationship_type": "donor",
+                "client_filter": null
+              }
+            ]
+          },
+          "raw_content": "",
+          "usage": {
+            "completion_tokens": 185,
+            "prompt_tokens": 1999,
+            "total_tokens": 2184,
+            "completion_tokens_details": "CompletionTokensDetailsWrapper(accepted_prediction_tokens=None, audio_tokens=None, reasoning_tokens=0, rejected_prediction_tokens=None, text_tokens=185, image_tokens=None, video_tokens=None)",
+            "prompt_tokens_details": "PromptTokensDetailsWrapper(audio_tokens=None, cache_write_tokens=0, cached_tokens=0, text_tokens=1999, image_tokens=None, video_tokens=None, cache_creation_tokens=0)",
+            "cache_creation_input_tokens": 0,
+            "cache_read_input_tokens": 0
+          },
+          "latency_s": 1.9299463341012597
+        },
+        {
+          "case_id": "q21",
+          "sample_index": 2,
+          "outcome": "plan_unfaithful",
+          "detail": "step 0: queries 'Donor' but the question is about 'Sample'",
+          "plan_json": {
+            "steps": [
+              {
+                "step_type": "filter",
+                "entity": "Donor",
+                "filters": [
+                  {
+                    "field": "id",
+                    "value": "DNR-0068",
+                    "op": "EQ"
+                  }
+                ],
+                "filter_mode": "AND",
+                "select_fields": [
+                  "id"
+                ],
+                "forward_relation": null,
+                "limit": 100
+              },
+              {
+                "step_type": "related_lookup",
+                "source_step": 0,
+                "relationship_type": "donor",
+                "client_filter": null
+              }
+            ]
+          },
+          "raw_content": "",
+          "usage": {
+            "completion_tokens": 185,
+            "prompt_tokens": 1999,
+            "total_tokens": 2184,
+            "completion_tokens_details": "CompletionTokensDetailsWrapper(accepted_prediction_tokens=None, audio_tokens=None, reasoning_tokens=0, rejected_prediction_tokens=None, text_tokens=185, image_tokens=None, video_tokens=None)",
+            "prompt_tokens_details": "PromptTokensDetailsWrapper(audio_tokens=None, cache_write_tokens=0, cached_tokens=0, text_tokens=1999, image_tokens=None, video_tokens=None, cache_creation_tokens=0)",
+            "cache_creation_input_tokens": 0,
+            "cache_read_input_tokens": 0
+          },
+          "latency_s": 2.0065595830092207
+        }
+      ]
+    },
+    {
+      "case_id": "q22",
+      "split": "holdout",
+      "capability": "traversal",
+      "pass_rate": 0.0,
+      "strict_pass": false,
+      "is_flaky": false,
+      "outcome_counts": {
+        "plan_unfaithful": 3
+      },
+      "samples": [
+        {
+          "case_id": "q22",
+          "sample_index": 0,
+          "outcome": "plan_unfaithful",
+          "detail": "step 0: queries 'Workflow' but the question is about 'Dataset'",
+          "plan_json": {
+            "steps": [
+              {
+                "step_type": "filter",
+                "entity": "Workflow",
+                "filters": [
+                  {
+                    "field": "id",
+                    "value": "WRKF-0245",
+                    "op": "EQ"
+                  }
+                ],
+                "filter_mode": "AND",
+                "select_fields": [
+                  "id"
+                ],
+                "forward_relation": null,
+                "limit": 100
+              },
+              {
+                "step_type": "filter",
+                "entity": "Dataset",
+                "filters": [
+                  {
+                    "field": "produced_by",
+                    "value": "WRKF-0245",
+                    "op": "EQ"
+                  }
+                ],
+                "filter_mode": "AND",
+                "select_fields": [
+                  "id",
+                  "name",
+                  "dataset_type",
+                  "description",
+                  "file_size_bytes",
+                  "access_level",
+                  "is_public",
+                  "is_available"
+                ],
+                "forward_relation": null,
+                "limit": 100
+              }
+            ]
+          },
+          "raw_content": "",
+          "usage": {
+            "completion_tokens": 231,
+            "prompt_tokens": 2001,
+            "total_tokens": 2232,
+            "completion_tokens_details": "CompletionTokensDetailsWrapper(accepted_prediction_tokens=None, audio_tokens=None, reasoning_tokens=0, rejected_prediction_tokens=None, text_tokens=231, image_tokens=None, video_tokens=None)",
+            "prompt_tokens_details": "PromptTokensDetailsWrapper(audio_tokens=None, cache_write_tokens=0, cached_tokens=0, text_tokens=2001, image_tokens=None, video_tokens=None, cache_creation_tokens=0)",
+            "cache_creation_input_tokens": 0,
+            "cache_read_input_tokens": 0
+          },
+          "latency_s": 2.3697263329522684
+        },
+        {
+          "case_id": "q22",
+          "sample_index": 1,
+          "outcome": "plan_unfaithful",
+          "detail": "step 0: queries 'Workflow' but the question is about 'Dataset'",
+          "plan_json": {
+            "steps": [
+              {
+                "step_type": "filter",
+                "entity": "Workflow",
+                "filters": [
+                  {
+                    "field": "id",
+                    "value": "WRKF-0245",
+                    "op": "EQ"
+                  }
+                ],
+                "filter_mode": "AND",
+                "select_fields": [
+                  "id"
+                ],
+                "forward_relation": null,
+                "limit": 100
+              },
+              {
+                "step_type": "filter",
+                "entity": "Dataset",
+                "filters": [
+                  {
+                    "field": "produced_by",
+                    "value": "WRKF-0245",
+                    "op": "EQ"
+                  }
+                ],
+                "filter_mode": "AND",
+                "select_fields": [
+                  "id",
+                  "name",
+                  "dataset_type",
+                  "description",
+                  "file_size_bytes",
+                  "access_level",
+                  "is_public",
+                  "is_available"
+                ],
+                "forward_relation": null,
+                "limit": 100
+              }
+            ]
+          },
+          "raw_content": "",
+          "usage": {
+            "completion_tokens": 231,
+            "prompt_tokens": 2001,
+            "total_tokens": 2232,
+            "completion_tokens_details": "CompletionTokensDetailsWrapper(accepted_prediction_tokens=None, audio_tokens=None, reasoning_tokens=0, rejected_prediction_tokens=None, text_tokens=231, image_tokens=None, video_tokens=None)",
+            "prompt_tokens_details": "PromptTokensDetailsWrapper(audio_tokens=None, cache_write_tokens=0, cached_tokens=0, text_tokens=2001, image_tokens=None, video_tokens=None, cache_creation_tokens=0)",
+            "cache_creation_input_tokens": 0,
+            "cache_read_input_tokens": 0
+          },
+          "latency_s": 2.1903963750228286
+        },
+        {
+          "case_id": "q22",
+          "sample_index": 2,
+          "outcome": "plan_unfaithful",
+          "detail": "step 0: queries 'Workflow' but the question is about 'Dataset'",
+          "plan_json": {
+            "steps": [
+              {
+                "step_type": "filter",
+                "entity": "Workflow",
+                "filters": [
+                  {
+                    "field": "id",
+                    "value": "WRKF-0245",
+                    "op": "EQ"
+                  }
+                ],
+                "filter_mode": "AND",
+                "select_fields": [
+                  "id"
+                ],
+                "forward_relation": null,
+                "limit": 100
+              },
+              {
+                "step_type": "filter",
+                "entity": "Dataset",
+                "filters": [
+                  {
+                    "field": "produced_by",
+                    "value": "WRKF-0245",
+                    "op": "EQ"
+                  }
+                ],
+                "filter_mode": "AND",
+                "select_fields": [
+                  "id",
+                  "name",
+                  "dataset_type",
+                  "description",
+                  "file_size_bytes",
+                  "access_level",
+                  "is_public",
+                  "is_available"
+                ],
+                "forward_relation": null,
+                "limit": 100
+              }
+            ]
+          },
+          "raw_content": "",
+          "usage": {
+            "completion_tokens": 231,
+            "prompt_tokens": 2001,
+            "total_tokens": 2232,
+            "completion_tokens_details": "CompletionTokensDetailsWrapper(accepted_prediction_tokens=None, audio_tokens=None, reasoning_tokens=0, rejected_prediction_tokens=None, text_tokens=231, image_tokens=None, video_tokens=None)",
+            "prompt_tokens_details": "PromptTokensDetailsWrapper(audio_tokens=None, cache_write_tokens=0, cached_tokens=0, text_tokens=2001, image_tokens=None, video_tokens=None, cache_creation_tokens=0)",
+            "cache_creation_input_tokens": 0,
+            "cache_read_input_tokens": 0
+          },
+          "latency_s": 2.1696093340869993
+        }
+      ]
+    },
+    {
+      "case_id": "q23",
+      "split": "holdout",
+      "capability": "traversal",
+      "pass_rate": 0.0,
+      "strict_pass": false,
+      "is_flaky": false,
+      "outcome_counts": {
+        "plan_invalid": 3
+      },
+      "samples": [
+        {
+          "case_id": "q23",
+          "sample_index": 0,
+          "outcome": "plan_invalid",
+          "detail": "step 0: Dataset.produced_by is a reference field and cannot appear in select_fields directly (it has no scalar value to return) -- use forward_relation to select fields on it",
+          "plan_json": {
+            "steps": [
+              {
+                "step_type": "filter",
+                "entity": "Dataset",
+                "filters": [
+                  {
+                    "field": "id",
+                    "value": "DTST-0001",
+                    "op": "EQ"
+                  }
+                ],
+                "filter_mode": "AND",
+                "select_fields": [
+                  "id",
+                  "produced_by"
+                ],
+                "forward_relation": null,
+                "limit": 100
+              },
+              {
+                "step_type": "filter",
+                "entity": "Workflow",
+                "filters": [
+                  {
+                    "field": "id",
+                    "value": [
+                      "<produced_by_from_step_0>"
+                    ],
+                    "op": "IN"
+                  }
+                ],
+                "filter_mode": "AND",
+                "select_fields": [
+                  "id",
+                  "input_samples"
+                ],
+                "forward_relation": null,
+                "limit": 100
+              },
+              {
+                "step_type": "related_lookup",
+                "source_step": 1,
+                "relationship_type": "input_samples",
+                "client_filter": null
+              },
+              {
+                "step_type": "filter",
+                "entity": "Donor",
+                "filters": [
+                  {
+                    "field": "id",
+                    "value": [
+                      "<donor_from_step_2>"
+                    ],
+                    "op": "IN"
+                  }
+                ],
+                "filter_mode": "AND",
+                "select_fields": [
+                  "id",
+                  "name",
+                  "cohort",
+                  "sex"
+                ],
+                "forward_relation": null,
+                "limit": 100
+              }
+            ]
+          },
+          "raw_content": "",
+          "usage": {
+            "completion_tokens": 353,
+            "prompt_tokens": 2020,
+            "total_tokens": 2373,
+            "completion_tokens_details": "CompletionTokensDetailsWrapper(accepted_prediction_tokens=None, audio_tokens=None, reasoning_tokens=0, rejected_prediction_tokens=None, text_tokens=353, image_tokens=None, video_tokens=None)",
+            "prompt_tokens_details": "PromptTokensDetailsWrapper(audio_tokens=None, cache_write_tokens=0, cached_tokens=0, text_tokens=2020, image_tokens=None, video_tokens=None, cache_creation_tokens=0)",
+            "cache_creation_input_tokens": 0,
+            "cache_read_input_tokens": 0
+          },
+          "latency_s": 2.4899040840100497
+        },
+        {
+          "case_id": "q23",
+          "sample_index": 1,
+          "outcome": "plan_invalid",
+          "detail": "step 0: Dataset.produced_by is a reference field and cannot appear in select_fields directly (it has no scalar value to return) -- use forward_relation to select fields on it",
+          "plan_json": {
+            "steps": [
+              {
+                "step_type": "filter",
+                "entity": "Dataset",
+                "filters": [
+                  {
+                    "field": "id",
+                    "value": "DTST-0001",
+                    "op": "EQ"
+                  }
+                ],
+                "filter_mode": "AND",
+                "select_fields": [
+                  "id",
+                  "produced_by"
+                ],
+                "forward_relation": null,
+                "limit": 100
+              },
+              {
+                "step_type": "filter",
+                "entity": "Workflow",
+                "filters": [
+                  {
+                    "field": "id",
+                    "value": [
+                      "<produced_by_from_step_0>"
+                    ],
+                    "op": "IN"
+                  }
+                ],
+                "filter_mode": "AND",
+                "select_fields": [
+                  "id",
+                  "input_samples"
+                ],
+                "forward_relation": null,
+                "limit": 100
+              },
+              {
+                "step_type": "related_lookup",
+                "source_step": 1,
+                "relationship_type": "input_samples",
+                "client_filter": null
+              },
+              {
+                "step_type": "filter",
+                "entity": "Donor",
+                "filters": [
+                  {
+                    "field": "id",
+                    "value": [
+                      "<donor_from_step_2>"
+                    ],
+                    "op": "IN"
+                  }
+                ],
+                "filter_mode": "AND",
+                "select_fields": [
+                  "id",
+                  "name",
+                  "cohort",
+                  "sex"
+                ],
+                "forward_relation": null,
+                "limit": 100
+              }
+            ]
+          },
+          "raw_content": "",
+          "usage": {
+            "completion_tokens": 353,
+            "prompt_tokens": 2020,
+            "total_tokens": 2373,
+            "completion_tokens_details": "CompletionTokensDetailsWrapper(accepted_prediction_tokens=None, audio_tokens=None, reasoning_tokens=0, rejected_prediction_tokens=None, text_tokens=353, image_tokens=None, video_tokens=None)",
+            "prompt_tokens_details": "PromptTokensDetailsWrapper(audio_tokens=None, cache_write_tokens=0, cached_tokens=0, text_tokens=2020, image_tokens=None, video_tokens=None, cache_creation_tokens=0)",
+            "cache_creation_input_tokens": 0,
+            "cache_read_input_tokens": 0
+          },
+          "latency_s": 2.8327993750572205
+        },
+        {
+          "case_id": "q23",
+          "sample_index": 2,
+          "outcome": "plan_invalid",
+          "detail": "step 0: Dataset.produced_by is a reference field and cannot appear in select_fields directly (it has no scalar value to return) -- use forward_relation to select fields on it",
+          "plan_json": {
+            "steps": [
+              {
+                "step_type": "filter",
+                "entity": "Dataset",
+                "filters": [
+                  {
+                    "field": "id",
+                    "value": "DTST-0001",
+                    "op": "EQ"
+                  }
+                ],
+                "filter_mode": "AND",
+                "select_fields": [
+                  "id",
+                  "produced_by"
+                ],
+                "forward_relation": null,
+                "limit": 100
+              },
+              {
+                "step_type": "filter",
+                "entity": "Workflow",
+                "filters": [
+                  {
+                    "field": "id",
+                    "value": [
+                      "<produced_by_from_step_0>"
+                    ],
+                    "op": "IN"
+                  }
+                ],
+                "filter_mode": "AND",
+                "select_fields": [
+                  "id",
+                  "input_samples"
+                ],
+                "forward_relation": null,
+                "limit": 100
+              },
+              {
+                "step_type": "related_lookup",
+                "source_step": 1,
+                "relationship_type": "input_samples",
+                "client_filter": null
+              },
+              {
+                "step_type": "filter",
+                "entity": "Donor",
+                "filters": [
+                  {
+                    "field": "id",
+                    "value": [
+                      "<donor_from_step_2>"
+                    ],
+                    "op": "IN"
+                  }
+                ],
+                "filter_mode": "AND",
+                "select_fields": [
+                  "id",
+                  "name",
+                  "cohort",
+                  "sex"
+                ],
+                "forward_relation": null,
+                "limit": 100
+              }
+            ]
+          },
+          "raw_content": "",
+          "usage": {
+            "completion_tokens": 353,
+            "prompt_tokens": 2020,
+            "total_tokens": 2373,
+            "completion_tokens_details": "CompletionTokensDetailsWrapper(accepted_prediction_tokens=None, audio_tokens=None, reasoning_tokens=0, rejected_prediction_tokens=None, text_tokens=353, image_tokens=None, video_tokens=None)",
+            "prompt_tokens_details": "PromptTokensDetailsWrapper(audio_tokens=None, cache_write_tokens=0, cached_tokens=0, text_tokens=2020, image_tokens=None, video_tokens=None, cache_creation_tokens=0)",
+            "cache_creation_input_tokens": 0,
+            "cache_read_input_tokens": 0
+          },
+          "latency_s": 2.2210960410302505
+        }
+      ]
+    },
+    {
+      "case_id": "q24",
+      "split": "train",
+      "capability": "traversal",
+      "pass_rate": 0.0,
+      "strict_pass": false,
+      "is_flaky": false,
+      "outcome_counts": {
+        "plan_unfaithful": 3
+      },
+      "samples": [
+        {
+          "case_id": "q24",
+          "sample_index": 0,
+          "outcome": "plan_unfaithful",
+          "detail": "step 0: queries 'Donor' but the question is about 'Sample'",
+          "plan_json": {
+            "steps": [
+              {
+                "step_type": "filter",
+                "entity": "Donor",
+                "filters": [],
+                "filter_mode": "AND",
+                "select_fields": [
+                  "id",
+                  "name"
+                ],
+                "forward_relation": null,
+                "limit": 100
+              },
+              {
+                "step_type": "related_lookup",
+                "source_step": 0,
+                "relationship_type": "donor",
+                "client_filter": null
+              },
+              {
+                "step_type": "related_lookup",
+                "source_step": 1,
+                "relationship_type": "input_samples",
+                "client_filter": null
+              },
+              {
+                "step_type": "related_lookup",
+                "source_step": 2,
+                "relationship_type": "produced_by",
+                "client_filter": null
+              }
+            ]
+          },
+          "raw_content": "",
+          "usage": {
+            "completion_tokens": 260,
+            "prompt_tokens": 2005,
+            "total_tokens": 2265,
+            "completion_tokens_details": "CompletionTokensDetailsWrapper(accepted_prediction_tokens=None, audio_tokens=None, reasoning_tokens=0, rejected_prediction_tokens=None, text_tokens=260, image_tokens=None, video_tokens=None)",
+            "prompt_tokens_details": "PromptTokensDetailsWrapper(audio_tokens=None, cache_write_tokens=0, cached_tokens=0, text_tokens=2005, image_tokens=None, video_tokens=None, cache_creation_tokens=0)",
+            "cache_creation_input_tokens": 0,
+            "cache_read_input_tokens": 0
+          },
+          "latency_s": 1.827675333013758
+        },
+        {
+          "case_id": "q24",
+          "sample_index": 1,
+          "outcome": "plan_unfaithful",
+          "detail": "step 0: queries 'Donor' but the question is about 'Sample'",
+          "plan_json": {
+            "steps": [
+              {
+                "step_type": "filter",
+                "entity": "Donor",
+                "filters": [],
+                "filter_mode": "AND",
+                "select_fields": [
+                  "id",
+                  "name"
+                ],
+                "forward_relation": null,
+                "limit": 100
+              },
+              {
+                "step_type": "related_lookup",
+                "source_step": 0,
+                "relationship_type": "donor",
+                "client_filter": null
+              },
+              {
+                "step_type": "related_lookup",
+                "source_step": 1,
+                "relationship_type": "input_samples",
+                "client_filter": null
+              },
+              {
+                "step_type": "related_lookup",
+                "source_step": 2,
+                "relationship_type": "produced_by",
+                "client_filter": null
+              }
+            ]
+          },
+          "raw_content": "",
+          "usage": {
+            "completion_tokens": 260,
+            "prompt_tokens": 2005,
+            "total_tokens": 2265,
+            "completion_tokens_details": "CompletionTokensDetailsWrapper(accepted_prediction_tokens=None, audio_tokens=None, reasoning_tokens=0, rejected_prediction_tokens=None, text_tokens=260, image_tokens=None, video_tokens=None)",
+            "prompt_tokens_details": "PromptTokensDetailsWrapper(audio_tokens=None, cache_write_tokens=0, cached_tokens=0, text_tokens=2005, image_tokens=None, video_tokens=None, cache_creation_tokens=0)",
+            "cache_creation_input_tokens": 0,
+            "cache_read_input_tokens": 0
+          },
+          "latency_s": 2.23018129193224
+        },
+        {
+          "case_id": "q24",
+          "sample_index": 2,
+          "outcome": "plan_unfaithful",
+          "detail": "step 0: queries 'Donor' but the question is about 'Sample'",
+          "plan_json": {
+            "steps": [
+              {
+                "step_type": "filter",
+                "entity": "Donor",
+                "filters": [],
+                "filter_mode": "AND",
+                "select_fields": [
+                  "id",
+                  "name"
+                ],
+                "forward_relation": null,
+                "limit": 100
+              },
+              {
+                "step_type": "related_lookup",
+                "source_step": 0,
+                "relationship_type": "donor",
+                "client_filter": null
+              },
+              {
+                "step_type": "related_lookup",
+                "source_step": 1,
+                "relationship_type": "input_samples",
+                "client_filter": null
+              },
+              {
+                "step_type": "related_lookup",
+                "source_step": 2,
+                "relationship_type": "produced_by",
+                "client_filter": null
+              }
+            ]
+          },
+          "raw_content": "",
+          "usage": {
+            "completion_tokens": 260,
+            "prompt_tokens": 2005,
+            "total_tokens": 2265,
+            "completion_tokens_details": "CompletionTokensDetailsWrapper(accepted_prediction_tokens=None, audio_tokens=None, reasoning_tokens=0, rejected_prediction_tokens=None, text_tokens=260, image_tokens=None, video_tokens=None)",
+            "prompt_tokens_details": "PromptTokensDetailsWrapper(audio_tokens=None, cache_write_tokens=0, cached_tokens=0, text_tokens=2005, image_tokens=None, video_tokens=None, cache_creation_tokens=0)",
+            "cache_creation_input_tokens": 0,
+            "cache_read_input_tokens": 0
+          },
+          "latency_s": 1.8790580000495538
+        }
+      ]
+    },
+    {
+      "case_id": "q35",
+      "split": "train",
+      "capability": "traversal",
+      "pass_rate": 0.0,
+      "strict_pass": false,
+      "is_flaky": false,
+      "outcome_counts": {
+        "plan_unfaithful": 3
+      },
+      "samples": [
+        {
+          "case_id": "q35",
+          "sample_index": 0,
+          "outcome": "plan_unfaithful",
+          "detail": "step 0: filter sample_type has value 'brain tissue' but the instruction says 'tissue'",
+          "plan_json": {
+            "steps": [
+              {
+                "step_type": "filter",
+                "entity": "Sample",
+                "filters": [
+                  {
+                    "field": "brain_region",
+                    "value": "hippocampus",
+                    "op": "EQ"
+                  },
+                  {
+                    "field": "sample_type",
+                    "value": "brain tissue",
+                    "op": "EQ"
+                  }
+                ],
+                "filter_mode": "AND",
+                "select_fields": [
+                  "id",
+                  "name",
+                  "accession",
+                  "brain_region",
+                  "sample_type",
+                  "collected_at",
+                  "storage_condition",
+                  "replicate_number",
+                  "tags"
+                ],
+                "forward_relation": {
+                  "field": "donor",
+                  "select_fields": [
+                    "id",
+                    "name",
+                    "cohort",
+                    "sex",
+                    "history_of_rhi"
+                  ]
+                },
+                "limit": 100
+              },
+              {
+                "step_type": "related_lookup",
+                "source_step": 0,
+                "relationship_type": "input_samples",
+                "client_filter": {
+                  "field": "workflow_type",
+                  "value": "rnaSeq",
+                  "op": "EQ"
+                }
+              }
+            ]
+          },
+          "raw_content": "",
+          "usage": {
+            "completion_tokens": 329,
+            "prompt_tokens": 2036,
+            "total_tokens": 2365,
+            "completion_tokens_details": "CompletionTokensDetailsWrapper(accepted_prediction_tokens=None, audio_tokens=None, reasoning_tokens=0, rejected_prediction_tokens=None, text_tokens=329, image_tokens=None, video_tokens=None)",
+            "prompt_tokens_details": "PromptTokensDetailsWrapper(audio_tokens=None, cache_write_tokens=0, cached_tokens=0, text_tokens=2036, image_tokens=None, video_tokens=None, cache_creation_tokens=0)",
+            "cache_creation_input_tokens": 0,
+            "cache_read_input_tokens": 0
+          },
+          "latency_s": 2.813460041070357
+        },
+        {
+          "case_id": "q35",
+          "sample_index": 1,
+          "outcome": "plan_unfaithful",
+          "detail": "step 0: filter sample_type has value 'brain tissue' but the instruction says 'tissue'",
+          "plan_json": {
+            "steps": [
+              {
+                "step_type": "filter",
+                "entity": "Sample",
+                "filters": [
+                  {
+                    "field": "brain_region",
+                    "value": "hippocampus",
+                    "op": "EQ"
+                  },
+                  {
+                    "field": "sample_type",
+                    "value": "brain tissue",
+                    "op": "EQ"
+                  }
+                ],
+                "filter_mode": "AND",
+                "select_fields": [
+                  "id",
+                  "name",
+                  "accession",
+                  "brain_region",
+                  "sample_type",
+                  "collected_at",
+                  "storage_condition",
+                  "replicate_number",
+                  "tags"
+                ],
+                "forward_relation": {
+                  "field": "donor",
+                  "select_fields": [
+                    "id",
+                    "name",
+                    "cohort",
+                    "sex",
+                    "history_of_rhi"
+                  ]
+                },
+                "limit": 100
+              },
+              {
+                "step_type": "related_lookup",
+                "source_step": 0,
+                "relationship_type": "input_samples",
+                "client_filter": {
+                  "field": "workflow_type",
+                  "value": "rnaSeq",
+                  "op": "EQ"
+                }
+              }
+            ]
+          },
+          "raw_content": "",
+          "usage": {
+            "completion_tokens": 329,
+            "prompt_tokens": 2036,
+            "total_tokens": 2365,
+            "completion_tokens_details": "CompletionTokensDetailsWrapper(accepted_prediction_tokens=None, audio_tokens=None, reasoning_tokens=0, rejected_prediction_tokens=None, text_tokens=329, image_tokens=None, video_tokens=None)",
+            "prompt_tokens_details": "PromptTokensDetailsWrapper(audio_tokens=None, cache_write_tokens=0, cached_tokens=0, text_tokens=2036, image_tokens=None, video_tokens=None, cache_creation_tokens=0)",
+            "cache_creation_input_tokens": 0,
+            "cache_read_input_tokens": 0
+          },
+          "latency_s": 2.872786374995485
+        },
+        {
+          "case_id": "q35",
+          "sample_index": 2,
+          "outcome": "plan_unfaithful",
+          "detail": "step 0: filter sample_type has value 'brain tissue' but the instruction says 'tissue'",
+          "plan_json": {
+            "steps": [
+              {
+                "step_type": "filter",
+                "entity": "Sample",
+                "filters": [
+                  {
+                    "field": "brain_region",
+                    "value": "hippocampus",
+                    "op": "EQ"
+                  },
+                  {
+                    "field": "sample_type",
+                    "value": "brain tissue",
+                    "op": "EQ"
+                  }
+                ],
+                "filter_mode": "AND",
+                "select_fields": [
+                  "id",
+                  "name",
+                  "accession",
+                  "brain_region",
+                  "sample_type",
+                  "collected_at",
+                  "storage_condition",
+                  "replicate_number",
+                  "tags"
+                ],
+                "forward_relation": {
+                  "field": "donor",
+                  "select_fields": [
+                    "id",
+                    "name",
+                    "cohort",
+                    "sex",
+                    "history_of_rhi"
+                  ]
+                },
+                "limit": 100
+              },
+              {
+                "step_type": "related_lookup",
+                "source_step": 0,
+                "relationship_type": "input_samples",
+                "client_filter": {
+                  "field": "workflow_type",
+                  "value": "rnaSeq",
+                  "op": "EQ"
+                }
+              }
+            ]
+          },
+          "raw_content": "",
+          "usage": {
+            "completion_tokens": 329,
+            "prompt_tokens": 2036,
+            "total_tokens": 2365,
+            "completion_tokens_details": "CompletionTokensDetailsWrapper(accepted_prediction_tokens=None, audio_tokens=None, reasoning_tokens=0, rejected_prediction_tokens=None, text_tokens=329, image_tokens=None, video_tokens=None)",
+            "prompt_tokens_details": "PromptTokensDetailsWrapper(audio_tokens=None, cache_write_tokens=0, cached_tokens=0, text_tokens=2036, image_tokens=None, video_tokens=None, cache_creation_tokens=0)",
+            "cache_creation_input_tokens": 0,
+            "cache_read_input_tokens": 0
+          },
+          "latency_s": 2.753769833012484
+        }
+      ]
+    },
+    {
+      "case_id": "q30",
+      "split": "train",
+      "capability": "provenance",
+      "pass_rate": 0.0,
+      "strict_pass": false,
+      "is_flaky": false,
+      "outcome_counts": {
+        "plan_unfaithful": 3
+      },
+      "samples": [
+        {
+          "case_id": "q30",
+          "sample_index": 0,
+          "outcome": "plan_unfaithful",
+          "detail": "step 0: missing required filter id='SMPL-0001' -- the instruction states this constraint and the plan drops it (present filters: ['accession'])",
+          "plan_json": {
+            "steps": [
+              {
+                "step_type": "filter",
+                "entity": "Sample",
+                "filters": [
+                  {
+                    "field": "accession",
+                    "value": "SMPL-0001",
+                    "op": "EQ"
+                  }
+                ],
+                "filter_mode": "AND",
+                "select_fields": [
+                  "id",
+                  "is_available"
+                ],
+                "forward_relation": null,
+                "limit": 100
+              }
+            ]
+          },
+          "raw_content": "",
+          "usage": {
+            "completion_tokens": 120,
+            "prompt_tokens": 2007,
+            "total_tokens": 2127,
+            "completion_tokens_details": "CompletionTokensDetailsWrapper(accepted_prediction_tokens=None, audio_tokens=None, reasoning_tokens=0, rejected_prediction_tokens=None, text_tokens=120, image_tokens=None, video_tokens=None)",
+            "prompt_tokens_details": "PromptTokensDetailsWrapper(audio_tokens=None, cache_write_tokens=0, cached_tokens=0, text_tokens=2007, image_tokens=None, video_tokens=None, cache_creation_tokens=0)",
+            "cache_creation_input_tokens": 0,
+            "cache_read_input_tokens": 0
+          },
+          "latency_s": 1.5964332919102162
+        },
+        {
+          "case_id": "q30",
+          "sample_index": 1,
+          "outcome": "plan_unfaithful",
+          "detail": "step 0: missing required filter id='SMPL-0001' -- the instruction states this constraint and the plan drops it (present filters: ['accession'])",
+          "plan_json": {
+            "steps": [
+              {
+                "step_type": "filter",
+                "entity": "Sample",
+                "filters": [
+                  {
+                    "field": "accession",
+                    "value": "SMPL-0001",
+                    "op": "EQ"
+                  }
+                ],
+                "filter_mode": "AND",
+                "select_fields": [
+                  "id",
+                  "is_available"
+                ],
+                "forward_relation": null,
+                "limit": 100
+              }
+            ]
+          },
+          "raw_content": "",
+          "usage": {
+            "completion_tokens": 120,
+            "prompt_tokens": 2007,
+            "total_tokens": 2127,
+            "completion_tokens_details": "CompletionTokensDetailsWrapper(accepted_prediction_tokens=None, audio_tokens=None, reasoning_tokens=0, rejected_prediction_tokens=None, text_tokens=120, image_tokens=None, video_tokens=None)",
+            "prompt_tokens_details": "PromptTokensDetailsWrapper(audio_tokens=None, cache_write_tokens=0, cached_tokens=0, text_tokens=2007, image_tokens=None, video_tokens=None, cache_creation_tokens=0)",
+            "cache_creation_input_tokens": 0,
+            "cache_read_input_tokens": 0
+          },
+          "latency_s": 1.6210077500436455
+        },
+        {
+          "case_id": "q30",
+          "sample_index": 2,
+          "outcome": "plan_unfaithful",
+          "detail": "step 0: missing required filter id='SMPL-0001' -- the instruction states this constraint and the plan drops it (present filters: ['accession'])",
+          "plan_json": {
+            "steps": [
+              {
+                "step_type": "filter",
+                "entity": "Sample",
+                "filters": [
+                  {
+                    "field": "accession",
+                    "value": "SMPL-0001",
+                    "op": "EQ"
+                  }
+                ],
+                "filter_mode": "AND",
+                "select_fields": [
+                  "id",
+                  "is_available"
+                ],
+                "forward_relation": null,
+                "limit": 100
+              }
+            ]
+          },
+          "raw_content": "",
+          "usage": {
+            "completion_tokens": 120,
+            "prompt_tokens": 2007,
+            "total_tokens": 2127,
+            "completion_tokens_details": "CompletionTokensDetailsWrapper(accepted_prediction_tokens=None, audio_tokens=None, reasoning_tokens=0, rejected_prediction_tokens=None, text_tokens=120, image_tokens=None, video_tokens=None)",
+            "prompt_tokens_details": "PromptTokensDetailsWrapper(audio_tokens=None, cache_write_tokens=0, cached_tokens=0, text_tokens=2007, image_tokens=None, video_tokens=None, cache_creation_tokens=0)",
+            "cache_creation_input_tokens": 0,
+            "cache_read_input_tokens": 0
+          },
+          "latency_s": 1.3042730420129374
+        }
+      ]
+    },
+    {
+      "case_id": "q31",
+      "split": "train",
+      "capability": "pagination",
+      "pass_rate": 1.0,
+      "strict_pass": true,
+      "is_flaky": false,
+      "outcome_counts": {
+        "pass": 3
+      },
+      "samples": [
+        {
+          "case_id": "q31",
+          "sample_index": 0,
+          "outcome": "pass",
+          "detail": "",
+          "plan_json": {
+            "steps": [
+              {
+                "step_type": "filter",
+                "entity": "Workflow",
+                "filters": [
+                  {
+                    "field": "status",
+                    "value": "completed",
+                    "op": "EQ"
+                  }
+                ],
+                "filter_mode": "AND",
+                "select_fields": [
+                  "id",
+                  "name",
+                  "status",
+                  "completed_at",
+                  "duration_hours",
+                  "workflow_type"
+                ],
+                "forward_relation": null,
+                "limit": 10000
+              }
+            ]
+          },
+          "raw_content": "",
+          "usage": {
+            "completion_tokens": 139,
+            "prompt_tokens": 2001,
+            "total_tokens": 2140,
+            "completion_tokens_details": "CompletionTokensDetailsWrapper(accepted_prediction_tokens=None, audio_tokens=None, reasoning_tokens=0, rejected_prediction_tokens=None, text_tokens=139, image_tokens=None, video_tokens=None)",
+            "prompt_tokens_details": "PromptTokensDetailsWrapper(audio_tokens=None, cache_write_tokens=0, cached_tokens=0, text_tokens=2001, image_tokens=None, video_tokens=None, cache_creation_tokens=0)",
+            "cache_creation_input_tokens": 0,
+            "cache_read_input_tokens": 0
+          },
+          "latency_s": 1.7747520830016583
+        },
+        {
+          "case_id": "q31",
+          "sample_index": 1,
+          "outcome": "pass",
+          "detail": "",
+          "plan_json": {
+            "steps": [
+              {
+                "step_type": "filter",
+                "entity": "Workflow",
+                "filters": [
+                  {
+                    "field": "status",
+                    "value": "completed",
+                    "op": "EQ"
+                  }
+                ],
+                "filter_mode": "AND",
+                "select_fields": [
+                  "id",
+                  "name",
+                  "status",
+                  "completed_at",
+                  "duration_hours",
+                  "workflow_type"
+                ],
+                "forward_relation": null,
+                "limit": 10000
+              }
+            ]
+          },
+          "raw_content": "",
+          "usage": {
+            "completion_tokens": 139,
+            "prompt_tokens": 2001,
+            "total_tokens": 2140,
+            "completion_tokens_details": "CompletionTokensDetailsWrapper(accepted_prediction_tokens=None, audio_tokens=None, reasoning_tokens=0, rejected_prediction_tokens=None, text_tokens=139, image_tokens=None, video_tokens=None)",
+            "prompt_tokens_details": "PromptTokensDetailsWrapper(audio_tokens=None, cache_write_tokens=0, cached_tokens=0, text_tokens=2001, image_tokens=None, video_tokens=None, cache_creation_tokens=0)",
+            "cache_creation_input_tokens": 0,
+            "cache_read_input_tokens": 0
+          },
+          "latency_s": 1.629055834026076
+        },
+        {
+          "case_id": "q31",
+          "sample_index": 2,
+          "outcome": "pass",
+          "detail": "",
+          "plan_json": {
+            "steps": [
+              {
+                "step_type": "filter",
+                "entity": "Workflow",
+                "filters": [
+                  {
+                    "field": "status",
+                    "value": "completed",
+                    "op": "EQ"
+                  }
+                ],
+                "filter_mode": "AND",
+                "select_fields": [
+                  "id",
+                  "name",
+                  "status",
+                  "completed_at",
+                  "duration_hours",
+                  "workflow_type"
+                ],
+                "forward_relation": null,
+                "limit": 10000
+              }
+            ]
+          },
+          "raw_content": "",
+          "usage": {
+            "completion_tokens": 139,
+            "prompt_tokens": 2001,
+            "total_tokens": 2140,
+            "completion_tokens_details": "CompletionTokensDetailsWrapper(accepted_prediction_tokens=None, audio_tokens=None, reasoning_tokens=0, rejected_prediction_tokens=None, text_tokens=139, image_tokens=None, video_tokens=None)",
+            "prompt_tokens_details": "PromptTokensDetailsWrapper(audio_tokens=None, cache_write_tokens=0, cached_tokens=0, text_tokens=2001, image_tokens=None, video_tokens=None, cache_creation_tokens=0)",
+            "cache_creation_input_tokens": 0,
+            "cache_read_input_tokens": 0
+          },
+          "latency_s": 1.7244938750518486
+        }
+      ]
+    },
+    {
+      "case_id": "q32",
+      "split": "train",
+      "capability": "blocked",
+      "pass_rate": 0.0,
+      "strict_pass": false,
+      "is_flaky": false,
+      "outcome_counts": {
+        "missing_rejection": 3
+      },
+      "samples": [
+        {
+          "case_id": "q32",
+          "sample_index": 0,
+          "outcome": "missing_rejection",
+          "detail": "produced an accepted plan for a question that cannot be answered: Needs a range op (GT) and a sort. FilterOp has only EQ/IN and no list query takes a sort argument (mosaic#96, open). The planner must refuse rather than silently degrade GT to EQ, which would return a confidently wrong answer.",
+          "plan_json": {
+            "steps": [
+              {
+                "step_type": "filter",
+                "entity": "Donor",
+                "filters": [
+                  {
+                    "field": "age_at_death",
+                    "value": null,
+                    "op": "EQ"
+                  }
+                ],
+                "filter_mode": "AND",
+                "select_fields": [
+                  "id",
+                  "name",
+                  "age_at_death",
+                  "sex",
+                  "cohort"
+                ],
+                "forward_relation": null,
+                "limit": 100
+              }
+            ]
+          },
+          "raw_content": "",
+          "usage": {
+            "completion_tokens": 129,
+            "prompt_tokens": 2003,
+            "total_tokens": 2132,
+            "completion_tokens_details": "CompletionTokensDetailsWrapper(accepted_prediction_tokens=None, audio_tokens=None, reasoning_tokens=0, rejected_prediction_tokens=None, text_tokens=129, image_tokens=None, video_tokens=None)",
+            "prompt_tokens_details": "PromptTokensDetailsWrapper(audio_tokens=None, cache_write_tokens=0, cached_tokens=0, text_tokens=2003, image_tokens=None, video_tokens=None, cache_creation_tokens=0)",
+            "cache_creation_input_tokens": 0,
+            "cache_read_input_tokens": 0
+          },
+          "latency_s": 1.3759963340125978
+        },
+        {
+          "case_id": "q32",
+          "sample_index": 1,
+          "outcome": "missing_rejection",
+          "detail": "produced an accepted plan for a question that cannot be answered: Needs a range op (GT) and a sort. FilterOp has only EQ/IN and no list query takes a sort argument (mosaic#96, open). The planner must refuse rather than silently degrade GT to EQ, which would return a confidently wrong answer.",
+          "plan_json": {
+            "steps": [
+              {
+                "step_type": "filter",
+                "entity": "Donor",
+                "filters": [
+                  {
+                    "field": "age_at_death",
+                    "value": null,
+                    "op": "EQ"
+                  }
+                ],
+                "filter_mode": "AND",
+                "select_fields": [
+                  "id",
+                  "name",
+                  "age_at_death",
+                  "sex",
+                  "cohort"
+                ],
+                "forward_relation": null,
+                "limit": 100
+              }
+            ]
+          },
+          "raw_content": "",
+          "usage": {
+            "completion_tokens": 129,
+            "prompt_tokens": 2003,
+            "total_tokens": 2132,
+            "completion_tokens_details": "CompletionTokensDetailsWrapper(accepted_prediction_tokens=None, audio_tokens=None, reasoning_tokens=0, rejected_prediction_tokens=None, text_tokens=129, image_tokens=None, video_tokens=None)",
+            "prompt_tokens_details": "PromptTokensDetailsWrapper(audio_tokens=None, cache_write_tokens=0, cached_tokens=0, text_tokens=2003, image_tokens=None, video_tokens=None, cache_creation_tokens=0)",
+            "cache_creation_input_tokens": 0,
+            "cache_read_input_tokens": 0
+          },
+          "latency_s": 2.6506454579066485
+        },
+        {
+          "case_id": "q32",
+          "sample_index": 2,
+          "outcome": "missing_rejection",
+          "detail": "produced an accepted plan for a question that cannot be answered: Needs a range op (GT) and a sort. FilterOp has only EQ/IN and no list query takes a sort argument (mosaic#96, open). The planner must refuse rather than silently degrade GT to EQ, which would return a confidently wrong answer.",
+          "plan_json": {
+            "steps": [
+              {
+                "step_type": "filter",
+                "entity": "Donor",
+                "filters": [
+                  {
+                    "field": "age_at_death",
+                    "value": null,
+                    "op": "EQ"
+                  }
+                ],
+                "filter_mode": "AND",
+                "select_fields": [
+                  "id",
+                  "name",
+                  "age_at_death",
+                  "sex",
+                  "cohort"
+                ],
+                "forward_relation": null,
+                "limit": 100
+              }
+            ]
+          },
+          "raw_content": "",
+          "usage": {
+            "completion_tokens": 129,
+            "prompt_tokens": 2003,
+            "total_tokens": 2132,
+            "completion_tokens_details": "CompletionTokensDetailsWrapper(accepted_prediction_tokens=None, audio_tokens=None, reasoning_tokens=0, rejected_prediction_tokens=None, text_tokens=129, image_tokens=None, video_tokens=None)",
+            "prompt_tokens_details": "PromptTokensDetailsWrapper(audio_tokens=None, cache_write_tokens=0, cached_tokens=0, text_tokens=2003, image_tokens=None, video_tokens=None, cache_creation_tokens=0)",
+            "cache_creation_input_tokens": 0,
+            "cache_read_input_tokens": 0
+          },
+          "latency_s": 1.5752233340172097
+        }
+      ]
+    },
+    {
+      "case_id": "q33",
+      "split": "holdout",
+      "capability": "blocked",
+      "pass_rate": 0.0,
+      "strict_pass": false,
+      "is_flaky": false,
+      "outcome_counts": {
+        "missing_rejection": 3
+      },
+      "samples": [
+        {
+          "case_id": "q33",
+          "sample_index": 0,
+          "outcome": "missing_rejection",
+          "detail": "produced an accepted plan for a question that cannot be answered: Needs group-by/facet counts, which no root query provides (mosaic#96, open). The only route is one equality-filtered count per enum value, which is a different query.",
+          "plan_json": {
+            "steps": [
+              {
+                "step_type": "filter",
+                "entity": "Donor",
+                "filters": [],
+                "filter_mode": "AND",
+                "select_fields": [
+                  "id",
+                  "cohort"
+                ],
+                "forward_relation": null,
+                "limit": 100
+              }
+            ]
+          },
+          "raw_content": "",
+          "usage": {
+            "completion_tokens": 74,
+            "prompt_tokens": 2005,
+            "total_tokens": 2079,
+            "completion_tokens_details": "CompletionTokensDetailsWrapper(accepted_prediction_tokens=None, audio_tokens=None, reasoning_tokens=0, rejected_prediction_tokens=None, text_tokens=74, image_tokens=None, video_tokens=None)",
+            "prompt_tokens_details": "PromptTokensDetailsWrapper(audio_tokens=None, cache_write_tokens=0, cached_tokens=0, text_tokens=2005, image_tokens=None, video_tokens=None, cache_creation_tokens=0)",
+            "cache_creation_input_tokens": 0,
+            "cache_read_input_tokens": 0
+          },
+          "latency_s": 1.3690287910867482
+        },
+        {
+          "case_id": "q33",
+          "sample_index": 1,
+          "outcome": "missing_rejection",
+          "detail": "produced an accepted plan for a question that cannot be answered: Needs group-by/facet counts, which no root query provides (mosaic#96, open). The only route is one equality-filtered count per enum value, which is a different query.",
+          "plan_json": {
+            "steps": [
+              {
+                "step_type": "filter",
+                "entity": "Donor",
+                "filters": [],
+                "filter_mode": "AND",
+                "select_fields": [
+                  "id",
+                  "cohort"
+                ],
+                "forward_relation": null,
+                "limit": 100
+              }
+            ]
+          },
+          "raw_content": "",
+          "usage": {
+            "completion_tokens": 74,
+            "prompt_tokens": 2005,
+            "total_tokens": 2079,
+            "completion_tokens_details": "CompletionTokensDetailsWrapper(accepted_prediction_tokens=None, audio_tokens=None, reasoning_tokens=0, rejected_prediction_tokens=None, text_tokens=74, image_tokens=None, video_tokens=None)",
+            "prompt_tokens_details": "PromptTokensDetailsWrapper(audio_tokens=None, cache_write_tokens=0, cached_tokens=0, text_tokens=2005, image_tokens=None, video_tokens=None, cache_creation_tokens=0)",
+            "cache_creation_input_tokens": 0,
+            "cache_read_input_tokens": 0
+          },
+          "latency_s": 1.1730312500149012
+        },
+        {
+          "case_id": "q33",
+          "sample_index": 2,
+          "outcome": "missing_rejection",
+          "detail": "produced an accepted plan for a question that cannot be answered: Needs group-by/facet counts, which no root query provides (mosaic#96, open). The only route is one equality-filtered count per enum value, which is a different query.",
+          "plan_json": {
+            "steps": [
+              {
+                "step_type": "filter",
+                "entity": "Donor",
+                "filters": [],
+                "filter_mode": "AND",
+                "select_fields": [
+                  "id",
+                  "cohort"
+                ],
+                "forward_relation": null,
+                "limit": 100
+              }
+            ]
+          },
+          "raw_content": "",
+          "usage": {
+            "completion_tokens": 74,
+            "prompt_tokens": 2005,
+            "total_tokens": 2079,
+            "completion_tokens_details": "CompletionTokensDetailsWrapper(accepted_prediction_tokens=None, audio_tokens=None, reasoning_tokens=0, rejected_prediction_tokens=None, text_tokens=74, image_tokens=None, video_tokens=None)",
+            "prompt_tokens_details": "PromptTokensDetailsWrapper(audio_tokens=None, cache_write_tokens=0, cached_tokens=0, text_tokens=2005, image_tokens=None, video_tokens=None, cache_creation_tokens=0)",
+            "cache_creation_input_tokens": 0,
+            "cache_read_input_tokens": 0
+          },
+          "latency_s": 1.459086790913716
+        }
+      ]
+    },
+    {
+      "case_id": "q34",
+      "split": "train",
+      "capability": "blocked",
+      "pass_rate": 0.0,
+      "strict_pass": false,
+      "is_flaky": false,
+      "outcome_counts": {
+        "missing_rejection": 3
+      },
+      "samples": [
+        {
+          "case_id": "q34",
+          "sample_index": 0,
+          "outcome": "missing_rejection",
+          "detail": "produced an accepted plan for a question that cannot be answered: Asks for a predicate-filtered reverse lookup as a SINGLE composed query. relatedTo accepts no predicate on the referenced entity (mosaic#148, open), so this is answerable only as a bounded lookup plus a client-side filter -- which is what q25 asserts. A plan claiming to do it server-side in one call is wrong.",
+          "plan_json": {
+            "steps": [
+              {
+                "step_type": "filter",
+                "entity": "Sample",
+                "filters": [
+                  {
+                    "field": "accession",
+                    "value": "SMPL-0032",
+                    "op": "EQ"
+                  }
+                ],
+                "filter_mode": "AND",
+                "select_fields": [
+                  "id"
+                ],
+                "forward_relation": null,
+                "limit": 100
+              },
+              {
+                "step_type": "related_lookup",
+                "source_step": 0,
+                "relationship_type": "input_samples",
+                "client_filter": {
+                  "field": "workflow_type",
+                  "value": "rna_seq",
+                  "op": "EQ"
+                }
+              }
+            ]
+          },
+          "raw_content": "",
+          "usage": {
+            "completion_tokens": 208,
+            "prompt_tokens": 2013,
+            "total_tokens": 2221,
+            "completion_tokens_details": "CompletionTokensDetailsWrapper(accepted_prediction_tokens=None, audio_tokens=None, reasoning_tokens=0, rejected_prediction_tokens=None, text_tokens=208, image_tokens=None, video_tokens=None)",
+            "prompt_tokens_details": "PromptTokensDetailsWrapper(audio_tokens=None, cache_write_tokens=0, cached_tokens=0, text_tokens=2013, image_tokens=None, video_tokens=None, cache_creation_tokens=0)",
+            "cache_creation_input_tokens": 0,
+            "cache_read_input_tokens": 0
+          },
+          "latency_s": 2.1424391249893233
+        },
+        {
+          "case_id": "q34",
+          "sample_index": 1,
+          "outcome": "missing_rejection",
+          "detail": "produced an accepted plan for a question that cannot be answered: Asks for a predicate-filtered reverse lookup as a SINGLE composed query. relatedTo accepts no predicate on the referenced entity (mosaic#148, open), so this is answerable only as a bounded lookup plus a client-side filter -- which is what q25 asserts. A plan claiming to do it server-side in one call is wrong.",
+          "plan_json": {
+            "steps": [
+              {
+                "step_type": "filter",
+                "entity": "Sample",
+                "filters": [
+                  {
+                    "field": "accession",
+                    "value": "SMPL-0032",
+                    "op": "EQ"
+                  }
+                ],
+                "filter_mode": "AND",
+                "select_fields": [
+                  "id"
+                ],
+                "forward_relation": null,
+                "limit": 100
+              },
+              {
+                "step_type": "related_lookup",
+                "source_step": 0,
+                "relationship_type": "input_samples",
+                "client_filter": {
+                  "field": "workflow_type",
+                  "value": "rna_seq",
+                  "op": "EQ"
+                }
+              }
+            ]
+          },
+          "raw_content": "",
+          "usage": {
+            "completion_tokens": 208,
+            "prompt_tokens": 2013,
+            "total_tokens": 2221,
+            "completion_tokens_details": "CompletionTokensDetailsWrapper(accepted_prediction_tokens=None, audio_tokens=None, reasoning_tokens=0, rejected_prediction_tokens=None, text_tokens=208, image_tokens=None, video_tokens=None)",
+            "prompt_tokens_details": "PromptTokensDetailsWrapper(audio_tokens=None, cache_write_tokens=0, cached_tokens=0, text_tokens=2013, image_tokens=None, video_tokens=None, cache_creation_tokens=0)",
+            "cache_creation_input_tokens": 0,
+            "cache_read_input_tokens": 0
+          },
+          "latency_s": 2.1268948749639094
+        },
+        {
+          "case_id": "q34",
+          "sample_index": 2,
+          "outcome": "missing_rejection",
+          "detail": "produced an accepted plan for a question that cannot be answered: Asks for a predicate-filtered reverse lookup as a SINGLE composed query. relatedTo accepts no predicate on the referenced entity (mosaic#148, open), so this is answerable only as a bounded lookup plus a client-side filter -- which is what q25 asserts. A plan claiming to do it server-side in one call is wrong.",
+          "plan_json": {
+            "steps": [
+              {
+                "step_type": "filter",
+                "entity": "Sample",
+                "filters": [
+                  {
+                    "field": "accession",
+                    "value": "SMPL-0032",
+                    "op": "EQ"
+                  }
+                ],
+                "filter_mode": "AND",
+                "select_fields": [
+                  "id"
+                ],
+                "forward_relation": null,
+                "limit": 100
+              },
+              {
+                "step_type": "related_lookup",
+                "source_step": 0,
+                "relationship_type": "input_samples",
+                "client_filter": {
+                  "field": "workflow_type",
+                  "value": "rna_seq",
+                  "op": "EQ"
+                }
+              }
+            ]
+          },
+          "raw_content": "",
+          "usage": {
+            "completion_tokens": 208,
+            "prompt_tokens": 2013,
+            "total_tokens": 2221,
+            "completion_tokens_details": "CompletionTokensDetailsWrapper(accepted_prediction_tokens=None, audio_tokens=None, reasoning_tokens=0, rejected_prediction_tokens=None, text_tokens=208, image_tokens=None, video_tokens=None)",
+            "prompt_tokens_details": "PromptTokensDetailsWrapper(audio_tokens=None, cache_write_tokens=0, cached_tokens=0, text_tokens=2013, image_tokens=None, video_tokens=None, cache_creation_tokens=0)",
+            "cache_creation_input_tokens": 0,
+            "cache_read_input_tokens": 0
+          },
+          "latency_s": 2.088460332946852
+        }
+      ]
+    }
+  ]
+}

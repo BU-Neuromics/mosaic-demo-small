@@ -131,16 +131,80 @@
 
 ## 8. Verify
 
-- [ ] 8.1 Baseline run on the seed context — **must reproduce the known dropped-filter failure**. A
-      clean seed run means the harness is wrong, not the planner.
-- [ ] 8.2 Force `EXON_OLLAMA_NUM_CTX=4096` and confirm `TRUNCATED` is reported but never appears in
-      the refiner bundle. (Running; queued behind the loaded probe on the single Ollama instance.)
+**2026-08-18 — target model switched from `ollama_chat/gemma4:12b` to
+`bedrock/global.anthropic.claude-haiku-4-5-20251001-v1:0`** (harness default, refiner default, and
+product-surface default all moved off local Ollama, per decision made in-person 2026-08-14; a
+Bedrock bearer credential is present in this environment, confirmed live via `aws sts
+get-caller-identity` and a real `litellm.completion` round trip). All of Section 8 below was run
+for real against the new default. Running it surfaced three real bugs, all fixed and re-verified
+against the existing 66-check no-model test suite (still 66/66) before re-running:
+
+- `DecodeParams.to_litellm_kwargs` sent `seed` unconditionally; Bedrock's Claude rejects it
+  (`UnsupportedParamsError`), which failed **100% of the first baseline run's 87 calls** before any
+  of them reached grading. Fixed to check `litellm.get_supported_openai_params(model=...)` instead
+  of a hardcoded provider list — the same "measure, don't assume" rule already applied to
+  Ollama-only params, now applied to the params themselves. (`exon/context/template.py`)
+- The validator checked `select_fields` entries for existence but not for whether they name a
+  reference-kind field. A reference field has no scalar value, so naming it directly (as opposed to
+  through `forward_relation`) passes validation and then crashes the executor with a GraphQL syntax
+  error. Observed live, twice, against Haiku. Fixed: rejected at validation time with a pointer to
+  `forward_relation`/`related_lookup`. (`exon/validator.py` — spec delta added to
+  `add-exon-query-planner`, since this is a validator-capability rule, not a harness one.)
+- `cmd_loop` never created `--out`'s directory before writing into it — always worked before only
+  because `loop` had never been run to completion in this environment (blocked on 8.4). Fixed.
+  (`exon/harness/cli.py`)
+
+- [x] 8.1 Baseline run on the seed context (`evals/baselines/2026-08-18-bedrock-haiku-4-5-seed-
+      v000.json`; fingerprint saved to `evals/schema/fingerprint-bedrock-claude-haiku-4-5.json`):
+      **train=0.33, holdout=0.50, strict=7/21, 0 flaky, 186600 tokens, 87 calls.** This is a real,
+      non-trivial failure signal (17/29 cases fail), not a clean pass — satisfying the check's
+      intent that a clean seed run would mean the harness is wrong, not the planner. One deviation
+      from the task's literal wording, stated plainly rather than glossed over: the task was
+      written to require reproducing gemma4's specific failure shape (`filters: []` — the whole
+      filter list silently dropped). Haiku's failures are a different shape. The flagship case
+      (`q35`, the project's own driving example, the same case gemma4 failed on) still fails
+      `PLAN_UNFAITHFUL`, but by substituting a wrong filter *value* (`'brain tissue'` for
+      `'tissue'`) rather than omitting the filter — same failure class (a structurally-valid plan
+      that misrepresents the instruction), different mechanism. Two more failure shapes appeared
+      that gemma4's run never surfaced: `plan_invalid` (the `select_fields` reference-field bug
+      above, caught pre-execution on 3 cases) and `missing_rejection` on all 3 of the
+      capability-gap questions (q32/q33/q34 — the model accepts a plan for a question mosaic#96/
+      #148 make unanswerable, where a rejection is the correct answer).
+- [~] 8.2 Forced `EXON_OLLAMA_NUM_CTX=4096` against `ollama_chat/gemma4:12b` (Ollama is still
+      installed locally with gemma4 pulled) — **not reproduced as specified**. Across all 21 train
+      cases, zero `TRUNCATED` outcomes; max `total_tokens` observed was 976, well under the 4096
+      ceiling. Root cause: the seed context's `think=false` (added after this task was written, see
+      commit `bfc772d`) suppresses the reasoning spiral that was the actual cause of the original
+      truncation — with reasoning off, even Ollama's small window is enough for this workload. The
+      classify-and-withhold mechanism this task exists to protect is not unexercised, just exercised
+      differently: it's covered directly by `tests/test_grading.py` ("truncation -> TRUNCATED
+      (config, not context)") and `tests/test_harness_invariants.py` ("TRUNCATED is not
+      context-addressable" / "TRUNCATED is an environment class"), both still passing. Left
+      unchecked rather than marked done against a condition that didn't hold; see the archival
+      decision this raises for the user, recorded in the change's summary.
 - [x] 8.3 Planner independence proven against the ACTUAL assembled prompts at the litellm boundary
       (`tests/test_independence.py`, 9 checks): every call is (system, user) with no assistant
       turns; no case id, expectation structure, rejection reason, or expected-results content
       appears; repeated samples send byte-identical prompts; `num_ctx` is correctly withheld from a
-      non-ollama provider.
-- [ ] 8.4 `loop --max-iter 2` end-to-end — blocked: no refiner credential in this environment.
-      `--no-auto-refine` (report and stop) is exercised and works.
-- [ ] 8.5 Report the before/after reliability numbers plainly.
-- [x] 8.6 `openspec validate add-exon-context-harness --strict` passes.
+      non-ollama provider. Also now proves seed is withheld exactly when the target provider's own
+      supported-params list says so, rather than by provider-name pattern-match.
+- [x] 8.4 `loop --auto-refine --max-iter 4` end-to-end against Bedrock Haiku — previously blocked
+      on "no refiner credential"; `EXON_REFINER_MODEL` now defaults to the same reachable Bedrock
+      model, unblocking this. Ran for real, 4 iterations: proposed patches added faithfulness/
+      glossary blocks, train rose (0.33 -> 0.43, strict 7 -> 9) on 2 of 3 patch attempts, holdout
+      stayed flat at 0.50 every iteration, and the loop correctly rolled back each time rather than
+      keep a context that only helped train. Stopped on plateau (3 iterations, no holdout gain), as
+      designed. `--no-auto-refine` (report and stop) remains exercised and works.
+- [x] 8.5 Before/after, reported plainly: **baseline holdout 0.50 -> best 0.50 (+0.00)**; train
+      0.33 -> 0.43 with strict 7/21 -> 9/21 on the surviving (rolled-back) attempts. Full
+      per-iteration table in `evals/baselines/2026-08-18-bedrock-haiku-4-5-loop-report.md`. Honest
+      reading: on this model, 4 iterations of prose/block tuning alone did not move the metric that
+      matters (holdout) — the remaining failures (value-vocabulary gaps, the two `plan_invalid`
+      structural mistakes, and the 3 missing-rejections) did not yield to the kind of patch the
+      refiner proposed in this run. Against the *previous* target, the only comparable historical
+      figure is the partial 5-case/2-sample gemma4 baseline: train 0.00, 0/5 strict
+      (`evals/baselines/2026-08-11-gemma4-12b-seed-v000.json`) — not a full-suite baseline, so not
+      directly comparable to the 0.33/0.50 above, but the two are consistent with the model switch
+      being a real improvement, not a wash.
+- [x] 8.6 `openspec validate add-exon-context-harness --strict` passes (re-checked after the spec
+      delta addition above).

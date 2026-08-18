@@ -60,8 +60,11 @@ pip install -r exon/requirements.txt
 mosaic serve --config mosaic.yaml --graphql --port 8080   # if not already running
 
 # Pick a provider by setting EXON_MODEL to a litellm model string, then set that
-# provider's own API key env var (litellm infers which one from the model prefix):
-export EXON_MODEL=anthropic/claude-opus-5-20251101   # default if unset
+# provider's own credential (litellm infers which one from the model prefix):
+export EXON_MODEL=bedrock/global.anthropic.claude-haiku-4-5-20251001-v1:0   # default if unset
+# credential: an AWS Bedrock bearer token (AWS_BEARER_TOKEN_BEDROCK) or standard AWS credentials
+#   -- or --
+export EXON_MODEL=anthropic/claude-opus-5-20251101
 export ANTHROPIC_API_KEY=...
 #   -- or --
 export EXON_MODEL=openai/gpt-4o
@@ -113,11 +116,25 @@ model for the first time, and the outcome is genuinely mixed, not a clean win:
   is "is this plan executable and safe against the live schema/capabilities," not "does this
   plan correctly represent the NL instruction"; those are different problems, and only the
   first one is in scope for what was built here.
-- **Not yet tried**: a real cloud-model run (Anthropic/OpenAI/Gemini) — no credentials were
-  available in this environment for any of them. Given the local model's mixed results, a
-  stronger model is the most likely next lever, not further prompt tuning against a 12B local
-  model. The two bugs above are real fixes that benefit every provider equally; the
-  faithfulness gap is a model-capability question this session couldn't resolve either way.
+- **Then tried for real (2026-08-18)**, once a Bedrock credential became available: default
+  switched to `bedrock/global.anthropic.claude-haiku-4-5-20251001-v1:0`. The stronger model
+  resolved the reliability half of the mixed result above — forced-tool-call compliance is no
+  longer the problem, and the driving example's plan was structurally faithful (every filter
+  present, `forward_relation` and `related_lookup` both correctly shaped, no dropped steps). But
+  it returned **0 results instead of 26**: the model filled `sample_type` with `"brain tissue"`
+  (paraphrasing the instruction) instead of the real data value `"tissue"` (verified live:
+  `sample_type="tissue"` -> 26 matches with the hippocampus filter; `sample_type="brain tissue"`
+  -> 0). Structurally valid, validator correctly accepted it, silently wrong — the same failure
+  *class* as gemma4's dropped filter, but a different mechanism: a value guessed from NL wording
+  rather than grounded in the schema's actual vocabulary, and the harness's full suite run found
+  the identical pattern on other cases (q02: `'at-risk'`/`'at_risk'`; q08: `'chemically
+  fixed'`/`'fixed'` — see `add-exon-context-harness`'s baseline). Two further real bugs were found
+  and fixed in the same session: the validator let a reference field (e.g. `donor`) appear
+  directly in `select_fields` instead of through `forward_relation`, which passed validation and
+  then crashed the executor with a GraphQL syntax error (fixed — see the validator section
+  above); and `DecodeParams` sent `seed` unconditionally, which Bedrock's Claude rejects outright
+  (fixed in `exon/context/template.py`, via litellm's own `get_supported_openai_params` rather
+  than a hardcoded provider list).
 
 **Earlier in the build, before any of the above, the planner's LLM call could not be exercised
 at all** — no provider credentials were available yet. The planner fails loudly and clearly on
@@ -229,6 +246,37 @@ protocol, while a light question (`q01`) produced a parseable plan through `json
 points at shrinking the grounding as a real lever, which is exactly the kind of change the loop
 can make and measure.
 
+### Findings from the first full-suite run against `bedrock/global.anthropic.claude-haiku-4-5-20251001-v1:0` (2026-08-18)
+
+The target model default moved off local Ollama entirely once a Bedrock credential became
+available. First full run (29 cases x 3 samples, seed context v000):
+**train=0.33, holdout=0.50, strict=7/21, 0 flaky, 186600 tokens** — a real, non-trivial failure
+signal (17/29 cases fail), across three distinct failure classes:
+
+- `PLAN_UNFAITHFUL` on 12 cases, mostly a value-vocabulary gap: the model fills a filter with a
+  value paraphrased from the NL instruction (`'at-risk'`, `'chemically fixed'`, `'brain tissue'`)
+  instead of the schema's real enum value (`'at_risk'`, `'fixed'`, `'tissue'`). The schema
+  grounding lists field *names*, never the actual values a field takes — this project's `q35`
+  driving-example case fails exactly this way.
+- `PLAN_INVALID` on 3 cases — the reference-field-in-`select_fields` validator gap (see above),
+  caught pre-execution now rather than crashing the executor.
+- `MISSING_REJECTION` on all 3 capability-gap questions (q32/q33/q34) — the model accepts a plan
+  for a question mosaic#96/#148 make genuinely unanswerable, where refusing is the correct
+  behavior.
+
+Running the closed loop (`--auto-refine --max-iter 4`) against this baseline for the first time
+ever end-to-end (previously blocked on a refiner credential — `EXON_REFINER_MODEL` now defaults
+to the same reachable Bedrock model): train rose on 2 of 3 patch attempts (0.33 -> 0.43, strict
+7 -> 9), but **holdout stayed flat at 0.50 on every iteration**, and the loop correctly rolled
+back each time rather than keep a context that only helped train. It stopped on plateau after 3
+non-improving iterations, exactly as designed — **baseline holdout 0.50 -> best 0.50 (+0.00)**.
+Honest reading: block/prose tuning alone, in 4 iterations, did not move the metric that matters
+against this model. The three failure classes above look like they need a different kind of fix
+(actual data-vocabulary grounding for the first; the validator fix already applied for the
+second; an explicit refusal exemplar for the third) rather than more of the same prose patches.
+Full numbers: `evals/baselines/2026-08-18-bedrock-haiku-4-5-seed-v000.json` and
+`evals/baselines/2026-08-18-bedrock-haiku-4-5-loop-report.md`.
+
 ### Test suite
 
 Four files, 60 checks, no model calls required:
@@ -255,8 +303,15 @@ Four files, 60 checks, no model calls required:
 Plan *faithfulness* to the NL instruction is not guaranteed, and isn't checked by anything in
 this pipeline. The validator only checks that a plan is executable and safe against the live
 schema/capabilities; it has no way to check "does this plan actually answer what was asked."
-Observed directly: `ollama_chat/gemma4:12b` producing a structurally-valid plan that silently
-dropped a stated filter and an entire requested lookup step. A stronger model may not have this
-problem as often, but nothing here catches it either way yet — worth flagging to a human
-reviewer (e.g., always print the plan for user approval before executing) rather than assuming
-"validated" means "correct."
+Observed directly with `ollama_chat/gemma4:12b`: a structurally-valid plan that silently dropped
+a stated filter and an entire requested lookup step. A stronger model — `bedrock/global.
+anthropic.claude-haiku-4-5-20251001-v1:0`, tried once a Bedrock credential became available —
+does not have *that* problem (no dropped steps, correct op shapes), but the gap did not close:
+it now produces a structurally-valid plan with the right filter *field* but the wrong *value*
+(`sample_type="brain tissue"` instead of `"tissue"`), guessed from the instruction's phrasing
+rather than the schema's real vocabulary — silently zero results instead of 26. Confirmed not a
+one-off: the harness's full-suite run against the same model found the identical value-guessing
+pattern on multiple other cases. Nothing here catches either shape of this yet — worth flagging
+to a human reviewer (e.g., always print the plan for user approval before executing) rather than
+assuming "validated" means "correct," and worth pursuing as the concrete next lever: grounding
+the model in each filterable field's *actual* value vocabulary, not just its name.
