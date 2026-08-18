@@ -4,12 +4,14 @@
     python -m exon.harness run    [--samples K]        # [B]+[C] one pass, print the report
     python -m exon.harness loop   [--auto-refine]      # the whole cycle
     python -m exon.harness report --run <dir>          # re-render a finished run
+    python -m exon.harness report --compare <a> <b>... # compare 2+ finished runs, no new calls
 
 `run` defaults to report-and-stop; the closed loop needs `--auto-refine` and a refiner credential.
 """
 import argparse
 import json
 import os
+import re
 import sys
 from pathlib import Path
 
@@ -24,8 +26,20 @@ from .triage import build_bundle
 
 DEFAULT_ENDPOINT = os.environ.get("EXON_ENDPOINT", "http://localhost:8080/graphql")
 DEFAULT_MODEL = os.environ.get("EXON_MODEL", "bedrock/global.anthropic.claude-haiku-4-5-20251001-v1:0")
-FINGERPRINT_PATH = Path("evals/schema/fingerprint.json")
 MANIFEST_PATH = "evals/schema/capabilities.json"
+
+
+def _model_slug(model: str) -> str:
+    """Mechanical, collision-free -- no alias table, no stripping version suffixes (two
+    versions of the same model must never resolve to the same fingerprint path)."""
+    return re.sub(r"[^a-z0-9]+", "-", model.lower()).strip("-")
+
+
+def _fingerprint_path(model: str) -> Path:
+    """One path per exact model string, so probing model B never overwrites or is mistaken
+    for model A's measured capabilities (the shared evals/schema/fingerprint.json this replaced
+    required a manual copy-and-rename to avoid exactly that)."""
+    return Path(f"evals/schema/fingerprint-{_model_slug(model)}.json")
 
 
 def _grounding_for_probe(hippo_schema, manifest):
@@ -41,20 +55,23 @@ def _grounding_for_probe(hippo_schema, manifest):
 
 def _load_or_probe(model, hippo_schema, manifest, *, force=False, skip_load_check=False):
     """A stored fingerprint is reused only if it matches this model; otherwise re-probe. A context
-    fitted to one local model tells you nothing about another."""
-    if FINGERPRINT_PATH.exists() and not force:
-        fp = ModelFingerprint.from_dict(json.loads(FINGERPRINT_PATH.read_text()))
+    fitted to one local model tells you nothing about another. Each model gets its own on-disk
+    path (see _fingerprint_path), so probing model B never touches model A's file."""
+    fingerprint_path = _fingerprint_path(model)
+    if fingerprint_path.exists() and not force:
+        fp = ModelFingerprint.from_dict(json.loads(fingerprint_path.read_text()))
         if fp.model == model:
-            print(f"reusing fingerprint {fp.id} for {model} ({FINGERPRINT_PATH})")
+            print(f"reusing fingerprint {fp.id} for {model} ({fingerprint_path})")
             return fp
-        print(f"stored fingerprint is for {fp.model!r}, not {model!r} -- re-probing")
+        print(f"stored fingerprint at {fingerprint_path} is for {fp.model!r}, not {model!r} "
+              f"-- re-probing")
     fp = probe_model(
         model,
         load_check=None if skip_load_check else _grounding_for_probe(hippo_schema, manifest),
     )
-    FINGERPRINT_PATH.parent.mkdir(parents=True, exist_ok=True)
-    FINGERPRINT_PATH.write_text(json.dumps(fp.to_dict(), indent=2) + "\n")
-    print(f"wrote {FINGERPRINT_PATH}")
+    fingerprint_path.parent.mkdir(parents=True, exist_ok=True)
+    fingerprint_path.write_text(json.dumps(fp.to_dict(), indent=2) + "\n")
+    print(f"wrote {fingerprint_path}")
     return fp
 
 
@@ -159,6 +176,14 @@ def cmd_loop(args):
 
 
 def cmd_report(args):
+    if args.compare and args.run:
+        print("pass exactly one of --run/--compare", file=sys.stderr)
+        return 1
+    if args.compare:
+        return _cmd_compare(args)
+    if not args.run:
+        print("pass exactly one of --run/--compare", file=sys.stderr)
+        return 1
     run = Path(args.run)
     md = run / "report.md"
     if md.exists():
@@ -174,6 +199,107 @@ def cmd_report(args):
         print(f"iter {d['iteration']:02d} v{d['context_version']:03d} "
               f"train={s['train']:.2f} holdout={s['holdout']:.2f} "
               f"strict={s['strict_train']} flaky={s['flaky']}")
+    return 0
+
+
+def _load_report_dict(path_str: str) -> dict:
+    """A directory resolves to <dir>/report.json (a `run` output dir). Anything else is read
+    directly as a file -- this also covers a `loop` run's iterations/iterNN.json, which is the
+    same SuiteReport.to_dict() shape. `loop` dirs have no top-level report.json, so a bare loop
+    dir is not auto-resolved -- point at the specific iteration file instead."""
+    p = Path(path_str)
+    if p.is_dir():
+        candidate = p / "report.json"
+        if not candidate.exists():
+            raise FileNotFoundError(
+                f"{p} has no report.json (a `loop` run dir has none -- point at a specific "
+                f"iterations/iterNN.json file instead)"
+            )
+        p = candidate
+    return json.loads(p.read_text())
+
+
+def _samples_per_case(d: dict) -> int:
+    return len(d["results"][0]["samples"]) if d["results"] else 0
+
+
+def _split_counts(d: dict) -> tuple:
+    return (
+        sum(1 for r in d["results"] if r["split"] == "train"),
+        sum(1 for r in d["results"] if r["split"] == "holdout"),
+    )
+
+
+def _compare_reports(paths: list) -> str:
+    """Pure: reads already-written report.json-shaped files and renders them side by side plus
+    deltas against the first. Raises ValueError/FileNotFoundError on bad input; never issues a
+    model call."""
+    if len(paths) < 2:
+        raise ValueError("need at least 2 paths to compare")
+    reports = [_load_report_dict(p) for p in paths]
+
+    baseline_spc, baseline_splits = _samples_per_case(reports[0]), _split_counts(reports[0])
+    warnings = []
+    for d in reports[1:]:
+        spc, splits = _samples_per_case(d), _split_counts(d)
+        if spc != baseline_spc or splits != baseline_splits:
+            warnings.append(
+                f"WARNING: {d['model']!r} used samples-per-case={spc}, train/holdout "
+                f"case counts={splits} vs the first report's samples-per-case={baseline_spc}, "
+                f"case counts={baseline_splits} -- NOT a clean apples-to-apples comparison"
+            )
+
+    lines = list(warnings)
+    base_scores = reports[0]["scores"]
+    for i, d in enumerate(reports):
+        s = d["scores"]
+        n_train, n_holdout = _split_counts(d)
+        lines.append(f"[{i}] model={d['model']}")
+        lines.append(
+            f"    protocol={d['protocol']}  context_version={d['context_version']}  "
+            f"fingerprint={d['fingerprint_id']}  samples/case={_samples_per_case(d)}"
+        )
+        lines.append(
+            f"    train={s['train']:.2f}  holdout={s['holdout']:.2f}  "
+            f"strict_train={s['strict_train']}/{n_train}  "
+            f"strict_holdout={s['strict_holdout']}/{n_holdout}  "
+            f"flaky={s['flaky']}  tokens={s['total_tokens']}  "
+            f"wall_clock_s={d['wall_clock_s']:.1f}"
+        )
+        if i > 0:
+            lines.append(
+                f"    Δtrain={s['train'] - base_scores['train']:+.2f}  "
+                f"Δholdout={s['holdout'] - base_scores['holdout']:+.2f}  "
+                f"Δstrict_train={s['strict_train'] - base_scores['strict_train']:+d}  "
+                f"Δflaky={s['flaky'] - base_scores['flaky']:+d}  "
+                f"(vs [0] {reports[0]['model']})"
+            )
+
+    protocols = {d["protocol"] for d in reports}
+    if len(protocols) > 1:
+        lines.append("")
+        lines.append(
+            f"NOTE: compared reports used different output protocols ({sorted(protocols)}) -- "
+            "each model's protocol is chosen by its own capability probe, so a score delta "
+            "above is model-AND-protocol jointly, not model alone."
+        )
+
+    return "\n".join(lines)
+
+
+def _cmd_compare(args) -> int:
+    if len(args.compare) < 2:
+        print("--compare needs at least 2 paths", file=sys.stderr)
+        return 1
+    try:
+        output = _compare_reports(args.compare)
+    except FileNotFoundError as e:
+        print(str(e), file=sys.stderr)
+        return 1
+    print(output)
+    if args.out:
+        Path(args.out).write_text(output + "\n")
+        print(f"\nwrote {args.out}")
     return 0
 
 
@@ -209,8 +335,14 @@ def main(argv=None):
                         "and stops")
     l.set_defaults(fn=cmd_loop)
 
-    rep = sub.add_parser("report", help="re-render a finished run")
-    rep.add_argument("--run", required=True)
+    rep = sub.add_parser("report", help="re-render a finished run, or compare finished runs")
+    rep.add_argument("--run", default=None, help="re-render this one run dir (mutually "
+                      "exclusive with --compare)")
+    rep.add_argument("--compare", nargs="+", default=None,
+                      help="2+ report.json paths (or run dirs containing one) to compare "
+                           "side by side -- spends no new model calls")
+    rep.add_argument("--out", default=None,
+                      help="with --compare, also write the comparison table to this file")
     rep.set_defaults(fn=cmd_report)
 
     args = ap.parse_args(argv)

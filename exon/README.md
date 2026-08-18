@@ -194,9 +194,19 @@ python -m exon.harness probe                    # fingerprint the target model
 python -m exon.harness run --samples 3          # one pass; prints per-case pass rates
 python -m exon.harness loop --auto-refine       # the full measure -> refine -> re-measure cycle
 python -m exon.harness report --run <dir>
+python -m exon.harness report --compare <a.json> <b.json> [--out FILE]   # compare 2+ finished
+                                                                          # runs, zero new tokens
 ```
 
 Defaults to report-and-stop; `--auto-refine` needs `EXON_REFINER_MODEL` and its credential.
+Each target model gets its own fingerprint path (`evals/schema/fingerprint-<slug>.json`, derived
+mechanically from the exact model string — no alias table, no manual copy-and-rename), so probing
+model B never overwrites model A's measured capabilities. `report --compare` reads any two
+already-written run reports (a `run` command's `<dir>/report.json`, or a specific `loop`
+iteration's `iterations/iterNN.json`) and prints them side by side plus deltas — no model call,
+zero cost. It warns explicitly if the two runs used different samples-per-case or case-split
+sizes, and notes if they used different output protocols (a score delta is then model-*and*-
+protocol jointly, not model alone, since each model's protocol comes from its own probe).
 
 **What it measures.** Per-case pass rate over k samples, plus strict (k-of-k) count and flake
 rate reported separately — the failures that motivated this were intermittent, and a
@@ -277,14 +287,74 @@ second; an explicit refusal exemplar for the third) rather than more of the same
 Full numbers: `evals/baselines/2026-08-18-bedrock-haiku-4-5-seed-v000.json` and
 `evals/baselines/2026-08-18-bedrock-haiku-4-5-loop-report.md`.
 
+### Haiku vs Sonnet 5 (2026-08-18) — the harness's first real cross-model comparison
+
+Same suite, same sampling (3/case), same protocol (`tool_call` qualified for both), run against
+`bedrock/global.anthropic.claude-sonnet-5` and compared with `report --compare` against the
+existing Haiku baseline above — no re-run of Haiku needed, since nothing it depends on had
+changed:
+
+```
+[0] bedrock/...claude-haiku-4-5...   train=0.33  holdout=0.50  strict_train=7/21
+[1] bedrock/...claude-sonnet-5       train=0.38  holdout=0.50  strict_train=8/21
+    Δtrain=+0.05  Δholdout=+0.00  Δstrict_train=+1
+```
+
+Full output: `evals/baselines/2026-08-18-compare-haiku-vs-sonnet-5.md`.
+
+**A real, load-bearing bug was found and fixed before this comparison meant anything.** The
+first probe of Sonnet 5 came back 0/5 on *every single check* — system role, all five protocols,
+preamble. A uniform-zero pattern across unrelated checks is this project's own signal that the
+defect is environmental, not behavioral (the same rule that caught the entity/accessor
+ambiguity earlier). Root cause: `litellm.UnsupportedParamsError: ... does not support
+temperature=0. Only temperature=1 is supported.` — every probe check and the seeded
+`DecodeParams` unconditionally assumed `temperature=0`, so 100% of calls failed before any
+capability was actually measured. This is not the same as Ollama's `thinking`-forces-temperature
+pattern (explicitly tested: passing `thinking={"type":"disabled"}` still rejected
+`temperature=0`) — it's a hard, unconditional provider/model constraint. Fixed the same way the
+`seed` param bug was fixed during the Haiku work: measure, don't assume. `probe.py` now detects
+the model's actual working temperature with one cheap call and threads it through every
+subsequent check and into the seeded decode params, rather than hardcoding 0 or special-casing
+one model string.
+
+**With that fixed, the findings are real:**
+
+- Isolated ladder: `system_role=5/5`, `tool_call` qualifies (5/5 isolated, 3/3 under load),
+  `json_schema=0/5`, `stop_sequences=3/5`.
+- **`determinism @ temp 1 = 40%`** — a real, expected reliability ceiling from being forced off
+  temperature 0, not a measurement bug. No amount of context tuning raises this; it's a hard cap
+  on this model/provider combination as configured.
+- Baseline (seed context v000): **train=0.38, holdout=0.50, strict_train=8/21** — matches Haiku's
+  holdout exactly, edges it slightly on train/strict.
+- Sonnet 5 correctly handles `q21` (100% — "which samples did this donor contribute," where both
+  gemma4 and Haiku queried `Donor` instead of `Sample`), but shares Haiku's *exact*
+  `select_fields` reference-field mistake on `q09`/`q17`/`q18`/`q23`/`q24`/`q35` — put a reference
+  field (e.g. `donor`) directly in `select_fields` instead of through `forward_relation`. Two
+  unrelated models sharing one specific failure mode is, again by this project's own rule, a sign
+  the grounding doesn't make the distinction clear enough — not a coincidence.
+- **The refine loop moved a real number this time**: iteration 1's patch (a constraint requiring
+  every stated constraint to appear as a filter) raised holdout from 0.50 to **0.67** — the first
+  time in this project a refine iteration has improved holdout at all (Haiku's loop stayed flat
+  at +0.00). Iteration 2 then hit the exact temperature constraint above from the *other*
+  direction: the refiner, free to tune decode params, set `temperature=0.7`, which this model
+  also rejects. Every one of that iteration's 87 samples failed with the same
+  `UnsupportedParamsError`, correctly classified `PROVIDER_ERROR` (environment, withheld from
+  the refiner's own bundle), correctly rolled back to iteration 1's context, and the loop
+  correctly stopped ("only environment/config failures remain") instead of erroring out or
+  spinning. **Final: baseline holdout 0.50 -> best 0.67 (+0.17) at v001.** Full numbers:
+  `evals/baselines/2026-08-18-bedrock-sonnet-5-seed-v000.json` and
+  `evals/baselines/2026-08-18-bedrock-sonnet-5-loop-report.md`.
+
 ### Test suite
 
-Four files, 60 checks, no model calls required:
+Four files, 77 checks, no model calls required:
 
 - `tests/test_grading.py` — the golden set, anchored on the two REAL captured plans (the faithful
   one, and the `filters: []` one that silently dropped every constraint).
 - `tests/test_harness_invariants.py` — render determinism, patch apply-then-invert, append-only
-  versioning, fingerprint binding, placeholder/size guards, memorization lint, holdout isolation.
+  versioning, fingerprint binding, placeholder/size guards, memorization lint, holdout isolation,
+  plus (added for cross-model comparison) fingerprint-path collision-freedom and `report
+  --compare`'s mismatch/protocol warnings.
 - `tests/test_independence.py` — asserts on the prompts actually assembled at the litellm
   boundary: no case ids, no expectations, no expected results, no conversation history.
 - `tests/test_runner_fake.py` — a fake litellm target for deterministic end-to-end runs.

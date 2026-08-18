@@ -3,10 +3,10 @@
 > **Run every command in this file from the repository root** (`mosaic-demo-small/`), which is
 > where this file lives. Paths like `evals/schema/capabilities.json` are relative to it.
 
-Last verified: 2026-08-18, against `../hippo@502991c` and
-`bedrock/global.anthropic.claude-haiku-4-5-20251001-v1:0` (the default moved off local Ollama
-this session, once a Bedrock credential became available — see "What does not work yet" below
-for what changed and what didn't).
+Last verified: 2026-08-18, against `../hippo@502991c`, the default `bedrock/global.anthropic.
+claude-haiku-4-5-20251001-v1:0`, and (for comparison) `bedrock/global.anthropic.claude-sonnet-5`
+(the default moved off local Ollama this session, once a Bedrock credential became available —
+see "What does not work yet" below for what changed and what didn't).
 
 ---
 
@@ -25,9 +25,12 @@ Unsupported requests are refused with a reason rather than approximated.
 - The query layer against real data: 26 hippocampus tissue samples (9 with an RNA-seq workflow);
   the 115-sample tissue-request set (45 with RNA-seq); q24's donor chain resolving 3 samples → 9
   workflows → 6 datasets with reproducible ids.
-- **66 automated checks** across 4 files, all passing, requiring **no model calls** and finishing
+- **77 automated checks** across 4 files, all passing, requiring **no model calls** and finishing
   in about 9 seconds.
-- The context-tuning harness: probe → suite → runner → grader → triage → refiner → loop → CLI.
+- The context-tuning harness: probe → suite → runner → grader → triage → refiner → loop → CLI,
+  plus (new) `report --compare` to line up two models' finished runs side by side at zero token
+  cost, and a fingerprint path keyed per exact model string so probing one model never clobbers
+  another's measured capabilities.
 
 **What does not work yet — stated plainly**
 
@@ -53,10 +56,31 @@ loop correctly rolled back rather than keep a context that only helped train. Ho
 prose/block tuning alone didn't move the metric that matters here; the concrete next lever is
 grounding filter *values*, not just field names, in the live schema (below).
 
-**Progress:** `add-exon-context-harness` OpenSpec change — Section 8 (Verify) is now complete
-against the new default model, with one deviation stated on its own terms rather than glossed
-over: the original truncation-withholding check (8.2) doesn't reproduce anymore, because the
-auto-disable-reasoning fix (below) removed the condition that caused it. Ready to archive.
+**Then compared against a second model, `bedrock/global.anthropic.claude-sonnet-5`** — the
+harness's first real cross-model comparison. Finding this model even worked required a real fix
+first: its first probe came back 0/5 on *every* check, because it rejects `temperature=0`
+outright (`"Only temperature=1 is supported"`) and every check/decode-param assumed 0 was safe.
+Fixed by detecting the working temperature empirically rather than assuming it, the same
+"measure, don't assume" rule already applied elsewhere. With that fixed:
+
+- Same-sampling baseline: **train=0.38, holdout=0.50, strict=8/21** — edges Haiku slightly.
+  `determinism @ temp 1 = 40%` — a real ceiling from being forced off temperature 0, not a bug.
+- Fixes Haiku's `q21` bug (wrong entity on a reverse lookup) but shares its *exact*
+  `select_fields`-reference-field mistake on 6 other cases — a shared, model-independent
+  grounding gap, not two coincidences.
+- **The refine loop moved holdout for the first time in this project**: 0.50 → **0.67** on
+  iteration 1's patch. Iteration 2 then hit the same temperature constraint from the refiner's
+  side (it tried `temperature=0.7`); the loop correctly classified all 87 failures as
+  environment (not context), rolled back, and stopped cleanly. Final: **+0.17**, vs Haiku's flat
+  +0.00 on the identical treatment.
+
+Full comparison: `evals/baselines/2026-08-18-compare-haiku-vs-sonnet-5.md` (see §5 below for the
+command that produced it).
+
+**Progress:** both `add-exon-context-harness` and `add-exon-harness-model-comparison` OpenSpec
+changes are complete and archived, the latter with one deviation stated on its own terms: the
+original truncation-withholding check (8.2, `add-exon-context-harness`) doesn't reproduce
+anymore, because the auto-disable-reasoning fix (below) removed the condition that caused it.
 
 ### What the harness found in its first afternoon
 
@@ -230,6 +254,18 @@ planner*. Against the hosted default this is a few minutes for the full 29-case 
 python3 -m exon.harness probe                                  # capability fingerprint, ~1 min against the hosted default
 python3 -m exon.harness loop --auto-refine --max-iter 4         # the closed cycle -- EXON_REFINER_MODEL defaults to the same reachable model
 ```
+
+Compare two models' already-finished runs, no new model calls, using the real saved baselines
+from this session:
+
+```bash
+python3 -m exon.harness report --compare \
+  evals/baselines/2026-08-18-bedrock-haiku-4-5-seed-v000.json \
+  evals/baselines/2026-08-18-bedrock-sonnet-5-seed-v000.json
+```
+
+Prints both models' scores side by side plus the delta; warns explicitly if the two runs used
+different sampling, and notes if they used different output protocols.
 
 ---
 

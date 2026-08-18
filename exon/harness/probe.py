@@ -78,6 +78,7 @@ _DELIMITED_ASK = (
 _PREAMBLE_MARKERS = re.compile(
     r"^\s*(sure|certainly|here'?s|here is|of course|okay|ok\b|i'?ll|let me|```)", re.I
 )
+_TEMP_CONSTRAINT_RE = re.compile(r"[Oo]nly temperature=([0-9.]+) is supported")
 
 
 @dataclass
@@ -111,6 +112,15 @@ class ModelFingerprint:
     recommended_protocol: str
     checks: dict
     is_thinking_model: bool = False
+    # Every check below is measured at this temperature, not always literally 0 -- some models
+    # (found live: global.anthropic.claude-sonnet-5 via Bedrock) reject temperature=0 outright
+    # ("Only temperature=1 is supported"), which would otherwise silently zero out every single
+    # check (each catches openai.APIError and records a failure, so a param-value rejection reads
+    # identically to the model failing every check). Detected empirically once, up front, rather
+    # than hardcoded per model name. `determinism_at_temp_0`'s NAME is kept for compatibility with
+    # existing stored fingerprints/call sites; what it measures is determinism at this
+    # probe_temperature, which is 0.0 for the overwhelming majority of models.
+    probe_temperature: float = 0.0
     id: str = ""
 
     def __post_init__(self):
@@ -132,6 +142,7 @@ class ModelFingerprint:
                 "supports_json_object": self.supports_json_object,
                 "honours_stop_sequences": self.honours_stop_sequences,
                 "recommended_protocol": self.recommended_protocol,
+                "probe_temperature": self.probe_temperature,
             },
             sort_keys=True,
         )
@@ -152,9 +163,27 @@ def _extra(model: str) -> dict:
     return {"num_ctx": OLLAMA_NUM_CTX} if model.startswith("ollama") else {}
 
 
-def _call(model: str, **kwargs) -> object:
+def _detect_temperature(model: str) -> float:
+    """Empirically find a temperature this model actually accepts, rather than assuming 0.
+    Raises on any error that is NOT the specific "only temperature=X" constraint -- a real
+    auth/transport/model-id problem must surface immediately, not be swallowed as a guess."""
+    try:
+        litellm.completion(
+            model=model, temperature=0, max_tokens=8,
+            messages=[{"role": "user", "content": "hi"}],
+            timeout=REQUEST_TIMEOUT, **_extra(model),
+        )
+        return 0.0
+    except openai.APIError as e:
+        m = _TEMP_CONSTRAINT_RE.search(str(e))
+        if m:
+            return float(m.group(1))
+        raise
+
+
+def _call(model: str, *, temperature: float = 0, **kwargs) -> object:
     return litellm.completion(
-        model=model, temperature=0, max_tokens=PROBE_MAX_TOKENS,
+        model=model, temperature=temperature, max_tokens=PROBE_MAX_TOKENS,
         timeout=REQUEST_TIMEOUT, **_extra(model), **kwargs
     )
 
@@ -163,7 +192,7 @@ def _text(resp) -> str:
     return (resp.choices[0].message.content or "").strip()
 
 
-def _check_system_role(model: str) -> ProbeCheck:
+def _check_system_role(model: str, temperature: float) -> ProbeCheck:
     """Does a system instruction actually constrain output? Decides whether exemplars can be
     rendered as chat turns or must be inlined as text."""
     passed, evidence = 0, []
@@ -172,6 +201,7 @@ def _check_system_role(model: str) -> ProbeCheck:
             out = _text(
                 _call(
                     model,
+                    temperature=temperature,
                     messages=[
                         {"role": "system", "content": "Reply with exactly: ACK"},
                         {"role": "user", "content": "Go."},
@@ -186,7 +216,7 @@ def _check_system_role(model: str) -> ProbeCheck:
     return ProbeCheck("system_role", passed, PROBE_SAMPLES, evidence=evidence)
 
 
-def _try_protocol(model: str, protocol: OutputProtocol) -> ProbeCheck:
+def _try_protocol(model: str, protocol: OutputProtocol, temperature: float) -> ProbeCheck:
     """One protocol tier, PROBE_SAMPLES attempts. Qualifies only if unanimous."""
     passed, evidence = 0, []
     for _ in range(PROBE_SAMPLES):
@@ -195,6 +225,7 @@ def _try_protocol(model: str, protocol: OutputProtocol) -> ProbeCheck:
             if protocol is OutputProtocol.JSON_SCHEMA:
                 resp = _call(
                     model,
+                    temperature=temperature,
                     messages=[{"role": "user", "content": _PROBE_ASK}],
                     response_format={
                         "type": "json_schema",
@@ -213,6 +244,7 @@ def _try_protocol(model: str, protocol: OutputProtocol) -> ProbeCheck:
             elif protocol is OutputProtocol.TOOL_CALL:
                 resp = _call(
                     model,
+                    temperature=temperature,
                     messages=[{"role": "user", "content": _PROBE_ASK}],
                     tools=[_PROBE_TOOL],
                     tool_choice={"type": "function", "function": {"name": "emit_probe"}},
@@ -225,6 +257,7 @@ def _try_protocol(model: str, protocol: OutputProtocol) -> ProbeCheck:
             elif protocol is OutputProtocol.JSON_OBJECT:
                 resp = _call(
                     model,
+                    temperature=temperature,
                     messages=[
                         {"role": "user", "content": _PROBE_ASK + ' Reply as {"entity": ...}.'}
                     ],
@@ -233,12 +266,18 @@ def _try_protocol(model: str, protocol: OutputProtocol) -> ProbeCheck:
                 got = _text(resp)
                 ok = json.loads(got).get("entity") == "Sample"
             elif protocol is OutputProtocol.DELIMITED:
-                resp = _call(model, messages=[{"role": "user", "content": _DELIMITED_ASK}])
+                resp = _call(
+                    model, temperature=temperature,
+                    messages=[{"role": "user", "content": _DELIMITED_ASK}],
+                )
                 got = _text(resp)
                 m = re.search(r"<answer>\s*(.*?)\s*</answer>", got, re.S)
                 ok = bool(m) and m.group(1).strip() == "Sample"
             else:  # RAW -- last resort: fenced-code or bare extraction
-                resp = _call(model, messages=[{"role": "user", "content": _PROBE_ASK}])
+                resp = _call(
+                    model, temperature=temperature,
+                    messages=[{"role": "user", "content": _PROBE_ASK}],
+                )
                 got = _text(resp)
                 ok = "Sample" in got
         except (openai.APIError, json.JSONDecodeError, TypeError, ValueError) as e:
@@ -249,13 +288,14 @@ def _try_protocol(model: str, protocol: OutputProtocol) -> ProbeCheck:
     return ProbeCheck(f"protocol:{protocol.value}", passed, PROBE_SAMPLES, evidence=evidence)
 
 
-def _check_stop_sequences(model: str) -> ProbeCheck:
+def _check_stop_sequences(model: str, temperature: float) -> ProbeCheck:
     passed, evidence = 0, []
     for _ in range(PROBE_SAMPLES):
         try:
             out = _text(
                 _call(
                     model,
+                    temperature=temperature,
                     messages=[
                         {"role": "user", "content": "Count: one two THREE four five six."}
                     ],
@@ -270,10 +310,10 @@ def _check_stop_sequences(model: str) -> ProbeCheck:
     return ProbeCheck("stop_sequences", passed, PROBE_SAMPLES, evidence=evidence)
 
 
-def _check_determinism(model: str) -> ProbeCheck:
+def _check_determinism(model: str, temperature: float) -> ProbeCheck:
     """The single most important number in a run: it caps achievable reliability. If the model
-    is not byte-identical at temperature 0, no amount of context tuning makes it so -- report it
-    rather than chase it."""
+    is not byte-identical at its minimum-randomness temperature, no amount of context tuning
+    makes it so -- report it rather than chase it."""
     outs = []
     for _ in range(PROBE_SAMPLES):
         try:
@@ -281,6 +321,7 @@ def _check_determinism(model: str) -> ProbeCheck:
                 _text(
                     _call(
                         model,
+                        temperature=temperature,
                         messages=[
                             {
                                 "role": "user",
@@ -302,7 +343,7 @@ def _check_determinism(model: str) -> ProbeCheck:
     )
 
 
-def _check_preamble(model: str) -> ProbeCheck:
+def _check_preamble(model: str, temperature: float) -> ProbeCheck:
     """How often the model wraps bare output in prose or fences. Drives whether the seed context
     needs an aggressive OUTPUT_CONTRACT block."""
     wrapped, evidence = 0, []
@@ -311,6 +352,7 @@ def _check_preamble(model: str) -> ProbeCheck:
             out = _text(
                 _call(
                     model,
+                    temperature=temperature,
                     messages=[
                         {
                             "role": "user",
@@ -331,7 +373,8 @@ def _check_preamble(model: str) -> ProbeCheck:
 
 
 def _check_protocol_under_load(
-    model: str, protocol: OutputProtocol, grounding: str, instruction: str, plan_tool: dict
+    model: str, protocol: OutputProtocol, grounding: str, instruction: str, plan_tool: dict,
+    temperature: float,
 ) -> ProbeCheck:
     """Does the protocol still hold on a REALISTICALLY SIZED request?
 
@@ -377,7 +420,7 @@ def _check_protocol_under_load(
 
             resp = litellm.completion(
                 model=model,
-                temperature=0,
+                temperature=temperature,
                 max_tokens=LOADED_MAX_TOKENS,
                 timeout=REQUEST_TIMEOUT,
                 messages=messages,
@@ -479,12 +522,17 @@ def probe_model(
 
     log(f"Probing {model} ({PROBE_SAMPLES} calls per check)...")
 
-    checks["system_role"] = _check_system_role(model)
+    temperature = _detect_temperature(model)
+    if temperature != 0.0:
+        log(f"  NOTE: temperature=0 rejected by this model/provider; probing at "
+            f"temperature={temperature} instead (detected empirically, not hardcoded)")
+
+    checks["system_role"] = _check_system_role(model, temperature)
     log(f"  system role adherence : {checks['system_role'].passed}/{PROBE_SAMPLES}")
 
     recommended = None
     for proto in PROTOCOL_LADDER:
-        c = _try_protocol(model, proto)
+        c = _try_protocol(model, proto, temperature)
         checks[c.name] = c
         log(f"  protocol {proto.value:<12}: {c.passed}/{PROBE_SAMPLES}"
             f"{'  <-- qualifies' if c.unanimous and recommended is None else ''}")
@@ -494,15 +542,15 @@ def probe_model(
         recommended = OutputProtocol.RAW
         log("  WARNING: no protocol qualified unanimously; falling back to RAW")
 
-    checks["stop_sequences"] = _check_stop_sequences(model)
+    checks["stop_sequences"] = _check_stop_sequences(model, temperature)
     log(f"  stop sequences        : {checks['stop_sequences'].passed}/{PROBE_SAMPLES}")
 
-    checks["determinism_temp_0"] = _check_determinism(model)
+    checks["determinism_temp_0"] = _check_determinism(model, temperature)
     det = checks["determinism_temp_0"].rate
-    log(f"  determinism @ temp 0  : {det:.0%}"
+    log(f"  determinism @ temp {temperature:g}  : {det:.0%}"
         f"{'   <-- CAPS ACHIEVABLE RELIABILITY' if det < 1.0 else ''}")
 
-    checks["preamble"] = _check_preamble(model)
+    checks["preamble"] = _check_preamble(model, temperature)
     log(f"  clean (no preamble)   : {checks['preamble'].passed}/{PROBE_SAMPLES}")
 
     if load_check is not None:
@@ -517,7 +565,9 @@ def probe_model(
                 continue
             if not checks[f"protocol:{proto.value}"].unanimous:
                 continue
-            c = _check_protocol_under_load(model, proto, grounding, instruction, plan_tool)
+            c = _check_protocol_under_load(
+                model, proto, grounding, instruction, plan_tool, temperature
+            )
             checks[c.name] = c
             log(f"  loaded {proto.value:<14}: {c.passed}/{LOADED_SAMPLES}")
             if c.unanimous:
@@ -562,6 +612,7 @@ def probe_model(
         max_context_tokens=ctx,
         recommended_protocol=recommended.value,
         is_thinking_model=thinking,
+        probe_temperature=temperature,
         checks={k: asdict(v) for k, v in checks.items()},
     )
     log(f"  -> protocol={fp.recommended_protocol} fingerprint={fp.id}")

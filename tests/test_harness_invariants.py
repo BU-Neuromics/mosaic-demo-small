@@ -4,7 +4,9 @@ These are the checks that would let a silently-wrong harness pass everything els
 can see the holdout, a patch that cannot be undone, a prompt that varies between renders, or a
 context that has quietly become an answer key.
 """
+import json
 import sys
+import tempfile
 from pathlib import Path
 
 sys.path.insert(0, str(Path(__file__).resolve().parents[1]))
@@ -19,6 +21,7 @@ from exon.context.template import (
     memorization_findings,
 )
 from exon.harness.cases import load_suite
+from exon.harness.cli import _compare_reports, _fingerprint_path, _model_slug
 from exon.harness.outcome import (
     CONTEXT_ADDRESSABLE,
     ENVIRONMENT_CLASSES,
@@ -223,6 +226,87 @@ art_with_block = base_artifact(blocks=[
 b = build_bundle(mk_report([("q01", "train")]), CASES, art_with_block)
 check("bundle names the block that should have prevented the failure",
       "tried-this" in b.to_markdown())
+
+# ---- fingerprint path is a collision-free function of the exact model string ------------
+haiku = "bedrock/global.anthropic.claude-haiku-4-5-20251001-v1:0"
+sonnet = "bedrock/global.anthropic.claude-sonnet-5"
+haiku_v2 = "bedrock/global.anthropic.claude-haiku-4-5-20260101-v1:0"
+check("two different models never collide on one fingerprint path",
+      _fingerprint_path(haiku) != _fingerprint_path(sonnet))
+check("a version-suffix-only change produces a distinct path, not a collision",
+      _fingerprint_path(haiku) != _fingerprint_path(haiku_v2))
+check("the same model string always resolves to the same path (idempotent)",
+      _fingerprint_path(haiku) == _fingerprint_path(haiku))
+check("the slug is a pure function of the string, not a lookup (unknown model still resolves)",
+      _model_slug("some/brand-new-model-nobody-added-yet") != "")
+
+
+# ---- report --compare reads existing reports, spends no new tokens ----------------------
+def mk_suite_report(model, samples_per_case, n_train=2, n_holdout=1, protocol="tool_call"):
+    results = []
+    for i in range(n_train):
+        results.append(CaseResult(case_id=f"t{i}", split="train", capability="filter", samples=[
+            SampleResult(case_id=f"t{i}", sample_index=k, outcome=FailureClass.PASS)
+            for k in range(samples_per_case)
+        ]))
+    for i in range(n_holdout):
+        results.append(CaseResult(case_id=f"h{i}", split="holdout", capability="filter", samples=[
+            SampleResult(case_id=f"h{i}", sample_index=k, outcome=FailureClass.PASS)
+            for k in range(samples_per_case)
+        ]))
+    return SuiteReport(
+        context_version=0, fingerprint_id=f"fp-{model}", model=model, protocol=protocol,
+        results=results,
+    )
+
+
+def write_report(tmpdir, name, report):
+    p = Path(tmpdir) / name
+    p.write_text(json.dumps(report.to_dict(), default=str))
+    return str(p)
+
+
+with tempfile.TemporaryDirectory() as tmp:
+    path_a = write_report(tmp, "a.json", mk_suite_report(haiku, samples_per_case=3))
+    path_b = write_report(tmp, "b.json", mk_suite_report(sonnet, samples_per_case=3))
+    path_c = write_report(tmp, "c.json", mk_suite_report(sonnet, samples_per_case=1))
+    path_d = write_report(
+        tmp, "d.json", mk_suite_report(sonnet, samples_per_case=3, protocol="json_schema")
+    )
+
+    out = _compare_reports([path_a, path_b])
+    check("compare output names both models", haiku in out and sonnet in out)
+    check("matched sampling produces no mismatch warning", "WARNING" not in out)
+
+    run_dir = Path(tmp) / "run_dir"
+    run_dir.mkdir()
+    (run_dir / "report.json").write_text(
+        json.dumps(mk_suite_report(haiku, samples_per_case=3).to_dict(), default=str)
+    )
+    out_dir = _compare_reports([str(run_dir), path_b])
+    check("a `run` output dir resolves via its own <dir>/report.json", haiku in out_dir)
+
+    out_mismatch = _compare_reports([path_a, path_c])
+    check("a samples-per-case mismatch is surfaced as an explicit warning",
+          "WARNING" in out_mismatch and "samples-per-case" in out_mismatch)
+
+    out_protocol = _compare_reports([path_a, path_d])
+    check("differing protocols trigger the model-AND-protocol-jointly caveat",
+          "model-AND-protocol" in out_protocol)
+
+    try:
+        _compare_reports([path_a])
+        check("comparing fewer than 2 paths raises", False)
+    except ValueError:
+        check("comparing fewer than 2 paths raises", True)
+
+    missing_dir = Path(tmp) / "empty_loop_run"
+    missing_dir.mkdir()
+    try:
+        _compare_reports([str(missing_dir), path_a])
+        check("a directory with no report.json raises rather than guessing", False)
+    except FileNotFoundError:
+        check("a directory with no report.json raises rather than guessing", True)
 
 print()
 if failures:

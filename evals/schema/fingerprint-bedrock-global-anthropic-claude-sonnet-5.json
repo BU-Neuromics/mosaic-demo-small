@@ -1,0 +1,145 @@
+{
+  "model": "bedrock/global.anthropic.claude-sonnet-5",
+  "honours_system_role": true,
+  "supports_json_schema": false,
+  "supports_tool_call": true,
+  "supports_json_object": true,
+  "honours_stop_sequences": false,
+  "determinism_at_temp_0": 0.4,
+  "preamble_tendency": 0.0,
+  "max_context_tokens": 1000000,
+  "recommended_protocol": "tool_call",
+  "checks": {
+    "system_role": {
+      "name": "system_role",
+      "passed": 5,
+      "total": 5,
+      "detail": "",
+      "evidence": [
+        "ACK",
+        "ACK",
+        "ACK",
+        "ACK",
+        "ACK"
+      ]
+    },
+    "protocol:json_schema": {
+      "name": "protocol:json_schema",
+      "passed": 0,
+      "total": 5,
+      "detail": "",
+      "evidence": [
+        "<error: BadRequestError: litellm.BadRequestError: BedrockException - {\"message\":\"The model returned the following errors: output_config.format: Extra inputs are not permitted\"}>",
+        "<error: BadRequestError: litellm.BadRequestError: BedrockException - {\"message\":\"The model returned the following errors: output_config.format: Extra inputs are not permitted\"}>",
+        "<error: BadRequestError: litellm.BadRequestError: BedrockException - {\"message\":\"The model returned the following errors: output_config.format: Extra inputs are not permitted\"}>",
+        "<error: BadRequestError: litellm.BadRequestError: BedrockException - {\"message\":\"The model returned the following errors: output_config.format: Extra inputs are not permitted\"}>",
+        "<error: BadRequestError: litellm.BadRequestError: BedrockException - {\"message\":\"The model returned the following errors: output_config.format: Extra inputs are not permitted\"}>"
+      ]
+    },
+    "protocol:tool_call": {
+      "name": "protocol:tool_call",
+      "passed": 5,
+      "total": 5,
+      "detail": "",
+      "evidence": [
+        "{\"entity\": \"Sample\"}",
+        "{\"entity\": \"Sample\"}",
+        "{\"entity\": \"Sample\"}",
+        "{\"entity\": \"Sample\"}",
+        "{\"entity\": \"Sample\"}"
+      ]
+    },
+    "protocol:json_object": {
+      "name": "protocol:json_object",
+      "passed": 5,
+      "total": 5,
+      "detail": "",
+      "evidence": [
+        "{\"entity\": \"Sample\"}",
+        "{\"entity\": \"Sample\"}",
+        "{\"entity\": \"Sample\"}",
+        "{\"entity\": \"Sample\"}",
+        "{\"entity\": \"Sample\"}"
+      ]
+    },
+    "protocol:delimited": {
+      "name": "protocol:delimited",
+      "passed": 5,
+      "total": 5,
+      "detail": "",
+      "evidence": [
+        "<answer>Sample</answer>",
+        "<answer>Sample</answer>",
+        "<answer>Sample</answer>",
+        "<answer>Sample</answer>",
+        "<answer>Sample</answer>"
+      ]
+    },
+    "protocol:raw": {
+      "name": "protocol:raw",
+      "passed": 5,
+      "total": 5,
+      "detail": "",
+      "evidence": [
+        "I understand you'd like me to return the entity name \"Sample\". Here it is:\n\n**Sample**\n\nIf you were expecting a different result or had additional context/instructions for this task, please provide more details and I'll be happy to help further.",
+        "The entity name is: **Sample**",
+        "Sample",
+        "The entity name is **Sample**.\n\nIf you meant something more specific\u2014like details about a \"Sample\" entity in a database schema, a piece of code, a document, or a particular system\u2014please provide additional context or the relevant data, and I can help you extract, format, or explain it further.",
+        "Sample"
+      ]
+    },
+    "stop_sequences": {
+      "name": "stop_sequences",
+      "passed": 3,
+      "total": 5,
+      "detail": "",
+      "evidence": [
+        "Here's the count:\n\n1. one\n2. two\n3.",
+        "There are **6 words** in that sequence:\n\n1. one\n2. two\n3.",
+        "One two three four five six.",
+        "Counting: one (1), two (2), three (3), four (4), five (5), six (6)\n\n**Total: 6 items**",
+        "One, two,"
+      ]
+    },
+    "determinism_temp_0": {
+      "name": "determinism_temp_0",
+      "passed": 2,
+      "total": 5,
+      "detail": "2/5 byte-identical to the first reply",
+      "evidence": [
+        "**Hippocampus**\n\nThis brain region is crucial for memory formation and spatial navigation.",
+        "**Hippocampus**\n\nThis brain region is critical for memory formation and spatial navigation.",
+        "**Hippocampus**",
+        "**Hippocampus**\n\nThis brain region is crucial for memory formation and spatial navigation.",
+        "**Hippocampus**"
+      ]
+    },
+    "preamble": {
+      "name": "preamble",
+      "passed": 5,
+      "total": 5,
+      "detail": "",
+      "evidence": [
+        "Sample",
+        "Sample",
+        "Sample",
+        "Sample",
+        "Sample"
+      ]
+    },
+    "loaded:tool_call": {
+      "name": "loaded:tool_call",
+      "passed": 3,
+      "total": 3,
+      "detail": "",
+      "evidence": [
+        "{\"steps\": [{\"step_type\": \"filter\", \"entity\": \"Sample\", \"filters\": [{\"field\": \"brain_region\", \"op\": \"EQ\", \"value\": \"hippocampus\"}, {\"field\": \"sample_type\", \"op\": \"EQ\", \"value\": \"brain tissue\"}], \"filter_mode\": \"AND\", \"select_fields\": [\"id\", \"name\", \"brain_region\", \"sample_type\", \"accession\", \"donor\"]",
+        "{\"steps\": [{\"step_type\": \"filter\", \"entity\": \"Sample\", \"filters\": [{\"field\": \"brain_region\", \"op\": \"EQ\", \"value\": \"hippocampus\"}, {\"field\": \"sample_type\", \"op\": \"EQ\", \"value\": \"brain tissue\"}], \"filter_mode\": \"AND\", \"select_fields\": [\"id\", \"name\", \"accession\", \"brain_region\", \"sample_type\", \"donor\"]",
+        "{\"steps\": [{\"step_type\": \"filter\", \"entity\": \"Sample\", \"filters\": [{\"field\": \"brain_region\", \"op\": \"EQ\", \"value\": \"hippocampus\"}], \"filter_mode\": \"AND\", \"select_fields\": [\"id\", \"name\", \"accession\", \"sample_type\", \"brain_region\", \"donor\"], \"forward_relation\": {\"field\": \"donor\", \"select_fields\": [\"coh"
+      ]
+    }
+  },
+  "is_thinking_model": false,
+  "probe_temperature": 1.0,
+  "id": "ce22368326666ec0"
+}

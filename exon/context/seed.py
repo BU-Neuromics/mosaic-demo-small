@@ -77,7 +77,10 @@ def seed_context(fingerprint: ModelFingerprint, *, num_ctx: int | None = None) -
 
     protocol = OutputProtocol(fingerprint.recommended_protocol)
     decode = DecodeParams(
-        temperature=0.0,
+        # Not always literally 0.0 -- some models/providers reject temperature=0 outright
+        # (found live: global.anthropic.claude-sonnet-5 via Bedrock, "Only temperature=1 is
+        # supported"). The probe detects the working value empirically; this just uses it.
+        temperature=getattr(fingerprint, "probe_temperature", 0.0),
         seed=0,
         num_ctx=num_ctx if num_ctx is not None else _working_num_ctx(fingerprint),
         # Turn reasoning off where the model has such a mode: it otherwise burns the completion
