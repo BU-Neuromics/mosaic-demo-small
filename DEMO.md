@@ -37,45 +37,22 @@ Unsupported requests are refused with a reason rather than approximated.
 Switching off local Ollama and onto a real hosted model (Bedrock Claude Haiku 4.5) fixed the
 reliability half of the problem — no more dropped filters, no more ignored tool calls — but not
 the faithfulness half. First full-suite baseline against the new default: **train=0.33,
-holdout=0.50, strict=7/21**, across three distinct failure shapes:
+holdout=0.50, strict=7/21**, across three distinct failure shapes (value-vocabulary guessing,
+wrong entity on a reverse lookup, missing rejection on capability-gap questions). The closed
+refinement loop (4 iterations) raised train (0.33 → 0.43) but **holdout stayed flat at
++0.00** — prose/block tuning alone didn't move the metric that matters.
 
-- **Value-vocabulary guessing** (the majority of failures): the model fills a filter with a value
-  paraphrased from the question's wording instead of the schema's real enum value —
-  `'brain tissue'` for `'tissue'`, `'at-risk'` for `'at_risk'`, `'chemically fixed'` for `'fixed'`.
-  Structurally valid, silently wrong. This project's own driving example (`q35`) fails exactly
-  this way now.
-- **Wrong entity on a reverse lookup** (`q21`): still queries `Donor` when asked which *samples*
-  a donor contributed — the same finding from the gemma4 run below, reproduced on a much
-  stronger model.
-- **Missing rejection** on all 3 capability-gap questions — the model accepts a plan for a
-  question that's genuinely unanswerable (mosaic#96/#148), where refusing is correct.
+Compared against a second model, `bedrock/global.anthropic.claude-sonnet-5`: same-sampling
+baseline **train=0.38, holdout=0.50, strict=8/21**, and this time the refine loop *did* move
+holdout — **0.50 → 0.67 (+0.17)** — before correctly hitting and rolling back from an unrelated
+provider constraint (this model rejects `temperature=0`, caught the same way the harness catches
+everything: measure, don't assume).
 
-Ran the closed refinement loop end-to-end for the first time (4 iterations, `--auto-refine`):
-train improved (0.33 → 0.43) but **holdout stayed flat at 0.50 — +0.00 improvement**, and the
-loop correctly rolled back rather than keep a context that only helped train. Honest reading:
-prose/block tuning alone didn't move the metric that matters here; the concrete next lever is
-grounding filter *values*, not just field names, in the live schema (below).
-
-**Then compared against a second model, `bedrock/global.anthropic.claude-sonnet-5`** — the
-harness's first real cross-model comparison. Finding this model even worked required a real fix
-first: its first probe came back 0/5 on *every* check, because it rejects `temperature=0`
-outright (`"Only temperature=1 is supported"`) and every check/decode-param assumed 0 was safe.
-Fixed by detecting the working temperature empirically rather than assuming it, the same
-"measure, don't assume" rule already applied elsewhere. With that fixed:
-
-- Same-sampling baseline: **train=0.38, holdout=0.50, strict=8/21** — edges Haiku slightly.
-  `determinism @ temp 1 = 40%` — a real ceiling from being forced off temperature 0, not a bug.
-- Fixes Haiku's `q21` bug (wrong entity on a reverse lookup) but shares its *exact*
-  `select_fields`-reference-field mistake on 6 other cases — a shared, model-independent
-  grounding gap, not two coincidences.
-- **The refine loop moved holdout for the first time in this project**: 0.50 → **0.67** on
-  iteration 1's patch. Iteration 2 then hit the same temperature constraint from the refiner's
-  side (it tried `temperature=0.7`); the loop correctly classified all 87 failures as
-  environment (not context), rolled back, and stopped cleanly. Final: **+0.17**, vs Haiku's flat
-  +0.00 on the identical treatment.
-
-Full comparison: `evals/baselines/2026-08-18-compare-haiku-vs-sonnet-5.md` (see §5 below for the
-command that produced it).
+Full narrative (exact example values, the temperature-detection fix, the shared `select_fields`
+bug across both models, per-model failure breakdowns) lives in `exon/README.md`'s "Findings from
+the first full-suite run" and "Haiku vs Sonnet 5" sections — this file stays the short version.
+Full comparison numbers: `evals/baselines/2026-08-18-compare-haiku-vs-sonnet-5.md` (see §5 below
+for the command that produced it).
 
 **Progress:** both `add-exon-context-harness` and `add-exon-harness-model-comparison` OpenSpec
 changes are complete and archived, the latter with one deviation stated on its own terms: the
@@ -287,16 +264,9 @@ different sampling, and notes if they used different output protocols.
 ### The next change, named by the measurements
 
 Ground filter **values**, not just field names, in the live schema — the grounding context lists
-`sample_type: tissue|blood|...` today only as a field name, never the values a field actually
-takes, and the model fills in a value from the question's own wording when it doesn't know
-better (`'brain tissue'`, `'at-risk'`, `'chemically fixed'` for `'tissue'`, `'at_risk'`,
-`'fixed'`). This is a one-block context change (an enum-values glossary derived from
-`hippoSchema`, same pattern as the existing relationship-type block), applied and measured on its
-own so a score movement stays attributable — exactly the loop's job, and exactly what 4 iterations
-of *other* prose changes didn't touch. Two smaller, already-diagnosed items remain from the
-original local-model run and still reproduce here: `q21` queries `Donor` when asked which
-*samples* a donor contributed (same finding, same fix, now confirmed on a much stronger model
-too), and `q32`/`q33`/`q34` need an explicit refusal exemplar rather than accepting an
-unanswerable question. `EXON_THINK=1` and the auto-disable-reasoning finding (19× fewer tokens,
-gemma4-specific) remain true and are documented in `exon/README.md`'s harness findings, but no
-longer affect the default path since it no longer targets a local Ollama model.
+field names today but never the values a field actually takes, so the model fills one in from the
+question's own wording when it doesn't know better. A one-block context change (an enum-values
+glossary derived from `hippoSchema`), applied and measured on its own so a score movement stays
+attributable — exactly what 4 iterations of *other* prose changes didn't touch. Full detail
+(exact example values, the two smaller already-diagnosed items, the gemma4-specific reasoning-mode
+finding) lives in `exon/README.md`'s "Known limitation" and harness-findings sections.
