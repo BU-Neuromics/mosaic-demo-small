@@ -223,6 +223,25 @@ def build_grounding_context(hippo_schema: dict, capability_manifest: dict) -> st
     )
 
 
+def decode_kwargs_for(model: str, decode_kwargs: dict = None) -> dict:
+    """Provider-specific decode parameters. Shared by the QueryPlan emitter here and the
+    QuerySpec emitter in spec_planner, so a tuning gain learned by one reaches the other --
+    the same reason `think=False` was wired into the product surface rather than left in the
+    harness."""
+    kwargs = dict(decode_kwargs or {})
+    if model.startswith("ollama"):
+        if "num_ctx" not in kwargs:
+            kwargs["num_ctx"] = OLLAMA_NUM_CTX
+        # Reasoning mode off by default for the product surface too. Measured on gemma4:12b:
+        # leaving it on cost 2631 completion tokens with NO tool call, against 135 tokens WITH
+        # one. The harness learned this via the probe; without it here, `python -m exon` would
+        # keep hitting the spiral the harness already diagnosed -- a tuning gain that never
+        # reaches the thing users actually run is worthless. Set EXON_THINK=1 to re-enable.
+        if "think" not in kwargs:
+            kwargs["think"] = os.environ.get("EXON_THINK", "").lower() in ("1", "true", "yes")
+    return kwargs
+
+
 @dataclass
 class PlanAttempt:
     """One model call, whatever happened. Deliberately records failure modes rather than
@@ -288,17 +307,7 @@ def request_plan(
     else:
         system, grounding = context
 
-    kwargs = dict(decode_kwargs or {})
-    if model.startswith("ollama"):
-        if "num_ctx" not in kwargs:
-            kwargs["num_ctx"] = OLLAMA_NUM_CTX
-        # Reasoning mode off by default for the product surface too. Measured on gemma4:12b:
-        # leaving it on cost 2631 completion tokens with NO tool call, against 135 tokens WITH
-        # one. The harness learned this via the probe; without it here, `python -m exon` would
-        # keep hitting the spiral the harness already diagnosed -- a tuning gain that never
-        # reaches the thing users actually run is worthless. Set EXON_THINK=1 to re-enable.
-        if "think" not in kwargs:
-            kwargs["think"] = os.environ.get("EXON_THINK", "").lower() in ("1", "true", "yes")
+    kwargs = decode_kwargs_for(model, decode_kwargs)
 
     messages = [
         {"role": "system", "content": system},
