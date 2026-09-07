@@ -197,6 +197,76 @@ Decision 2 additions above on the `construct-query-spec` Prompt and actionable v
 which further shrink what's actually Exon-specific down to the harness and the product-integration
 surface, nothing more.
 
+### 8. The MCP boundary is NOT a superset of Mosaic's GraphQL — migrate anyway, and track the gap
+
+Found during Phase 2 step 1 (2026-09-07), and not anticipated by any of Decisions 1–7: this
+change's whole premise was that Mosaic's MCP boundary is at least as capable as what Exon reaches
+today. **It isn't.** Mosaic's GraphQL exposes, per entity, `<entity>Count`, `<entity>FacetCounts`,
+and `<entity>FieldRange`, plus `searchAll`, `neighbors`, `relatedTo`, and `entityHistory`. The
+`QuerySpec` boundary exposes none of them: `columns` was rejected outright by Phase 1 (#183), and
+there is no aggregation, faceting, range, or search surface at all.
+
+Exon reaches GraphQL today. So migrating it to the MCP boundary **strictly reduces reachable
+capability**. Concretely, eval case `q33` ("how many donors are there per cohort") is answerable
+right now via `donorsFacetCounts(field: "cohort")` — verified live: control 125, case 104,
+at_risk 71 — and becomes inexpressible after the migration.
+
+The earlier reading that the boundary was a superset came from checking it against `QueryPlan`'s
+op catalog rather than against Mosaic's own query surface. It is a superset of `QueryPlan`. It is
+not a superset of Mosaic.
+
+**Decision: close the gap upstream before migrating Exon, not after.** The user's own use case
+(multimodal cohort analysis) makes counting/grouping/ranging a normal query shape, not an edge
+case, which rules out simply accepting the regression. Filed upstream as `BU-Neuromics/mosaic#195`
+(`count_query_spec`/`facet_query_spec`/`field_range_query_spec`) and `#196` (`search_query_spec`,
+which closes a second, adjacent gap found in the same pass — the capability manifest already
+advertises `searchable: true` on fields like `Dataset.description`/`Donor.notes` that no MCP tool
+can search). Both issues turned out to be far smaller than "add aggregation" first sounded: the
+underlying capability was already shipped and closed out under `mosaic#96` → ADR-0007 (`#154`) →
+OpenSpec `aggregation-and-ordering` (`#156`, merged in PR #167) — `MosaicClient.count()`/
+`facet_counts()`/`field_range()`/`search()` already exist and already take the exact `where`/
+`entity_type` shape `compile_query_spec` already produces for `execute_query_spec`. The new tools
+are thin wrappers reusing that compiler unmodified, not new query logic — confirmed by
+`query_spec_compiler.py`'s own docstring, which already named this exact gap as deferred
+("`QuerySpec` has no representation for `facet_counts`/`field_range`/`search` yet"), and by the
+capability manifest already computing `aggregatable`/`range_queryable`/`searchable` flags with
+no tool consuming them before now.
+
+This resolves what looked, before checking, like a choice between three bad options:
+- **Accept the regression and migrate anyway** — rejected: the consuming use case needs this class
+  of query routinely, not as an edge case.
+- **Design row-shaped aggregation into `QuerySpec` itself first** (the `columns`
+  aggregate-vs-explode choice, Open Question 1 below) — rejected as the wrong-sized fix: that
+  question is genuinely unresolved even in ADR-0035 itself, and count/facet/range don't need it —
+  they return a different response shape entirely (a number, a distribution, a min/max), never
+  mixed with row output in the same call.
+- **Keep a GraphQL escape hatch alongside the MCP client** — rejected: reintroduces the two-paths
+  duplication this change exists to remove, and turned out to be unnecessary once the real fix
+  (small, additive MCP tools) was identified.
+
+Exon's Phase 2 migration (this repo, `add-mosaic-mcp-boundary` tasks 2.1–2.7) now additionally
+depends on `mosaic#195`/`#196` shipping before the eval-suite comparison in task 2.5 can run
+without a known false regression on the counting-style cases.
+
+**Corollary that makes task 2.5c mandatory regardless of #195/#196 shipping.** Even once
+`count_query_spec`/`facet_query_spec` exist, Exon still has to *recognize* a counting-style
+instruction and route it to the right tool instead of silently degrading it into a row query. It
+currently does the latter: asked for a per-cohort facet count, the QuerySpec emitter returned a
+**valid** spec listing all 300 donors sorted by cohort — a confidently wrong answer that Mosaic's
+validator cannot catch, because it checks shape and legality, never faithfulness to the
+instruction. #195/#196 turn "impossible to express" into "must be routed correctly"; they do not
+remove the need for that routing/refusal logic — if anything they make it a required
+classification step rather than a moot one.
+
+**Honesty note on measuring this migration.** Eval case `q32` ("donors older than 65, sorted by
+age descending") reads as a win for the new boundary, and is not one. Mosaic's GraphQL `FilterOp`
+enum gained `GT/GTE/LT/LTE/NEQ/CONTAINS/IS_NULL` in the ADR-0006 rollout; the flat `filters:` path
+answers `q32` today (verified live: 174 donors). The only thing blocking the *old* path is
+`exon/validator.py`'s stale `SUPPORTED_FILTER_OPS = ("EQ", "IN")  # mosaic#96, open` — the same
+stale-capability-notes problem this change exists to fix, one layer down. Any before/after
+comparison must say so, or it credits the migration for a capability the old path could have had
+with a one-line edit.
+
 ## Risks / Trade-offs
 
 - **This repo cannot unilaterally make Mosaic build its half.** Mitigated by writing the contract

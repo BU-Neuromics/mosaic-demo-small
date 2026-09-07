@@ -62,22 +62,31 @@ change depends on (`specs/mosaic-query-boundary-contract/spec.md`), not as actio
         a false regression. `evals/expected-results.json` already carries real executed totals for
         35 cases against the same data snapshot the demo server serves (3600 records, seed 0), so
         result equivalence is available as the primary signal; keep structural checks secondary.
-  - [ ] 2.5b **Re-baseline the stale `expect_rejection` cases.** Two of the three encode Mosaic
-        limitations that the ADR-0006/0007 rollout has since closed, and both were verified live to
-        be answerable now: `q32` ("donors older than 65 at death, sorted by age descending") was
-        blocked on mosaic#96 having no range op or sort — the emitter produced `age_at_death gt 65`
-        with `sort desc`, 174 rows; `q34` ("as a single composed query: which rna_seq workflows
-        reference sample SMPL-0032") was blocked on mosaic#148 having no relationship predicate —
-        the emitter produced one spec with a `RelatedCondition` on `input_samples`, 2 rows. Leaving
-        these tagged `blocked` would score the new path *wrong* for correctly answering them.
-        `q33` (facet count / group-by) is still genuinely unsupported and stays a rejection case.
+  - [ ] 2.5b **Re-baseline all three stale `expect_rejection` cases — none stay tagged `blocked`.**
+        All three encode Mosaic limitations that no longer hold, verified live: `q32` ("donors
+        older than 65 at death, sorted by age descending") — blocked on mosaic#96 having no range
+        op or sort — the emitter produced `age_at_death gt 65` with `sort desc`, 174 rows; `q34`
+        ("as a single composed query: which rna_seq workflows reference sample SMPL-0032") —
+        blocked on mosaic#148 having no relationship predicate — the emitter produced one spec
+        with a `RelatedCondition` on `input_samples`, 2 rows; `q33` ("how many donors per cohort")
+        — answerable TODAY via GraphQL's `donorsFacetCounts` (control 125 / case 104 / at_risk 71)
+        but NOT via the `QuerySpec` boundary, which has no aggregation tool at all. Leaving any of
+        the three tagged `blocked` would score the new path *wrong* for correctly answering them
+        (q32/q34) or hide a genuine boundary gap behind a stale "Mosaic can't do this" label (q33).
+        `q33` specifically **blocks this task**, not just its own re-tag: it depends on
+        `BU-Neuromics/mosaic#195` (aggregation tools) shipping — decided in `design.md` Decision 8
+        as extend-the-boundary-then-migrate, not accept-the-regression. Do not run the eval-suite
+        comparison in 2.5's parent task until #195 is live, or `q33` will read as a false
+        regression against the old GraphQL-calling path.
   - [ ] 2.5c **Grade the silent-degradation gap, which validation structurally cannot catch.**
-        `q33` demonstrated it: asked for a per-cohort facet count, the emitter returned a *valid*
-        spec listing all 300 donors sorted by cohort — a confidently wrong answer to a question
-        that asked for counts. Mosaic's validator checks shape and legality, never faithfulness to
-        the instruction, so it will never reject this. The old architecture's correct answer was
-        refusal; `spec_planner` has no refusal path at all. Either give it one, or grade this class
-        explicitly — but do not assume the boundary covers it.
+        `q33` demonstrated it even before #195: asked for a per-cohort facet count, the emitter
+        returned a *valid* spec listing all 300 donors sorted by cohort — a confidently wrong
+        answer to a question that asked for counts. Mosaic's validator checks shape and legality,
+        never faithfulness to the instruction, so it will never reject this. This does NOT go away
+        once `count_query_spec`/`facet_query_spec` (#195) exist — it becomes a routing problem
+        instead of an impossibility: Exon must recognize a counting-style instruction and call the
+        new tool, not silently degrade it into a row query. Either give the planner that
+        recognition, or grade this class explicitly — do not assume shipping #195 alone fixes it.
   - [ ] 2.5d **Treat a `related` criterion with empty `criteria` as a graded failure.** It
         validates clean and executes (Phase 1's compiler fills a trivially-true predicate on the
         target's identifier), returning every anchor record that has *any* related record — a
