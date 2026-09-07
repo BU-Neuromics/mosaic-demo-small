@@ -101,9 +101,13 @@ Per the user's explicit choice: not the thinner "resources only" option. Mosaic'
 - **Exposes a `construct-query-spec` MCP Prompt** carrying the procedural "how to" knowledge that
   raw schema/capability data doesn't convey on its own — e.g. always resolve field names as LinkML
   slot names, never camelCase; express relationship existence/predicates as a single
-  `RelatedCondition` with `quantifier: 'some'/'none'`, never a client-side fan-out; a to-many
-  `columns` path needs an explicit `aggregate`-vs-`explode` choice; `asOf` cannot combine with a
-  `RelatedCondition` on the same `QuerySpec`. This is exactly the kind of empirically-derived,
+  `RelatedCondition` with `quantifier: 'some'/'none'`, never a client-side fan-out; `columns` is
+  not supported at all and must be omitted (**superseded as shipped**: this originally read that a
+  to-many `columns` path needs an explicit `aggregate`-vs-`explode` choice — Phase 1 instead
+  rejected `columns` outright with a coded `COLUMNS_NOT_SUPPORTED` error, since no Mosaic-side
+  compiler exists for that choice; the shipped Prompt teaches the rejection, and a regression test
+  guards it against being re-copied from this paragraph's earlier wording); `asOf` cannot combine
+  with a `RelatedCondition` on the same `QuerySpec`. This is exactly the kind of empirically-derived,
   hard-won guidance Exon's own `planner.py` currently hand-curates in
   `render_relationship_types()`/`render_limitations()` — without a shared Prompt, every future MCP
   client (Exon, Reel, a generic coding agent) either reinvents it or gets it wrong the way Exon's
