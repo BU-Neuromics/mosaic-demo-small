@@ -1,3 +1,4 @@
 litellm
 fastapi
 uvicorn
+mcp
