@@ -209,6 +209,39 @@ Haiku, per this session's earlier migration off local Ollama) — not `planner.p
 `REQUEST_TIMEOUT`, which is tuned far higher for slow local/Ollama generation and would make a chat
 turn feel broken if reused here as-is.
 
+### 9. What "existing QuerySpec" means when the wire's `query_spec` and the turn history could diverge
+
+Decision 8's request carries `query_spec` as its own top-level field, separate from `turns` — and
+Decision 3's rationale for that (Aperture already tracks the current draft independently, via its
+URL) implies they are not always guaranteed to agree: Aperture's own point-and-click `QuerySpec`
+builder (pre-existing, unrelated to chat) could in principle edit the same URL state a chat
+conversation is also building, with no corresponding turn recording it.
+
+**Whether that can actually happen is Aperture's own UI call, not this repo's** (Non-Goals already
+name "designing the suspended-turn UI affordance" as Aperture's; this is the same kind of decision,
+one level earlier). The direction, as of this design pass: **for now, Aperture locks its
+point-and-click panel once a chat conversation begins** — pick one input method per conversation,
+not both at once. Unlocking that later (letting both edit the same draft concurrently) is an
+explicitly named possibility, not a closed door.
+
+Given that, Exon's endpoint does not need to *resolve* a genuine divergence today — the lock means
+one shouldn't exist. But "assume it can't happen and ignore the field" would silently rot: nothing
+would notice if Aperture's lock is ever loosened without Exon being told, and the wire's own
+`query_spec` field would sit unused and untested indefinitely. Instead: the endpoint computes the
+current draft from `turns` (unchanged from `conversational_orchestrator.append_turn`'s existing
+behavior) **and asserts it equals the wire's stated `query_spec`**, rejecting the request (400-level,
+naming both values) if they disagree. This is a checked invariant standing in for the lock, not a
+duplicate implementation of it — Exon has no notion of "UI panels" and never will; it only knows
+whether the two numbers it was given agree.
+
+**The unlock hook**: `conversational_orchestrator.append_turn` takes an optional
+`existing_query_spec` override (falling back to today's turns-derivation when omitted, so every
+already-shipped test and behavior is unchanged). The day Aperture's lock is lifted, the only change
+needed is in the HTTP layer: stop asserting equality, and pass the wire's `query_spec` through as
+the override instead. No change to `conversational_orchestrator.py` itself, no wire-contract change
+(the field was always there), no change to `edit_turn` (its redo step rewinds to a past point,
+`turns[:idx]`, which the wire's *current*-state field was never the right input for regardless).
+
 ## Risks / Trade-offs
 
 - **Exon absorbing a role Aperture's own architecture assigns to Reel** is a real, named

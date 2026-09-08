@@ -19,17 +19,44 @@ remaining handoff step.
       otherwise consistent with `add-mosaic-mcp-boundary`'s existing constraints (no write/mutation
       path; `X-Mosaic-Actor` remains provenance-only).
 
-## Phase 2 — Exon (this repo; **blocked on Phase 1 shipping and being confirmed live**)
+## Phase 2 — Exon (this repo; **only full end-to-end integration is blocked on Phase 1**)
 
-- [ ] 2.1 Confirm Phase 1 has shipped and is reachable before starting any of the following.
-- [ ] 2.2 Add a turn-mode HTTP entry point to Exon implementing Decision 8's wire contract exactly
-      (`{utterance, query_spec, turns, edit_turn_id}` in, `{turn, suspended_turn_ids}` out; `Turn`
-      shape as specified), alongside (not replacing) the single-shot entry point from
-      `add-mosaic-mcp-boundary`.
+**Correction found while implementing (2026-09-07):** the header above originally blocked *all* of
+Phase 2 on Phase 1 shipping. That's stricter than the real dependency. Exon's own turn-mode planning
+core and HTTP endpoint need only what `add-mosaic-mcp-boundary` Phase 1 already shipped
+(`mosaic://capabilities`, `validate_query_spec`) — nothing here calls `converse_query_spec` itself;
+that tool is Exon's *caller*, not a dependency. Building and proving the endpoint standalone first
+(a real HTTP client hitting a real Exon server) is the same "build the callee before the caller, so
+there's something real to verify against" order already used for `mosaic#195`/`#196`. Only the
+*full* Aperture → Mosaic → Exon path is blocked on Phase 1 (`mosaic#186`) actually shipping.
+
+- [ ] 2.1 ~~Confirm Phase 1 has shipped and is reachable before starting any of the following.~~
+      Superseded by the correction above — confirm instead that `add-mosaic-mcp-boundary` Phase 1
+      (already shipped) is reachable, since that's what 2.2+ actually depend on.
+- [x] 2.2 Add a turn-mode planning core and HTTP entry point to Exon implementing Decision 8's wire
+      contract exactly (`{utterance, query_spec, turns, edit_turn_id}` in, `{turn,
+      suspended_turn_ids}` out; `Turn` shape as specified), alongside (not replacing) the
+      single-shot entry point from `add-mosaic-mcp-boundary`. Shipped across three slices, verified
+      independently at each step (`exon/conversational_planner.py` — the stateless planning core;
+      `exon/conversational_orchestrator.py` — turn-list/rewind-and-edit bookkeeping; the HTTP
+      endpoint itself, next).
+- [x] 2.2a **Decision 9 (`design.md`)**: resolved the tension between the wire's explicit
+      `query_spec` field and the turn-history-derived current draft. For now, Aperture locks its
+      point-and-click `QuerySpec` builder once a chat starts, so they can never genuinely diverge —
+      the endpoint asserts they agree (400-level, naming both, if they don't) rather than silently
+      trusting one or the other. `conversational_orchestrator.append_turn` already accepts an
+      optional `existing_query_spec` override so lifting that lock later is a change to the HTTP
+      layer alone (stop asserting equality, pass the wire value through as the override) — no change
+      needed to the orchestrator, `edit_turn`, or the wire contract itself.
 - [ ] 2.3 Implement the discriminated response shape (`proposal` vs. `clarification`); Exon's own
       generation retry loop may call Mosaic's `validate_query_spec` as an MCP client (same
       relationship the single-shot planner already has) to iterate on a candidate before returning
-      it — the authoritative re-validation happens on Mosaic's side per task 1.2, not here.
+      it — the authoritative re-validation happens on Mosaic's side per task 1.2, not here. Note:
+      the discriminated shape itself already shipped as part of 2.2 (`conversational_planner.py`'s
+      `emit_turn_response` tool); what remains here is specifically the optional self-validation
+      retry loop, deferred as its own increment (design discussion, 2026-09-07) since Mosaic's
+      `converse_query_spec` already re-validates authoritatively regardless (task 1.2) — this is a
+      quality improvement, not a correctness requirement, and isn't built yet.
 - [ ] 2.4 Restrict the turn-mode op vocabulary to `filter`/`exists-related-filter`
       (`FieldCondition`/`RelatedCondition`) — no aggregation, pivot, or set-op support.
 - [ ] 2.5 Implement rewind-and-edit: each turn carries an `id`; editing an earlier turn recomputes
