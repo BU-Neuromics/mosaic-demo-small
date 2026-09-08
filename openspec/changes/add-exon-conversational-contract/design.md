@@ -189,7 +189,16 @@ intent.
 **Validation stays authoritative in Mosaic, and this does not create a call cycle.** Exon's own
 turn endpoint may call Mosaic's `validate_query_spec`/`mosaic://capabilities` as an MCP client
 during its own generation retry loop — exactly the relationship the single-shot planner
-(`add-mosaic-mcp-boundary`) already has with Mosaic, unchanged. Separately, `converse_query_spec`
+(`add-mosaic-mcp-boundary`) already has with Mosaic, unchanged.
+
+**Correction (found 2026-09-07, while picking Phase 2 back up): that relationship doesn't exist
+yet.** No MCP client exists anywhere in this repo today — `exon/requirements.txt` has no MCP SDK,
+and the single-shot planner (`spec_planner.py`) only emits a `QuerySpec`; Mosaic validates it
+out-of-process, after the fact, not because Exon called `validate_query_spec` as a client.
+Creating that client is `add-mosaic-mcp-boundary` task 2.3's job, itself paused on an upstream
+aggregation/search gap. This design intent stands, but `tasks.md` 2.3 (the self-validation retry
+loop this decision motivates) is now recorded there as blocked on that migration shipping first,
+not merely an independent later increment. Separately, `converse_query_spec`
 validates whatever `QuerySpec` Exon's HTTP response carries **in-process** — calling the validator
 function directly, not over MCP, since it's the same Mosaic process that already hosts it — before
 ever labeling a turn `proposal`. This is defense-in-depth, not busywork: it's what keeps "Mosaic

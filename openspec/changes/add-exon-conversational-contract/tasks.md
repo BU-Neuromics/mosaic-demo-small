@@ -51,15 +51,29 @@ there's something real to verify against" order already used for `mosaic#195`/`#
       optional `existing_query_spec` override so lifting that lock later is a change to the HTTP
       layer alone (stop asserting equality, pass the wire value through as the override) — no change
       needed to the orchestrator, `edit_turn`, or the wire contract itself.
-- [ ] 2.3 Implement the discriminated response shape (`proposal` vs. `clarification`); Exon's own
-      generation retry loop may call Mosaic's `validate_query_spec` as an MCP client (same
-      relationship the single-shot planner already has) to iterate on a candidate before returning
-      it — the authoritative re-validation happens on Mosaic's side per task 1.2, not here. Note:
-      the discriminated shape itself already shipped as part of 2.2 (`conversational_planner.py`'s
-      `emit_turn_response` tool); what remains here is specifically the optional self-validation
-      retry loop, deferred as its own increment (design discussion, 2026-09-07) since Mosaic's
-      `converse_query_spec` already re-validates authoritatively regardless (task 1.2) — this is a
-      quality improvement, not a correctness requirement, and isn't built yet.
+- [ ] 2.3 *(blocked, found while picking this back up — 2026-09-07)* The discriminated response
+      shape (`proposal` vs. `clarification`) itself already shipped as part of 2.2
+      (`conversational_planner.py`'s `emit_turn_response` tool) — what remains here is specifically
+      an optional self-validation retry loop: Exon's own generation retry loop calling Mosaic's
+      `validate_query_spec` as an MCP client to iterate on a candidate before returning it (the
+      authoritative re-validation still happens on Mosaic's side per task 1.2, not here).
+
+      **Correction: the task's original premise — "same relationship the single-shot planner
+      already has" — is false about the code today.** No MCP client exists anywhere in this repo
+      on either branch — `exon/requirements.txt` carries only `litellm`, `fastapi`, `uvicorn` (no
+      `mcp`/`modelcontextprotocol`/`fastmcp`), and neither `conversational_planner.py` nor
+      `spec_planner.py` calls one. The single-shot planner emits a `QuerySpec` and stops; Mosaic
+      validates it after the fact, out of process, not because Exon called it as a client.
+      Creating that client is `add-mosaic-mcp-boundary` task 2.3's job (still unchecked there),
+      and that migration is itself deliberately paused on the upstream aggregation/search gap
+      (`f430674`, "close the aggregation/search gap upstream before migrating Exon"). Building a
+      client here first would either duplicate that surface or invert a dependency order already
+      decided upstream-first.
+
+      **This task is therefore blocked on `add-mosaic-mcp-boundary` task 2.3 shipping**, not
+      merely deferred — and even once unblocked, it remains only a quality improvement, not a
+      correctness requirement, since Mosaic's `converse_query_spec` already re-validates
+      authoritatively regardless (task 1.2, also unbuilt).
 - [x] 2.4 Restrict the turn-mode op vocabulary to `filter`/`exists-related-filter`
       (`FieldCondition`/`RelatedCondition`) — no aggregation, pivot, or set-op support. True by
       construction: `TURN_TOOL`'s `query_spec` property reuses `SPEC_TOOL`'s shape verbatim, which
