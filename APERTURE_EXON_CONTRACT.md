@@ -1,11 +1,18 @@
 # Aperture ↔ Exon: the conversational query contract
 
-**Status: brainstorm, not yet an OpenSpec proposal.** This document is the output of a design
-session (2026-08-2x) working out how Aperture's planned chatbot-style interface should talk to
-Exon, now that Exon is no longer a safety-critical validator/executor (that moves to Mosaic — see
-`openspec/changes/add-mosaic-mcp-boundary/`) but a harness and reference conversational-planning
-service sitting between Aperture and Mosaic's new MCP boundary. Nothing here is implemented.
-Treat this as the shared context for drafting a formal OpenSpec change next.
+**Status (2026-09-07): formalized and Exon's side implemented.** This document began as the
+output of a design session (2026-08-2x) working out how Aperture's planned chatbot-style
+interface should talk to Exon, now that Exon is no longer a safety-critical validator/executor
+(that moves to Mosaic — see `openspec/changes/add-mosaic-mcp-boundary/`) but a harness and
+reference conversational-planning service sitting between Aperture and Mosaic's new MCP
+boundary. It was formalized into `openspec/changes/add-exon-conversational-contract/`
+(`design.md` carries a ninth decision beyond the four below, resolved during implementation —
+see "State ownership and the wire contract" further down). Of the three repos in the dependency
+graph below, only Exon's turn-taking planning core (this repo) is built and tested end-to-end
+over real HTTP: `exon/conversational_planner.py`, `exon/conversational_orchestrator.py`,
+`exon/conversational_server.py` — see `exon/README.md`'s "Conversational mode" section for what
+shipped and what's still deferred. Mosaic's `converse_query_spec` MCP tool (tracked upstream as
+`BU-Neuromics/mosaic#186`) and Aperture's chat UI remain unbuilt, external to this repo.
 
 ## The MVP being designed for
 
@@ -113,14 +120,29 @@ browser entirely (`scopedClient.ts`'s own stated principle).
 - **Response is discriminated: `proposal` vs. `clarification`.** Default to proposing a visible,
   correctable `QuerySpec` update; fall back to asking a clarifying question only on genuine
   ambiguity (contradictory constraints, an enum value that doesn't resolve).
+- **Resolved during implementation: what the wire's `query_spec` field means when it could
+  diverge from the turn history.** Since Aperture tracks the current draft independently (its
+  URL) as well as sending it on the wire, the two could in principle disagree. As implemented:
+  Aperture locks its point-and-click builder while a chat is active, so they shouldn't diverge —
+  and Exon's endpoint asserts that invariant (400-level, naming both values, on disagreement)
+  rather than silently trusting either side. The unlock path, if that lock is ever lifted, is a
+  change to the HTTP layer alone (stop asserting equality, pass the wire value through as an
+  override); the orchestrator already exposes that override and needs no change itself.
 
 ## Validation and execution
 
-- **Exon validates against Mosaic before ever returning to Aperture.** Every candidate `QuerySpec`
-  is checked via Mosaic's `validate_query_spec` first; a validation failure feeds back into Exon's
-  own retry loop (using the actionable per-criterion errors and the `construct-query-spec` Prompt
-  already specified in `add-mosaic-mcp-boundary`) rather than surfacing a raw error to the user.
-  Aperture should never receive an invalid `QuerySpec` from this contract.
+- **Design intent: Exon validates against Mosaic before ever returning to Aperture.** Every
+  candidate `QuerySpec` was meant to be checked via Mosaic's `validate_query_spec` first, feeding
+  a validation failure back into Exon's own retry loop (using the actionable per-criterion errors
+  and the `construct-query-spec` Prompt already specified in `add-mosaic-mcp-boundary`) rather
+  than surfacing a raw error to the user. **As shipped, this retry loop does not exist yet**
+  (`add-exon-conversational-contract` task 2.3, deferred as its own increment) — Exon's endpoint
+  today returns a `proposal` that is shape-conforming to its tool-call schema but not re-validated
+  against live data. The authoritative check that actually guarantees "Aperture never receives an
+  invalid `QuerySpec`" lives on Mosaic's side: `converse_query_spec` re-validates in-process before
+  ever labeling a turn `proposal` (design.md Decision 8, task 1.2) — and that tool doesn't exist
+  yet either (`BU-Neuromics/mosaic#186`, open). Until both pieces ship, nothing in this path
+  actually enforces that guarantee end-to-end.
 - **The LLM never decides to execute.** Exon's contract ends at "here's a validated `QuerySpec`."
   Fetching and rendering the results view is Aperture's own existing/planned execution path,
   triggered by an explicit user action — "model plans, deterministic code executes."
@@ -162,21 +184,24 @@ browser entirely (`scopedClient.ts`'s own stated principle).
 
 ```
 Mosaic (hippo)         — needs `converse_query_spec` MCP tool
-                          (extends add-mosaic-mcp-boundary Phase 1; not yet filed as an issue)
+                          (extends add-mosaic-mcp-boundary Phase 1; tracked as mosaic#186 — open)
         │  blocks
         ▼
-Exon (mosaic-demo-small) — turn-taking planning core rework
-                            (blocked on Mosaic's boundary + this new tool existing)
+Exon (mosaic-demo-small) — turn-taking planning core — SHIPPED, tested standalone over real HTTP
+                            (only the full Aperture → Mosaic → Exon path is blocked on mosaic#186)
         │  blocks
         ▼
-Aperture                 — chat UI, calling Mosaic's converse_query_spec
-                            (blocked on Exon's turn function existing and being reachable)
+Aperture                 — chat UI, calling Mosaic's converse_query_spec — not started
+                            (blocked on mosaic#186 shipping, not on Exon: Exon's turn function
+                            already exists and is reachable)
 ```
 
-Three repos now, one more than `add-mosaic-mcp-boundary`'s two (Mosaic + Exon). Nothing here is
-actionable until Mosaic's Phase 1 (the existing GitHub issue,
-[BU-Neuromics/mosaic#177](https://github.com/BU-Neuromics/mosaic/issues/177)) ships — this adds a
-new tool to that same surface rather than starting a separate boundary.
+Three repos now, one more than `add-mosaic-mcp-boundary`'s two (Mosaic + Exon). Exon's own
+planning core needed only what `add-mosaic-mcp-boundary` Phase 1 already shipped
+(`mosaic://capabilities`, `validate_query_spec`) and didn't wait on mosaic#186 — see
+`openspec/changes/add-exon-conversational-contract/tasks.md`'s Phase 2 header for the corrected
+dependency reasoning. Only the full end-to-end path (a real Aperture chat calling a real Mosaic
+`converse_query_spec` calling this repo's Exon) remains blocked on mosaic#186 shipping.
 
 ## Open questions not yet resolved
 

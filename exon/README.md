@@ -52,6 +52,9 @@ instruction --[planner.py, LLM]--> QueryPlan --[validator.py]--> validated plan
   below), forcing structured output (`tool_choice`) so the model can only emit the typed op
   shapes above, never prose or raw GraphQL.
 - `cli.py` / `__main__.py` — `python -m exon "<instruction>"` runs the full pipeline.
+- `conversational_planner.py` / `conversational_orchestrator.py` / `conversational_server.py` —
+  the turn-taking conversational mode (`add-exon-conversational-contract`), layered alongside the
+  single-shot pipeline above, not replacing it. See "Conversational mode" below.
 
 ## Running it
 
@@ -79,6 +82,54 @@ python -m exon "Hi Exon, bring me back all of the brain tissue samples that we h
 
 The provider is a deployment-time choice (`EXON_MODEL` + that provider's credential), never a
 code change — `planner.py` has no vendor-specific branching.
+
+## Conversational mode (turn-taking)
+
+Alongside the single-shot pipeline above, Exon also hosts a stateless turn-taking planning core
+for Aperture's chatbot MVP — see `APERTURE_EXON_CONTRACT.md` (repo root) for the full design
+rationale and `openspec/changes/add-exon-conversational-contract/` (`design.md` Decisions 1-9)
+for the formal spec. Shipped in three layers, each independently tested:
+
+- `conversational_planner.py` — one stateless call, `(existing QuerySpec | none, prior turns, new
+  utterance) → {status, message, query_spec}`. Reuses `spec_planner.py`'s capability grounding and
+  `QuerySpec` shape directly. `status` is discriminated: `proposal` (an updated `QuerySpec` plus a
+  plain-language restatement) or `clarification` (a question back, no spec change) — the model
+  defaults to `proposal` whenever a reasonable interpretation exists. "Updated" here means
+  shape-conforming to `SPEC_TOOL`'s tool-call schema, not re-validated against live data — see
+  "Not yet built" below for where authoritative validation actually lives.
+- `conversational_orchestrator.py` — turn-list bookkeeping: assigns each turn an `id`, derives
+  "the current draft" from the turn list, and implements rewind-and-edit (`edit_turn`):
+  redoing an earlier turn recomputes every turn after it, cascading to `suspended` (never
+  silently dropped or reinterpreted) the moment a recompute can no longer resolve.
+- `conversational_server.py` — the HTTP endpoint (`create_conversational_app`), a thin wrapper
+  translating the wire contract's `{utterance, query_spec, turns, edit_turn_id}` request /
+  `{turn, suspended_turn_ids}` response shape to and from `append_turn`/`edit_turn` calls.
+
+Op vocabulary is restricted to `filter`/`exists-related-filter` (no aggregation, pivot, or
+set-op) by construction — it reuses the single-shot planner's `QuerySpec` shape verbatim, which
+never exposes anything broader. There is no conversation persistence: Aperture holds the turn
+list across calls, Exon's turn function stores nothing between requests.
+
+**Decision 9's lock, as implemented**: the wire's `query_spec` field is expected to always agree
+with what the endpoint derives from `turns` (Aperture's point-and-click builder is locked while a
+chat is active); the endpoint asserts that rather than silently trusting either side, returning a
+400 naming both values on disagreement. `append_turn` already accepts an `existing_query_spec`
+override for the day that lock is lifted — see the docstrings in `conversational_orchestrator.py`
+and `conversational_server.py`.
+
+**Not yet built:**
+
+- Mosaic's `converse_query_spec` MCP tool (tracked upstream as `BU-Neuromics/mosaic#186`) and
+  Aperture's chat UI — both external to this repo; this endpoint has been proven standalone
+  against a real HTTP client, not against a real Mosaic-hosted caller yet.
+- The startup wiring for Exon's deployment to fetch its own `mosaic://capabilities` as an MCP
+  client (`create_conversational_app` currently takes a `capabilities` dict as a constructor
+  argument, supplied by the caller, mirroring how `mosaic.mcp.server.create_mcp_server` is
+  built) — a separate, following increment.
+- The optional self-validation retry loop (calling Mosaic's `validate_query_spec` from inside
+  Exon's own generation loop before returning a candidate) — a quality improvement, not a
+  correctness requirement, since Mosaic's `converse_query_spec` re-validates authoritatively
+  regardless once it exists.
 
 ## What actually happened
 
@@ -361,7 +412,9 @@ Four files, 77 checks, no model calls required:
 
 ## Known limitations (by design, not oversight)
 
-- One instruction in, one result out — no multi-turn conversation, no session state.
+- The single-shot pipeline above is one instruction in, one result out — no session state. A
+  separate conversational turn-taking mode exists (see "Conversational mode" above) but is itself
+  stateless between calls: Aperture holds the turn list, not Exon.
 - No rendering — the executor returns raw records, not a chart or table component.
 - No aggregation (group-by/count/sort/range) — the validator rejects plans needing it
   (mosaic#96, open).

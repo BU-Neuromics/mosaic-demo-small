@@ -30,9 +30,12 @@ that tool is Exon's *caller*, not a dependency. Building and proving the endpoin
 there's something real to verify against" order already used for `mosaic#195`/`#196`. Only the
 *full* Aperture → Mosaic → Exon path is blocked on Phase 1 (`mosaic#186`) actually shipping.
 
-- [ ] 2.1 ~~Confirm Phase 1 has shipped and is reachable before starting any of the following.~~
+- [x] 2.1 ~~Confirm Phase 1 has shipped and is reachable before starting any of the following.~~
       Superseded by the correction above — confirm instead that `add-mosaic-mcp-boundary` Phase 1
-      (already shipped) is reachable, since that's what 2.2+ actually depend on.
+      (already shipped) is reachable, since that's what 2.2+ actually depend on. Confirmed, not
+      assumed: slice 3's live verification (see 2.5) ran a real uvicorn server, hit by a real HTTP
+      client over an actual socket, driving a full conversation against the real Mosaic demo
+      server's own capability manifest.
 - [x] 2.2 Add a turn-mode planning core and HTTP entry point to Exon implementing Decision 8's wire
       contract exactly (`{utterance, query_spec, turns, edit_turn_id}` in, `{turn,
       suspended_turn_ids}` out; `Turn` shape as specified), alongside (not replacing) the
@@ -80,7 +83,13 @@ there's something real to verify against" order already used for `mosaic#195`/`#
       construction: `conversational_orchestrator.py`'s functions are pure (`turns` is never
       mutated, always returned as a new list) and `conversational_server.py` holds no state between
       requests — every call reconstructs everything from the request body alone.
-- [ ] 2.8 Update `exon/README.md` and `APERTURE_EXON_CONTRACT.md` to reflect the shipped state.
+- [x] 2.8 Update `exon/README.md` and `APERTURE_EXON_CONTRACT.md` to reflect the shipped state.
+      README gained a "Conversational mode" section (files, wire contract, Decision 9's lock as
+      implemented, what's still deferred) and a fix to the now-stale "no multi-turn conversation"
+      limitation line. The contract doc's status header now points at the formalized OpenSpec
+      change and the shipped modules instead of reading as an unimplemented brainstorm; its
+      dependency graph and decisions list were updated to match (mosaic#186 filed, Decision 9's
+      resolution noted).
 - [ ] 2.9 Update `openspec/specs/exon-conversational-planner/spec.md` (new) and
       `openspec/specs/mosaic-query-boundary-contract/spec.md` at archive time.
 
