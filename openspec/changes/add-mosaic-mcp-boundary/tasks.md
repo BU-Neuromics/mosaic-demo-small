@@ -71,11 +71,28 @@ the live proof, so nothing below is checked off on the strength of an issue trac
       described the artifact as `anchor`/`mode`/`criteria`/`columns` — `columns` is **not** part of
       it, since Phase 1 (#183) decided to reject `columns` outright rather than build a Mosaic-side
       compiler for its aggregate-vs-explode choice.
-- [ ] 2.3 Replace local calls to `validator.validate_plan`/`executor.execute_plan` with MCP client
+- [x] 2.3 Replace local calls to `validator.validate_plan`/`executor.execute_plan` with MCP client
       calls to Mosaic's `validate_query_spec`/`execute_query_spec`. Paused (`f430674`) on the
-      aggregation/search gap this migration would otherwise regress on — **that gap closed
-      2026-09-07** (see 2.5b for the verification), so this task is actionable now; it just hasn't
-      been started.
+      aggregation/search gap this migration would otherwise regress on — that gap closed
+      2026-09-07 (see 2.5b), and this shipped 2026-09-08 as `exon/mosaic_mcp.py` plus a retargeted
+      `exon/cli.py`.
+
+      One finding worth recording: this was not purely a call swap.
+      `evals/schema/capabilities.json` is the OLD hand-authored manifest shape, and
+      `render_capability_grounding` raises `KeyError: 'fields'` against it — so the QuerySpec path
+      had **no manifest on disk it could actually run with**, and `fetch_capabilities()` reading
+      `mosaic://capabilities` is what made the path viable at all, not just less drift-prone.
+
+      `MosaicBoundaryError` separates "boundary unreachable" from "boundary rejected this spec"
+      (`cli.py` exits 3 vs 2); collapsing them would make a stopped server look like a refused
+      query. A `valid: false` verdict is returned as data with its coded errors intact — nothing
+      is re-checked client-side, which is the duplication this migration removes.
+
+      Verified live against the real demo server and Bedrock Haiku: 26 hippocampus tissue samples
+      and 364 blood samples, both matching known-good numbers. Notable, though unmeasured (n=1):
+      the emitter produced `sample_type="tissue"` — the correct value vocabulary — where the
+      QueryPlan path is documented as guessing `"brain tissue"` and silently returning 0.
+      Aggregation/search tools deliberately NOT wired; see 2.5c.
 - [ ] 2.4 Retire `exon/validator.py`, `exon/executor.py`, `exon/ops.py` (the `QueryPlan`/
       `FilterStep`/`RelatedLookupStep` types and their validation/execution logic) once 2.3 is
       confirmed working end-to-end. Confirmed safe in principle: every check `validator.py`
@@ -127,6 +144,36 @@ the live proof, so nothing below is checked off on the strength of an issue trac
         instead of an impossibility: Exon must recognize a counting-style instruction and call the
         new tool, not silently degrade it into a row query. Either give the planner that
         recognition, or grade this class explicitly — do not assume shipping #195 alone fixes it.
+
+        **Re-measured 2026-09-08 against the shipped 2.3 path** (live, Bedrock Haiku). The gap is
+        real but **narrower and differently shaped** than the wording above assumes, and the
+        difference matters for how it gets fixed:
+
+        - *Single-count questions now come back CORRECT.* "How many donors are in the case
+          cohort?" produced a plain filter spec and `execute_query_spec` returned `total: 104` —
+          the right answer. `execute_query_spec`'s envelope carries `total` independently of the
+          page, so a scalar count needs no aggregation tool to be **correct**. It is merely
+          wasteful (104 rows materialized for one number). Grading this as wrong would be wrong.
+        - *Per-category questions are still confidently WRONG.* "how many donors are there per
+          cohort?" reproduced the original failure exactly: a valid spec for all 300 donors with
+          `sort: cohort asc`, `total: 300` — not `control 125 / case 104 / at_risk 71`. `total` is
+          a single scalar and **structurally cannot** express a grouped count, so no amount of row
+          querying answers this.
+
+        So the routing requirement is specifically about **facet- and range-shaped** questions
+        (and search), not counting generally. That is a smaller, sharper target than "recognize a
+        counting-style instruction."
+
+        **Design note for whoever implements the planner half** (not yet decided, deliberately —
+        this task offers two options and neither is chosen): the obvious move, adding a
+        `result_shape` field to `SPEC_TOOL`, is a trap. `SPEC_TOOL["function"]["parameters"]` *is*
+        the QuerySpec schema, and `conversational_planner.TURN_TOOL` reuses it verbatim as its
+        `query_spec` property — so a routing field added there would leak into the conversational
+        turn contract and break `add-exon-conversational-contract` task 2.4's
+        "no aggregation by construction" guarantee. The non-breaking shape is a *separate*
+        single-shot tool that composes the QuerySpec schema as one property alongside a sibling
+        `result_shape` (exactly how `TURN_TOOL` already composes it), leaving `SPEC_TOOL` itself
+        untouched.
   - [ ] 2.5d **Treat a `related` criterion with empty `criteria` as a graded failure.** It
         validates clean and executes (Phase 1's compiler fills a trivially-true predicate on the
         target's identifier), returning every anchor record that has *any* related record — a
