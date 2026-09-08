@@ -57,15 +57,29 @@ there's something real to verify against" order already used for `mosaic#195`/`#
       retry loop, deferred as its own increment (design discussion, 2026-09-07) since Mosaic's
       `converse_query_spec` already re-validates authoritatively regardless (task 1.2) — this is a
       quality improvement, not a correctness requirement, and isn't built yet.
-- [ ] 2.4 Restrict the turn-mode op vocabulary to `filter`/`exists-related-filter`
-      (`FieldCondition`/`RelatedCondition`) — no aggregation, pivot, or set-op support.
-- [ ] 2.5 Implement rewind-and-edit: each turn carries an `id`; editing an earlier turn recomputes
+- [x] 2.4 Restrict the turn-mode op vocabulary to `filter`/`exists-related-filter`
+      (`FieldCondition`/`RelatedCondition`) — no aggregation, pivot, or set-op support. True by
+      construction: `TURN_TOOL`'s `query_spec` property reuses `SPEC_TOOL`'s shape verbatim, which
+      never exposes a `CriteriaGroup`/aggregation/pivot kind at all — there is nothing to restrict
+      because nothing broader was ever offered to the model.
+- [x] 2.5 Implement rewind-and-edit: each turn carries an `id`; editing an earlier turn recomputes
       turns after it; a later turn invalidated by the edit is marked `suspended`, never silently
-      dropped or reinterpreted.
-- [ ] 2.6 Implement anchor-pivot behavior: switching entity type always re-derives the relationship
+      dropped or reinterpreted. Shipped in `conversational_orchestrator.py` (slice 2) and verified
+      live twice: a scripted-stub cascade test proving no further model calls happen once
+      suspension starts, and a real multi-turn conversation over real HTTP (slice 3) where an edit
+      pivoting `Sample` → `Workflow` correctly suspended a later turn referencing a field that
+      doesn't exist on the new anchor, with a useful re-prompt naming the exact conflict.
+- [x] 2.6 Implement anchor-pivot behavior: switching entity type always re-derives the relationship
       as a fresh filter rule against current data, never a reference to a frozen prior result set.
-- [ ] 2.7 No persistence: conversation state lives only in the caller's (Aperture's) hands across
-      calls; Exon's turn function stores nothing between calls beyond what's passed in.
+      True by construction, not separately implemented: every turn emits a FULL `QuerySpec` (never
+      a diff), grounded fresh in `mosaic://capabilities` each call, and this planning flow never
+      executes anything (never calls `execute_query_spec`) — there is no result set anywhere in
+      this code for a pivot to accidentally reference.
+- [x] 2.7 No persistence: conversation state lives only in the caller's (Aperture's) hands across
+      calls; Exon's turn function stores nothing between calls beyond what's passed in. True by
+      construction: `conversational_orchestrator.py`'s functions are pure (`turns` is never
+      mutated, always returned as a new list) and `conversational_server.py` holds no state between
+      requests — every call reconstructs everything from the request body alone.
 - [ ] 2.8 Update `exon/README.md` and `APERTURE_EXON_CONTRACT.md` to reflect the shipped state.
 - [ ] 2.9 Update `openspec/specs/exon-conversational-planner/spec.md` (new) and
       `openspec/specs/mosaic-query-boundary-contract/spec.md` at archive time.
