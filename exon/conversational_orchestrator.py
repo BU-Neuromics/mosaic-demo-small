@@ -108,14 +108,29 @@ def _request_turn_with_retry(
     )
 
 
+_UNSET = object()  # distinguishes "no override given" from an explicit None
+
+
 def append_turn(
-    turns: list[dict], utterance: str, capabilities: dict, **kw
+    turns: list[dict], utterance: str, capabilities: dict,
+    *, existing_query_spec=_UNSET, **kw
 ) -> tuple[list[dict], dict]:
     """Add a new turn to the end of the conversation. Returns
-    (new_turns_list, the_new_turn) -- `turns` itself is never mutated."""
+    (new_turns_list, the_new_turn) -- `turns` itself is never mutated.
+
+    `existing_query_spec`, when given, OVERRIDES the turns-derived current
+    draft -- see design.md Decision 9. This exists for a caller (the HTTP
+    endpoint) that has its own independently-tracked notion of "the
+    current state" and needs it to win; when omitted (every caller in this
+    codebase today), behavior is unchanged from before this parameter
+    existed. `edit_turn`'s redo step has no equivalent override: it always
+    rewinds to a past point (`turns[:idx]`), which an override representing
+    the *current* moment was never the right input for."""
+    if existing_query_spec is _UNSET:
+        existing_query_spec = _current_query_spec(turns)
     result = _request_turn_with_retry(
         utterance, capabilities,
-        existing_query_spec=_current_query_spec(turns),
+        existing_query_spec=existing_query_spec,
         prior_turns=_prior_turns_view(turns),
         **kw,
     )
