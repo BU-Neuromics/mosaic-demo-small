@@ -10,13 +10,17 @@ already exist and are already tested in isolation.
 Capabilities are supplied at app-construction time (`create_conversational_app
 (capabilities, ...)`), mirroring how `mosaic.mcp.server.create_mcp_server`
 takes its schema-derived data as a constructor argument rather than
-fetching it itself. How Exon's real deployment actually OBTAINS that
-manifest (an MCP client fetching mosaic://capabilities from a configured
-Mosaic URL once at startup, per design.md Decision 8's own text: "Exon's
-own turn endpoint may call ... mosaic://capabilities as an MCP client") is
-a separate, following increment -- this slice is fully testable with a
-real HTTP client and a capabilities dict handed to it directly, without
-that wiring existing yet.
+fetching it itself. That keeps the app itself testable with a plain dict.
+
+`main()` (below) is the deployment entry point that supplies it for real:
+`python -m exon.conversational_server` fetches `mosaic://capabilities` from
+Mosaic once at startup via `mosaic_mcp.fetch_capabilities()` and serves the
+app -- design.md Decision 8's own "Exon's own turn endpoint may call ...
+mosaic://capabilities as an MCP client", now that
+`add-mosaic-mcp-boundary` task 2.3 has supplied that client.
+
+This is the process Mosaic's `converse_query_spec` tool talks to: point
+Mosaic's `MOSAIC_EXON_URL` at this server's `/turn`.
 """
 from __future__ import annotations
 
@@ -114,3 +118,68 @@ def create_conversational_app(
         return TurnResponse(turn=TurnModel(**new_turn), suspended_turn_ids=[])
 
     return app
+
+
+#: Where this service listens. Mosaic's own MOSAIC_EXON_URL must agree with
+#: whatever these produce -- the two are configured independently, in
+#: different processes, so a mismatch is a deployment error nothing here can
+#: detect (the symptom is an "error" turn from converse_query_spec saying
+#: Exon is unreachable).
+HOST_ENV = "EXON_TURN_HOST"
+PORT_ENV = "EXON_TURN_PORT"
+DEFAULT_HOST = "127.0.0.1"
+DEFAULT_PORT = 9100
+
+
+def main() -> None:
+    """`python -m exon.conversational_server` -- the deployable turn service.
+
+    Capabilities are fetched ONCE, at startup, not per request: they are a
+    property of the deployment's schema, not of any conversation, and
+    re-fetching per turn would add a round-trip to every chat message for
+    data that cannot change without a schema migration. The cost is that a
+    schema change needs a restart, which is the same tradeoff
+    `mosaic.mcp.server.create_mcp_server` already makes for its own
+    resources (built at mount time).
+
+    Failing loudly here rather than starting a server that cannot plan
+    anything: an Exon with no grounding would accept turns and then fail
+    every one of them, which is strictly worse than not starting.
+    """
+    import os
+    import sys
+
+    import uvicorn
+
+    from .mosaic_mcp import MosaicBoundaryError, fetch_capabilities, mcp_url
+
+    print(f"Fetching capability grounding from {mcp_url()} ...", file=sys.stderr)
+    try:
+        capabilities = fetch_capabilities()
+    except MosaicBoundaryError as exc:
+        print(f"Cannot start: {exc}", file=sys.stderr)
+        sys.exit(3)
+
+    host = os.environ.get(HOST_ENV, "").strip() or DEFAULT_HOST
+    try:
+        port = int(os.environ.get(PORT_ENV, "").strip() or DEFAULT_PORT)
+    except ValueError:
+        print(
+            f"{PORT_ENV}={os.environ.get(PORT_ENV)!r} is not an integer", file=sys.stderr
+        )
+        sys.exit(1)
+
+    print(
+        f"Grounded in {len(capabilities)} entities: {', '.join(sorted(capabilities))}",
+        file=sys.stderr,
+    )
+    print(
+        f"Serving Exon's conversational turn endpoint at http://{host}:{port}/turn\n"
+        f"Point Mosaic at it with: MOSAIC_EXON_URL=http://{host}:{port}/turn",
+        file=sys.stderr,
+    )
+    uvicorn.run(create_conversational_app(capabilities), host=host, port=port)
+
+
+if __name__ == "__main__":
+    main()
