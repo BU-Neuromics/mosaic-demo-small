@@ -2,22 +2,48 @@
 
 Not implementable from `mosaic-demo-small`. Tracked upstream as `BU-Neuromics/mosaic#186`, filed
 alongside the #177 split (same batch as #182/#183, which this tool depends on) — Decision 8 below
-is the wire contract #186's implementer needs; posting it as a comment there is this change's
-remaining handoff step.
+is the wire contract #186's implementer needs.
 
-- [ ] 1.1 *(blocked — owned by `hippo`, tracked as mosaic#186)* `converse_query_spec` MCP tool implementing
+**Handoff step: done.** Decision 8's wire contract was posted as a comment on `mosaic#186`
+(request/response shape, `MOSAIC_EXON_URL` config, validation ownership, failure semantics). The
+text above previously called this "this change's remaining handoff step"; that was stale.
+
+**Implemented upstream 2026-09-08, pending review — `BU-Neuromics/mosaic` PR #199.** Both tasks
+below are left UNCHECKED deliberately: the PR is open, not merged, and it was flagged for explicit
+review rather than self-merged, because it adds Mosaic's first outbound network call (the
+read-only posture is unchanged, but "Mosaic makes an egress HTTP request when configured to" is a
+deployment-shape change). Check these off when #199 merges.
+
+What unblocked it: #186's own stated blocker was never a Mosaic-side gap but *cross-repo access to
+a real Exon endpoint to integrate against*. Phase 2's endpoint (below) supplied that, once
+published — this repo's `exon-conversational-turn-core` branch is now pushed, which is what made
+the upstream work possible.
+
+- [ ] 1.1 *(implemented in mosaic PR #199, awaiting merge)* `converse_query_spec` MCP tool implementing
       the wire contract in `design.md` Decision 8: `POST` to a `MOSAIC_EXON_URL`-configured
       endpoint with the `{utterance, query_spec, turns, edit_turn_id}` request /
       `{turn, suspended_turn_ids}` response shape; tool absent from the MCP server entirely when
       `MOSAIC_EXON_URL` is unset; hosted alongside the `validate_query_spec`/`execute_query_spec`
-      tools from `add-mosaic-mcp-boundary` Phase 1.
-- [ ] 1.2 *(blocked — owned by `hippo`, tracked as mosaic#186)* `converse_query_spec` re-validates the
+      tools from `add-mosaic-mcp-boundary` Phase 1. All as specified; both registration directions
+      verified live (7 tools when configured, the prior 6 and no `converse_query_spec` when not).
+- [ ] 1.2 *(implemented in mosaic PR #199, awaiting merge)* `converse_query_spec` re-validates the
       `QuerySpec` in Exon's HTTP response in-process (direct function call, not over MCP) before
       ever returning a `proposal`-status turn, and never calls `execute_query_spec` itself
       (Decision 8). Exon-unreachable/timeout/still-invalid-after-retry all surface as an `"error"`
       turn status, not a bare tool exception. Confirm the tool's auth/reachability model is
       otherwise consistent with `add-mosaic-mcp-boundary`'s existing constraints (no write/mutation
       path; `X-Mosaic-Actor` remains provenance-only).
+
+      All as specified. Re-validation is a direct `validate_query_spec` call in-process, and a spec
+      Exon labelled `proposal` that Mosaic's validator rejects becomes an `error` turn (tested with
+      an unknown slot, an unknown anchor, and a malformed shape). A test asserts no
+      `client.query()` occurs. Failure semantics verified live: with Exon killed, the call returned
+      `is_error: False` at the protocol level with a structured `error` turn naming the unreachable
+      service. Read-only posture unchanged; `X-Mosaic-Actor` untouched. Went **beyond** this task's
+      wording in one respect worth noting: the tool also strictly rejects out-of-contract Exon
+      *responses* (unrecognized status, missing message, a `proposal` with no spec, a
+      `clarification`/`suspended` turn carrying one), since Mosaic is the only thing between an
+      out-of-contract planning service and Aperture's UI.
 
 ## Phase 2 — Exon (this repo; **only full end-to-end integration is blocked on Phase 1**)
 

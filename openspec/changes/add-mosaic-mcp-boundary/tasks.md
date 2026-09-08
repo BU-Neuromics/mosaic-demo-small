@@ -3,27 +3,45 @@
 Not implementable from `mosaic-demo-small`. Listed for traceability against the contract this
 change depends on (`specs/mosaic-query-boundary-contract/spec.md`), not as actionable tasks here.
 
-- [ ] 1.1 *(blocked — owned by `hippo`)* Server-derived capability manifest, extending
-      `hippoSchema`/`SchemaRegistry`, exposed as an MCP resource.
-- [ ] 1.2 *(blocked — owned by `hippo`)* MCP server module (`mosaic/mcp/`) + `--mcp` CLI flag,
-      mounted following the existing `mosaic/graphql/` conditional-mount pattern.
-- [ ] 1.3 *(blocked — owned by `hippo`)* Python `QuerySpec` parser + `validateQuerySpec`-equivalent
-      validator (ported discipline from Aperture's TS implementation), including the enum-value
-      check this repo's `add-exon-mcp-boundary` proposal originally targeted for Exon.
-- [ ] 1.4 *(blocked — owned by `hippo`)* `validate_query_spec`/`execute_query_spec` MCP tools;
-      `execute_query_spec` validates unconditionally before compiling to Mosaic's `where:`/
-      aggregation/search surface. Validation errors must be specific and actionable per-criterion
-      (naming the offending slot/op/edge and, for enum/op mismatches, the valid set) — sufficient
-      to support an iterative validate → fix → retry loop from any MCP client, not just a generic
-      pass/fail.
-- [ ] 1.5 *(blocked — owned by `hippo`)* Auth decision for the new surface (mosaic issue #54 Part
-      A) — at minimum, confirm no write/mutation tool exists and the `X-Mosaic-Actor` header is not
-      mistaken for authorization.
-- [ ] 1.6 *(blocked — owned by `hippo`)* `construct-query-spec` MCP Prompt carrying procedural
-      "how to" guidance beyond raw schema/capability data — field-name resolution (LinkML slot
-      names, never camelCase), relationship-predicate shape (`RelatedCondition`, never a client-side
-      fan-out), `columns`' aggregate-vs-explode choice on to-many paths, and the `asOf` +
-      relationship-predicate incompatibility. See `design.md` Decision 2/Open Question 5.
+**All of Phase 1 shipped upstream (checked off 2026-09-08).** These were all still marked
+*"(blocked — owned by `hippo`)"* long after they merged — a staleness found by an audit of this
+repo's OpenSpec state, not by anything going wrong. ADR-0009 was ratified (`fe8f332`) and every
+issue in its cluster is closed. Task 2.1's own re-verification against this repo's demo server is
+the live proof, so nothing below is checked off on the strength of an issue tracker alone.
+
+- [x] 1.1 Server-derived capability manifest, extending `hippoSchema`/`SchemaRegistry`, exposed as
+      an MCP resource. Shipped as `mosaic#181` (PR #189, `mosaic.core.schema_typing.
+      build_capability_manifest`); live at `mosaic://capabilities`.
+- [x] 1.2 MCP server module (`mosaic/mcp/`) + `--mcp` CLI flag, mounted following the existing
+      `mosaic/graphql/` conditional-mount pattern. Shipped as `mosaic#182` (PR #191). One
+      deviation from ADR-0009's own hedge, reasoning recorded in the `mosaic/mcp` package
+      docstring: the transport is Streamable HTTP, not stdio.
+- [x] 1.3 Python `QuerySpec` parser + `validateQuerySpec`-equivalent validator (ported discipline
+      from Aperture's TS implementation), including the enum-value check this repo's
+      `add-exon-mcp-boundary` proposal originally targeted for Exon. Shipped as `mosaic#183`
+      (PR #190, validator-only increment; PR #192 additionally rejects multi-column sort).
+- [x] 1.4 `validate_query_spec`/`execute_query_spec` MCP tools; `execute_query_spec` validates
+      unconditionally before compiling to Mosaic's `where:`/aggregation/search surface. Validation
+      errors must be specific and actionable per-criterion (naming the offending slot/op/edge and,
+      for enum/op mismatches, the valid set) — sufficient to support an iterative validate → fix →
+      retry loop from any MCP client, not just a generic pass/fail. Shipped as `mosaic#183`
+      (PR #193, with `mosaic/core/query_spec_compiler.py`). The actionable-error requirement is
+      met and was exercised directly: an unknown slot comes back `UNKNOWN_SLOT` at
+      `$.criteria[0].slot` (task 2.1). Note the aggregation/search half of this task's wording was
+      NOT satisfied by #183 — it needed `mosaic#195`/`#196` (PRs #197/#198), see 2.5b.
+- [x] 1.5 Auth decision for the new surface (mosaic issue #54 Part A) — at minimum, confirm no
+      write/mutation tool exists and the `X-Mosaic-Actor` header is not mistaken for
+      authorization. Resolved as `mosaic#185`: the surface ships read-only ahead of #54,
+      consistent with #178's precedent (Mosaic stays auth-unaware; enforcement lives in Bridge).
+      `mosaic#54` Part A itself has since landed (PR #140).
+- [x] 1.6 `construct-query-spec` MCP Prompt carrying procedural "how to" guidance beyond raw
+      schema/capability data — field-name resolution (LinkML slot names, never camelCase),
+      relationship-predicate shape (`RelatedCondition`, never a client-side fan-out), `columns`'
+      aggregate-vs-explode choice on to-many paths, and the `asOf` + relationship-predicate
+      incompatibility. Shipped as `mosaic#184` (PR #194). One item of this wording was
+      deliberately superseded as shipped: `columns`' aggregate-vs-explode guidance is moot because
+      Phase 1 rejects `columns` outright with `COLUMNS_NOT_SUPPORTED` — see `design.md`
+      Decision 2's own "superseded as shipped" annotation.
 
 ## Phase 2 — Exon (this repo; **blocked on Phase 1 shipping and being confirmed live**)
 
