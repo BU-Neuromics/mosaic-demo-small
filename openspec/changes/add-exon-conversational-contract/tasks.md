@@ -8,25 +8,25 @@ is the wire contract #186's implementer needs.
 (request/response shape, `MOSAIC_EXON_URL` config, validation ownership, failure semantics). The
 text above previously called this "this change's remaining handoff step"; that was stale.
 
-**Implemented upstream 2026-09-08, pending review — `BU-Neuromics/mosaic` PR #199.** Both tasks
-below are left UNCHECKED deliberately: the PR is open, not merged, and it was flagged for explicit
-review rather than self-merged, because it adds Mosaic's first outbound network call (the
-read-only posture is unchanged, but "Mosaic makes an egress HTTP request when configured to" is a
-deployment-shape change). Check these off when #199 merges.
+**Shipped upstream 2026-09-08 — `BU-Neuromics/mosaic` PR #199, merged (`e04e919`); `mosaic#186`
+closed as completed.** Held for explicit review rather than self-merged first, because it adds
+Mosaic's first outbound network call (read-only posture unchanged, but "Mosaic makes an egress
+HTTP request when configured to" is a deployment-shape change); reviewed and merged with all 8 CI
+checks green, including postgres and CodeQL. With this, the whole ADR-0009 cluster is closed.
 
 What unblocked it: #186's own stated blocker was never a Mosaic-side gap but *cross-repo access to
 a real Exon endpoint to integrate against*. Phase 2's endpoint (below) supplied that, once
 published — this repo's `exon-conversational-turn-core` branch is now pushed, which is what made
 the upstream work possible.
 
-- [ ] 1.1 *(implemented in mosaic PR #199, awaiting merge)* `converse_query_spec` MCP tool implementing
+- [x] 1.1 *(shipped: mosaic PR #199, merged)* `converse_query_spec` MCP tool implementing
       the wire contract in `design.md` Decision 8: `POST` to a `MOSAIC_EXON_URL`-configured
       endpoint with the `{utterance, query_spec, turns, edit_turn_id}` request /
       `{turn, suspended_turn_ids}` response shape; tool absent from the MCP server entirely when
       `MOSAIC_EXON_URL` is unset; hosted alongside the `validate_query_spec`/`execute_query_spec`
       tools from `add-mosaic-mcp-boundary` Phase 1. All as specified; both registration directions
       verified live (7 tools when configured, the prior 6 and no `converse_query_spec` when not).
-- [ ] 1.2 *(implemented in mosaic PR #199, awaiting merge)* `converse_query_spec` re-validates the
+- [x] 1.2 *(shipped: mosaic PR #199, merged)* `converse_query_spec` re-validates the
       `QuerySpec` in Exon's HTTP response in-process (direct function call, not over MCP) before
       ever returning a `proposal`-status turn, and never calls `execute_query_spec` itself
       (Decision 8). Exon-unreachable/timeout/still-invalid-after-retry all surface as an `"error"`
@@ -77,7 +77,7 @@ there's something real to verify against" order already used for `mosaic#195`/`#
       optional `existing_query_spec` override so lifting that lock later is a change to the HTTP
       layer alone (stop asserting equality, pass the wire value through as the override) — no change
       needed to the orchestrator, `edit_turn`, or the wire contract itself.
-- [ ] 2.3 *(blocked, found while picking this back up — 2026-09-07)* The discriminated response
+- [ ] 2.3 *(unblocked 2026-09-08, not started)* The discriminated response
       shape (`proposal` vs. `clarification`) itself already shipped as part of 2.2
       (`conversational_planner.py`'s `emit_turn_response` tool) — what remains here is specifically
       an optional self-validation retry loop: Exon's own generation retry loop calling Mosaic's
@@ -104,10 +104,15 @@ there's something real to verify against" order already used for `mosaic#195`/`#
       in this repo. This task (conversational 2.3) is blocked on that migration happening, not on
       any further upstream work.
 
-      Even once `add-mosaic-mcp-boundary` 2.3 ships and this becomes actionable, it remains only a
-      quality improvement, not a correctness requirement, since Mosaic's `converse_query_spec`
-      already re-validates
-      authoritatively regardless (task 1.2, also unbuilt).
+      **Unblocked 2026-09-08.** `add-mosaic-mcp-boundary` task 2.3 shipped — `exon/mosaic_mcp.py`
+      now exposes `validate_query_spec()` as an MCP client call, which is the one thing this task
+      was waiting on. Nothing blocks it any more; it simply isn't built.
+
+      Still only a quality improvement, not a correctness requirement: Mosaic's
+      `converse_query_spec` re-validates authoritatively regardless — and as of PR #199 that is
+      shipped and merged (task 1.2), so the guarantee this loop would *improve* is now actually
+      enforced in production rather than merely specified. That makes this less urgent than when
+      it was written, not more.
 - [x] 2.4 Restrict the turn-mode op vocabulary to `filter`/`exists-related-filter`
       (`FieldCondition`/`RelatedCondition`) — no aggregation, pivot, or set-op support. True by
       construction: `TURN_TOOL`'s `query_spec` property reuses `SPEC_TOOL`'s shape verbatim, which
