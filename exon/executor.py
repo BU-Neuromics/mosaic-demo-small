@@ -36,11 +36,11 @@ def _to_camel(slot_name: str) -> str:
     return head + "".join(word.capitalize() for word in rest)
 
 
-def execute_plan(plan: QueryPlan, endpoint: str, hippo_schema: dict) -> dict:
+def execute_plan(plan: QueryPlan, endpoint: str, mosaic_schema: dict) -> dict:
     results = {}
     for i, step in enumerate(plan.steps):
         if isinstance(step, FilterStep):
-            results[i] = _execute_filter_step(step, endpoint, hippo_schema)
+            results[i] = _execute_filter_step(step, endpoint, mosaic_schema)
         elif isinstance(step, RelatedLookupStep):
             results[i] = _execute_related_lookup_step(step, results, endpoint)
         else:
@@ -48,10 +48,10 @@ def execute_plan(plan: QueryPlan, endpoint: str, hippo_schema: dict) -> dict:
     return {"steps": results, "final": results[len(plan.steps) - 1]}
 
 
-def _execute_filter_step(step: FilterStep, endpoint: str, hippo_schema: dict) -> dict:
+def _execute_filter_step(step: FilterStep, endpoint: str, mosaic_schema: dict) -> dict:
     # Read the accessor name from hippoSchema -- never guess it (the same "don't guess a
     # name, read it" discipline that mosaic#149 taught this pipeline the hard way).
-    accessor = hippo_schema[step.entity]["accessor_name"]
+    accessor = mosaic_schema[step.entity]["accessor_name"]
     fields = ["id"] + [_to_camel(f) for f in step.select_fields if f != "id"]
     if step.forward_relation:
         rel = step.forward_relation

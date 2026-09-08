@@ -17,7 +17,7 @@ from pathlib import Path
 
 from ..context.seed import seed_context
 from ..context.template import ContextArtifact
-from ..schema import fetch_hippo_schema, load_capability_manifest
+from ..schema import fetch_mosaic_schema, load_capability_manifest
 from .cases import load_suite
 from .loop import LoopConfig, RUNS_ROOT, new_run_dir, run_refinement_loop
 from .probe import ModelFingerprint, probe_model
@@ -42,18 +42,18 @@ def _fingerprint_path(model: str) -> Path:
     return Path(f"evals/schema/fingerprint-{_model_slug(model)}.json")
 
 
-def _grounding_for_probe(hippo_schema, manifest):
+def _grounding_for_probe(mosaic_schema, manifest):
     from ..planner import PLAN_TOOL, build_grounding_context
 
     return (
-        build_grounding_context(hippo_schema, manifest),
+        build_grounding_context(mosaic_schema, manifest),
         "bring me back all of the brain tissue samples for the hippocampus region, with the "
         "donor cohort, sex and RHI history, and any rnaSeq data associated with them",
         PLAN_TOOL,
     )
 
 
-def _load_or_probe(model, hippo_schema, manifest, *, force=False, skip_load_check=False):
+def _load_or_probe(model, mosaic_schema, manifest, *, force=False, skip_load_check=False):
     """A stored fingerprint is reused only if it matches this model; otherwise re-probe. A context
     fitted to one local model tells you nothing about another. Each model gets its own on-disk
     path (see _fingerprint_path), so probing model B never touches model A's file."""
@@ -67,7 +67,7 @@ def _load_or_probe(model, hippo_schema, manifest, *, force=False, skip_load_chec
               f"-- re-probing")
     fp = probe_model(
         model,
-        load_check=None if skip_load_check else _grounding_for_probe(hippo_schema, manifest),
+        load_check=None if skip_load_check else _grounding_for_probe(mosaic_schema, manifest),
     )
     fingerprint_path.parent.mkdir(parents=True, exist_ok=True)
     fingerprint_path.write_text(json.dumps(fp.to_dict(), indent=2) + "\n")
@@ -85,7 +85,7 @@ def _seed_or_latest(fp, contexts_dir: Path) -> ContextArtifact:
 
 
 def cmd_probe(args):
-    hs = fetch_hippo_schema(args.endpoint)
+    hs = fetch_mosaic_schema(args.endpoint)
     m = load_capability_manifest(MANIFEST_PATH)
     fp = _load_or_probe(args.model, hs, m, force=True, skip_load_check=args.skip_load_check)
     art = seed_context(fp)
@@ -95,7 +95,7 @@ def cmd_probe(args):
 
 
 def cmd_run(args):
-    hs = fetch_hippo_schema(args.endpoint)
+    hs = fetch_mosaic_schema(args.endpoint)
     m = load_capability_manifest(MANIFEST_PATH)
     cases = load_suite()
     fp = _load_or_probe(args.model, hs, m, skip_load_check=True)
@@ -140,7 +140,7 @@ def cmd_run(args):
 
 
 def cmd_loop(args):
-    hs = fetch_hippo_schema(args.endpoint)
+    hs = fetch_mosaic_schema(args.endpoint)
     m = load_capability_manifest(MANIFEST_PATH)
     cases = load_suite()
     fp = _load_or_probe(args.model, hs, m, skip_load_check=args.skip_load_check)

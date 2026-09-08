@@ -295,7 +295,7 @@ def request_spec(
     """One stateless single-turn call. No retries -- see plan_query_spec for the facade.
 
     Takes the capability manifest alone: unlike request_plan, there is no separate
-    hippo_schema argument, because Mosaic's manifest already carries the field metadata the
+    mosaic_schema argument, because Mosaic's manifest already carries the field metadata the
     two used to have to be cross-referenced for.
 
     `context` is an optional (system_prompt, grounding) pair, letting the harness swap in a

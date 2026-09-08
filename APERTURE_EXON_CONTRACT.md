@@ -183,7 +183,7 @@ browser entirely (`scopedClient.ts`'s own stated principle).
 ## Cross-repo dependency graph
 
 ```
-Mosaic (hippo)         — needs `converse_query_spec` MCP tool
+Mosaic                 — needs `converse_query_spec` MCP tool
                           (extends add-mosaic-mcp-boundary Phase 1; tracked as mosaic#186 — open)
         │  blocks
         ▼

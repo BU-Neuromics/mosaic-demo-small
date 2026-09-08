@@ -13,10 +13,10 @@ from exon.harness.outcome import FailureClass
 from exon.harness.runner import run_suite
 from exon.context.template import ContextArtifact, DecodeParams
 from exon.harness.probe import OutputProtocol
-from exon.schema import fetch_hippo_schema, load_capability_manifest
+from exon.schema import fetch_mosaic_schema, load_capability_manifest
 
 ENDPOINT = "http://localhost:8080/graphql"
-HS = fetch_hippo_schema(ENDPOINT)
+HS = fetch_mosaic_schema(ENDPOINT)
 M = load_capability_manifest("evals/schema/capabilities.json")
 FOUR = ["hippocampus","frontal_cortex","cerebellum","brainstem"]
 

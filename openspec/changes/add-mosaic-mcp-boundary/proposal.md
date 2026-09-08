@@ -73,7 +73,7 @@ future Reel engine or Aperture's own `QuerySpec` builder could.
 - **Affected code (this repo, Phase 2 only, blocked on Mosaic's boundary shipping)**:
   `exon/planner.py` (tool schema swap), `exon/validator.py`/`exon/executor.py`/`exon/ops.py`
   (retired), `exon/harness/` (regraded against the new shape), `exon/README.md`/`DEMO.md`.
-- **External dependencies, not implemented by this change**: Mosaic (`BU-Neuromics/hippo`/`mosaic`)
+- **External dependencies, not implemented by this change**: Mosaic (`BU-Neuromics/mosaic`)
   gaining an MCP server module, a server-derived capability manifest, and
   `validate_query_spec`/`execute_query_spec` tools — owned by Mosaic's own repo/OpenSpec process.
   Aperture (`BU-Neuromics/aperture`) optionally pointing its existing `QuerySpec` builder at

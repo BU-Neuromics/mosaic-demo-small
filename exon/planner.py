@@ -141,7 +141,7 @@ PLAN_TOOL = {
 }
 
 
-def render_schema_slots(hippo_schema: dict) -> str:
+def render_schema_slots(mosaic_schema: dict) -> str:
     """Placeholder renderer: the per-entity field listing. Substituted into the context template
     at render time from LIVE introspection, never stored in the artifact.
 
@@ -154,13 +154,13 @@ def render_schema_slots(hippo_schema: dict) -> str:
     executor does, and it reads it straight from hippoSchema.
     """
     lines = []
-    for entity, info in sorted(hippo_schema.items()):
+    for entity, info in sorted(mosaic_schema.items()):
         slots = ", ".join(sorted(info["fields"]))
         lines.append(f'- entity "{entity}" -- fields: {slots}')
     return "\n".join(lines)
 
 
-def render_relationship_types(hippo_schema: dict) -> str:
+def render_relationship_types(mosaic_schema: dict) -> str:
     """Placeholder renderer: the ONLY valid relationship_type values for related_lookup steps,
     derived directly from hippoSchema field metadata -- never from the capability manifest's
     human-authored descriptive labels (e.g. "workflows_via_input_samples"), which are keys for
@@ -168,7 +168,7 @@ def render_relationship_types(hippo_schema: dict) -> str:
     manifest's raw dict passed those descriptive keys as relationship_type, which silently
     matches nothing (relatedTo finds zero edges for a type never written to the table)."""
     lines = []
-    for owner_entity, info in sorted(hippo_schema.items()):
+    for owner_entity, info in sorted(mosaic_schema.items()):
         for field_name, field_info in sorted(info["fields"].items()):
             if field_info.get("kind") == "reference" and field_info.get("multivalued"):
                 target = field_info.get("targetEntityType")
@@ -214,11 +214,11 @@ names exactly; `entity` takes the quoted entity name:
 {{limitations}}"""
 
 
-def build_grounding_context(hippo_schema: dict, capability_manifest: dict) -> str:
+def build_grounding_context(mosaic_schema: dict, capability_manifest: dict) -> str:
     """The source of field/entity names and capabilities the model may use."""
     return (
-        DEFAULT_GROUNDING_BODY.replace("{{schema_slots}}", render_schema_slots(hippo_schema))
-        .replace("{{relationship_types}}", render_relationship_types(hippo_schema))
+        DEFAULT_GROUNDING_BODY.replace("{{schema_slots}}", render_schema_slots(mosaic_schema))
+        .replace("{{relationship_types}}", render_relationship_types(mosaic_schema))
         .replace("{{limitations}}", render_limitations(capability_manifest))
     )
 
@@ -283,7 +283,7 @@ PLAN_JSON_SCHEMA = PLAN_TOOL["function"]["parameters"]
 
 def request_plan(
     instruction: str,
-    hippo_schema: dict,
+    mosaic_schema: dict,
     capability_manifest: dict,
     *,
     model: str = None,
@@ -303,7 +303,7 @@ def request_plan(
     max_tokens = max_tokens or MAX_TOKENS
     if context is None:
         system = DEFAULT_SYSTEM_PROMPT
-        grounding = build_grounding_context(hippo_schema, capability_manifest)
+        grounding = build_grounding_context(mosaic_schema, capability_manifest)
     else:
         system, grounding = context
 
@@ -377,7 +377,7 @@ def request_plan(
 
 def plan_query(
     instruction: str,
-    hippo_schema: dict,
+    mosaic_schema: dict,
     capability_manifest: dict,
     *,
     context: tuple = None,
@@ -393,7 +393,7 @@ def plan_query(
     for _ in range(MAX_ATTEMPTS):
         last = request_plan(
             instruction,
-            hippo_schema,
+            mosaic_schema,
             capability_manifest,
             context=context,
             protocol=protocol,

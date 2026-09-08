@@ -13,7 +13,7 @@ reduction or refactor of it, a fresh, smaller schema from scratch.
 - LinkML (schema authoring)
 - `linkml-data-gen` (synthetic data generation; sibling repo at
   `../linkml-data-gen`, must be on `origin/main` for the hints system)
-- Mosaic (`datahelix-mosaic` / `mosaic` CLI — sibling repo `../hippo`) for
+- Mosaic (`datahelix-mosaic` / `mosaic` CLI — sibling repo `../mosaic`) for
   `migrate`/`ingest`/`serve`
 - DataHelix `solo` deployment recipe (sibling repo `../datahelix`,
   `deploy/recipes/solo/`) for running Aperture against this project via
@@ -66,12 +66,12 @@ worth demonstrating, not a bug to work around).
   real numeric distributions (normal/lognormal), sparse optional fields,
   skewed repeated values — not purely uniform-random and not thousands of
   near-identical rows.
-- Never touch upstream/remote git state on **other** repos (`../hippo`, `../datahelix`,
+- Never touch upstream/remote git state on **other** repos (`../mosaic`, `../datahelix`,
   `../linkml-data-gen`, …) — read-only there, always. This repo has its own remote (see Git
   Workflow) and may be pushed to.
 
 ## External Dependencies
 - `linkml-data-gen` (BU-Neuromics) — must be switched to `origin/main`
   locally for the hints system.
-- `datahelix-mosaic` (`mosaic` CLI) — via the `../hippo` sibling checkout.
+- `datahelix-mosaic` (`mosaic` CLI) — via the `../mosaic` sibling checkout.
 - DataHelix `solo` recipe — via the `../datahelix` sibling checkout.

@@ -12,6 +12,27 @@ See `openspec/changes/add-small-demo-schema/` (proposal, design, tasks, delta
 spec) for the full rationale and acceptance criteria this implementation
 satisfies.
 
+## A note on "hippo" vs "mosaic"
+
+The product was renamed Hippo → Mosaic (upstream ADR-0004), and this repo's own
+code and docs use **Mosaic** throughout. Some `hippo*` spellings remain, and
+every one of them is deliberate — **do not bulk-rename them**, because each is
+either someone else's identifier or not the product name at all:
+
+| Spelling | Why it stays |
+|---|---|
+| `hippocampus` | An anatomical brain region — real data values in this schema. Nothing to do with the product. |
+| `hippoSchema`, `hippoEntityType` | **Live GraphQL field/type names** that upstream Mosaic still serves. Renaming breaks every query. |
+| `hippo_core`, `hippo_ext`, `hippo_search`, `hippo_index`, `hippo_meta`, `hippo_external_xref` | Data-contract identifiers and LinkML annotation keys, **deliberately not renamed** by ADR-0004. Upstream reads these exact strings. |
+| `hippo-benchmark`, `brainbank-hippo-performance`, `hippo-reference-ensembl` | Names of other real repos. |
+| `hippoSource.ts`, `VITE_HIPPO_GRAPHQL_URL` | Aperture's own file and env-var names. |
+| `../hippo@<commit>` in `captured_against` / "last verified" strings | Provenance records. At capture time the repo really was named `hippo`; rewriting them would falsify the record. The clone still exists at `../hippo`, but it is **stale** — the live editable install is `../mosaic` (`BU-Neuromics/mosaic`). |
+
+Exon's own local Python names for the schema it fetches *were* renamed
+(`fetch_mosaic_schema`, `mosaic_schema`, `MOSAIC_SCHEMA_QUERY`) — those are
+ours, internal, and carry no wire meaning. The GraphQL query string they send
+still asks for `hippoSchema`, because that is what the server answers to.
+
 ## Schema
 
 `schemas/demo.yaml` — four concrete classes, each `is_a: Entity` (Mosaic's
@@ -98,7 +119,7 @@ make clean       # wipe data/
 **As of this repo's current schema**, see "Two Mosaic builds in play" above:
 the `datahelix` solo container is pinned to a pre-`ec59c90` published Mosaic
 image and will crash-loop on `Workflow.input_samples: required: true`. Use
-the host's fixed `../hippo` checkout directly instead, until a new Mosaic
+the host's fixed `../mosaic` checkout directly instead, until a new Mosaic
 release + digest bump lands:
 
 ```bash
@@ -169,7 +190,7 @@ schema (`input_samples: required: true`) reproduces #143 immediately —
 confirmed empirically: `docker restart` crash-loops in exactly the
 ALTER-TABLE way #143 describes.
 
-Only the **host's editable `../hippo` checkout** (used for this repo's own
+Only the **host's editable `../mosaic` checkout** (used for this repo's own
 `make migrate`/`make ingest`/`mosaic serve` CLI calls) has the fix. Until
 BU-Neuromics/mosaic cuts a new release past `ec59c90` and `datahelix` bumps
 `composition.lock.json` to its digest, **the certified solo container

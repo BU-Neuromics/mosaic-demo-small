@@ -162,10 +162,10 @@ python3 -m exon "Bring me back all of the brain tissue samples that we have for 
 
 ```bash
 python3 -c "
-from exon.schema import fetch_hippo_schema, load_capability_manifest
+from exon.schema import fetch_mosaic_schema, load_capability_manifest
 from exon.ops import FieldFilter, FilterStep, QueryPlan
 from exon.validator import validate_plan, ValidationError
-hs=fetch_hippo_schema('http://localhost:8080/graphql')
+hs=fetch_mosaic_schema('http://localhost:8080/graphql')
 m=load_capability_manifest('evals/schema/capabilities.json')
 for label, plan in [
   ('range filter (mosaic#96, open)', QueryPlan('x',[FilterStep(entity='Donor', filters=[FieldFilter('age_at_death',65,'GT')])])),

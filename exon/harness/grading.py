@@ -22,10 +22,10 @@ from ..validator import ValidationError, resolve_field, validate_plan
 from .outcome import FailureClass, SampleResult
 
 
-def _canon(hippo_schema: dict, entity: str | None, name: str) -> str:
+def _canon(mosaic_schema: dict, entity: str | None, name: str) -> str:
     """Canonical slot name, or the input unchanged when it can't be resolved (the validator will
     already have rejected a genuinely unknown name, so this only normalises spelling)."""
-    fields = (hippo_schema.get(entity) or {}).get("fields", {}) if entity else {}
+    fields = (mosaic_schema.get(entity) or {}).get("fields", {}) if entity else {}
     return resolve_field(fields, name) or name
 
 
@@ -37,7 +37,7 @@ def _values_equal(expected, actual) -> bool:
     return str(expected) == str(actual)
 
 
-def check_faithfulness(plan, case, hippo_schema: dict) -> tuple:
+def check_faithfulness(plan, case, mosaic_schema: dict) -> tuple:
     """-> (ok, detail). `detail` names the specific defect, because that string is what the
     refiner reasons over -- vagueness here directly degrades the loop."""
     exp_steps = case.steps
@@ -59,10 +59,10 @@ def check_faithfulness(plan, case, hippo_schema: dict) -> tuple:
                 )
 
             actual = {
-                _canon(hippo_schema, got.entity, f.field): (f.value, f.op) for f in got.filters
+                _canon(mosaic_schema, got.entity, f.field): (f.value, f.op) for f in got.filters
             }
             for rf in exp.required_filters:
-                slot = _canon(hippo_schema, exp.entity, rf.field)
+                slot = _canon(mosaic_schema, exp.entity, rf.field)
                 if slot not in actual:
                     return False, (
                         f"step {i}: missing required filter {slot}={rf.value!r} -- the "
@@ -83,7 +83,7 @@ def check_faithfulness(plan, case, hippo_schema: dict) -> tuple:
 
             if exp.forbid_extra_filters:
                 required = {
-                    _canon(hippo_schema, exp.entity, rf.field) for rf in exp.required_filters
+                    _canon(mosaic_schema, exp.entity, rf.field) for rf in exp.required_filters
                 }
                 extra = sorted(set(actual) - required)
                 if extra:
@@ -93,8 +93,8 @@ def check_faithfulness(plan, case, hippo_schema: dict) -> tuple:
                     )
 
             for want in exp.select_fields_include:
-                slot = _canon(hippo_schema, got.entity, want)
-                have = {_canon(hippo_schema, got.entity, s) for s in got.select_fields}
+                slot = _canon(mosaic_schema, got.entity, want)
+                have = {_canon(mosaic_schema, got.entity, s) for s in got.select_fields}
                 if slot not in have:
                     return False, (
                         f"step {i}: does not select {slot!r}, which the question asks about"
@@ -102,24 +102,24 @@ def check_faithfulness(plan, case, hippo_schema: dict) -> tuple:
 
             if exp.required_forward_relation:
                 fr = got.forward_relation or {}
-                want_rel = _canon(hippo_schema, exp.entity, exp.required_forward_relation)
-                got_rel = _canon(hippo_schema, exp.entity, fr.get("field", "")) if fr else ""
+                want_rel = _canon(mosaic_schema, exp.entity, exp.required_forward_relation)
+                got_rel = _canon(mosaic_schema, exp.entity, fr.get("field", "")) if fr else ""
                 if got_rel != want_rel:
                     return False, (
                         f"step {i}: the question asks for the related {want_rel!r} record's "
                         f"attributes, but the plan resolves {got_rel or 'no'} forward relation"
                     )
                 target = (
-                    (hippo_schema.get(exp.entity) or {})
+                    (mosaic_schema.get(exp.entity) or {})
                     .get("fields", {})
                     .get(want_rel, {})
                     .get("targetEntityType")
                 )
                 have = {
-                    _canon(hippo_schema, target, s) for s in fr.get("select_fields", []) or []
+                    _canon(mosaic_schema, target, s) for s in fr.get("select_fields", []) or []
                 }
                 for want in exp.required_forward_select:
-                    slot = _canon(hippo_schema, target, want)
+                    slot = _canon(mosaic_schema, target, want)
                     if slot not in have:
                         return False, (
                             f"step {i}: forward relation {want_rel!r} does not select {slot!r}, "
@@ -153,7 +153,7 @@ def check_faithfulness(plan, case, hippo_schema: dict) -> tuple:
                         f"every referencing entity, not the ones asked for"
                     )
                 if not _values_equal(exp.required_client_filter.value, cf.value) or _canon(
-                    hippo_schema, None, cf.field
+                    mosaic_schema, None, cf.field
                 ) != exp.required_client_filter.field:
                     return False, (
                         f"step {i}: client filter is {cf.field}={cf.value!r}, expected "
@@ -213,7 +213,7 @@ def grade_sample(
     attempt,
     case,
     sample_index: int,
-    hippo_schema: dict,
+    mosaic_schema: dict,
     capability_manifest: dict,
     *,
     endpoint: str | None = None,
@@ -262,7 +262,7 @@ def grade_sample(
 
     # --- tier 2: validator ---
     try:
-        validate_plan(attempt.plan, hippo_schema, capability_manifest)
+        validate_plan(attempt.plan, mosaic_schema, capability_manifest)
         rejected = None
     except ValidationError as e:
         rejected = str(e)
@@ -284,7 +284,7 @@ def grade_sample(
         return SampleResult(outcome=FailureClass.PLAN_INVALID, detail=rejected, **base)
 
     # --- tier 3: faithfulness ---
-    ok, detail = check_faithfulness(attempt.plan, case, hippo_schema)
+    ok, detail = check_faithfulness(attempt.plan, case, mosaic_schema)
     if not ok:
         return SampleResult(outcome=FailureClass.PLAN_UNFAITHFUL, detail=detail, **base)
 
@@ -293,7 +293,7 @@ def grade_sample(
         from ..executor import execute_plan
 
         try:
-            result = execute_plan(attempt.plan, endpoint, hippo_schema)
+            result = execute_plan(attempt.plan, endpoint, mosaic_schema)
         except Exception as e:  # noqa: BLE001 - any execution failure is a graded outcome
             return SampleResult(
                 outcome=FailureClass.EXEC_ERROR, detail=f"{type(e).__name__}: {e}", **base

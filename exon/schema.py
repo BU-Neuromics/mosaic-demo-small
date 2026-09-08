@@ -24,14 +24,14 @@ def graphql_query(endpoint: str, query: str) -> dict:
     return result["data"]
 
 
-HIPPO_SCHEMA_QUERY = """
+MOSAIC_SCHEMA_QUERY = """
 { hippoSchema { name accessorName description fields { name kind range role required
   multivalued identifier description targetEntityType enumName enumValues }
   relationships { field targetEntityType } } }
 """
 
 
-def fetch_hippo_schema(endpoint: str) -> dict:
+def fetch_mosaic_schema(endpoint: str) -> dict:
     """{entity_name: {accessor_name, fields: {slot_name: field_info}}}.
 
     The source of truth for field names. Since mosaic#149/PR#150 the server accepts both the
@@ -39,7 +39,7 @@ def fetch_hippo_schema(endpoint: str) -> dict:
     guessed -- and hippoSchema also carries the kind/multivalued metadata the validator needs
     to reject unfilterable fields before execution.
     """
-    data = graphql_query(endpoint, HIPPO_SCHEMA_QUERY)
+    data = graphql_query(endpoint, MOSAIC_SCHEMA_QUERY)
     schema = {}
     for entity in data["hippoSchema"]:
         schema[entity["name"]] = {
