@@ -143,6 +143,21 @@ there's something real to verify against" order already used for `mosaic#195`/`#
       change and the shipped modules instead of reading as an unimplemented brainstorm; its
       dependency graph and decisions list were updated to match (mosaic#186 filed, Decision 9's
       resolution noted).
+- [x] 2.8a **Make it runnable and demonstrable** (added 2026-09-08, not in the original plan).
+      The contract was complete and merged while remaining impossible to *show*:
+      `create_conversational_app` had no caller but a test, so Mosaic's `converse_query_spec` had
+      nothing to point `MOSAIC_EXON_URL` at. Three pieces close that:
+      - `python -m exon.conversational_server` — the deployable turn service, fetching
+        `mosaic://capabilities` once at startup via the task-2.3 MCP client.
+      - `python -m exon.chat` — an interactive terminal chat standing in for Aperture's unbuilt
+        UI. Talks **only** to Mosaic's `converse_query_spec`, never to Exon directly, so it
+        exercises the real path; and it holds the turn list, playing Aperture's state-carrier role.
+      - `./run-chat-demo.sh` — starts both services, wires them together, drops into the chat,
+        and tears down on exit.
+
+      This is also what found the `turns` wire-contract gap (see `design.md` Decision 8's
+      correction): a client that actually derives its own draft from the turn list surfaced a bug
+      that reading the spec did not.
 - [ ] 2.9 Update `openspec/specs/exon-conversational-planner/spec.md` (new) and
       `openspec/specs/mosaic-query-boundary-contract/spec.md` at archive time.
 

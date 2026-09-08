@@ -178,9 +178,31 @@ contract.
 ```
 {
   "turn":               <Turn>,         # this call's result (a new turn, or the redone one)
-  "suspended_turn_ids": ["<id>", ...]   # turns invalidated by an edit; [] when not editing
+  "suspended_turn_ids": ["<id>", ...],  # turns invalidated by an edit; [] when not editing
+  "turns":              [<Turn>, ...]   # the FULL conversation after this call (see below)
 }
 ```
+
+**Correction (2026-09-08): `turns` was added after the original two-field shape proved
+insufficient.** Found by building the demo chat client against the shipped path, not by re-reading
+this document. `edit_turn` recomputes every turn following the edited one — a real model call each
+— and with only `turn` + `suspended_turn_ids` on the wire, those recomputed turns had nowhere to
+go: a caller could not learn their new message or `QuerySpec`. A client deriving "the current
+draft" from its own copy therefore reads a **pre-edit** spec and executes the wrong query.
+Measured end to end: after editing turn 1 from hippocampus to cerebellum, executing the resulting
+draft returned 20 rows (the stale query) where the correct answer is 58.
+
+`turns` is returned on **every** call, not only edits, so a caller never reconstructs state
+itself — replace your list with it. `turn` and `suspended_turn_ids` are retained (still the answer
+to "which turn was this call about" and "what should the user re-prompt"), and are redundant with,
+never contradictory to, `turns`. On an `"error"` turn `turns` is **omitted, not empty**: an error
+means nothing was applied, so the conversation is unchanged, and `[]` would instead tell a caller
+to wipe the chat.
+
+Mosaic's `converse_query_spec` re-validates **every** proposal in `turns`, not just `turn` — a
+recompute produces specs the deployment has never seen, so checking only `turn` would leave the
+"Aperture never receives an invalid QuerySpec" guarantee with a hole exactly the width of an edit.
+Shipped in Exon's endpoint and upstream in `BU-Neuromics/mosaic` PR #200.
 
 This is the concrete shape Decision 3 (pure-function signature) and Decision 4 (discriminated
 `proposal`/`clarification`) describe only in prose — #186's implementer needs field names, not just

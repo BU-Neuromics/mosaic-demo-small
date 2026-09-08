@@ -246,6 +246,82 @@ different sampling, and notes if they used different output protocols.
 
 ---
 
+## 6. The conversational MVP — one command, then just type
+
+This is the headline demo: build a query by **talking**, refine it across turns, go back and
+change your mind, then see the records.
+
+```bash
+./run-chat-demo.sh
+```
+
+That starts everything and wires it together:
+
+```
+you (chat client)  ->  Mosaic :8080  ->  Exon :9100  ->  Mosaic re-validates
+   stands in for            converse_query_spec        the turn-taking planner
+   Aperture's UI            (the real MCP boundary)
+```
+
+The chat client deliberately talks **only to Mosaic**, never to Exon directly — so what you see
+is the actual path Aperture will use, not a shortcut around it. It also holds the conversation
+state, which is Aperture's job: Exon is stateless and gets the whole turn list on every call.
+
+A demo that shows off everything worth showing, in about six lines of typing:
+
+```
+> show me tissue samples from the hippocampus
+  exon (proposal): Filtering to tissue samples collected from the hippocampus.
+
+> only from donors over 60
+  exon (proposal): ...from the hippocampus, collected from donors over 60 years old.
+                   (note the related criterion on donor.age_at_death — it traversed the edge)
+
+> /run
+  20 matching record(s)                      <- real rows from the live graph
+
+> /edit 1 show me cerebellum samples instead
+  exon (proposal): Filtering to samples from the cerebellum brain region.
+                   turn 2 recomputes automatically against the new anchor
+
+> /turns
+  [2] exon (proposal): ...cerebellum..., where the donor is over 60 years old.
+
+> /run
+  58 matching record(s)                      <- the EDIT propagated; not the stale 20
+```
+
+Commands: `/run` execute, `/spec` show the QuerySpec, `/turns` list turns, `/edit N <text>`
+rewind and redo turn N, `/help`, `/quit`.
+
+**The two things to point at.** First, the model never writes GraphQL or SQL — every turn emits a
+typed `QuerySpec` that **Mosaic validates before anything runs**, and Mosaic re-validates it again
+on the way back even though Exon already grounded it. Second, `/edit` is the feature that is
+easy to get wrong: turns after the edited one are *recomputed*, and any that no longer make sense
+are marked **suspended** rather than silently dropped, for the user to re-word. That 20 -> 58 is
+worth showing deliberately: it is the edit actually propagating.
+
+Needs a model credential (same as §2 — `EXON_MODEL` plus that provider's key). Each turn is one
+LLM call, so expect a couple of seconds per message. `Ctrl-C` or `/quit` stops both services.
+
+If you would rather run the pieces by hand, in three terminals:
+
+```bash
+# 1
+MOSAIC_EXON_URL=http://127.0.0.1:9100/turn \
+  mosaic serve --config mosaic.yaml --graphql --mcp --port 8080
+# 2
+python3 -m exon.conversational_server
+# 3
+python3 -m exon.chat
+```
+
+`converse_query_spec` only appears on the MCP boundary when `MOSAIC_EXON_URL` is set — an
+unconfigured deployment does not advertise a tool it cannot serve, so if the chat client reports
+the tool missing, that env var on terminal 1 is why.
+
+---
+
 ## What to expect, so nothing surprises you
 
 - **Simple filter questions work, fast, against the hosted default.** Multi-constraint and

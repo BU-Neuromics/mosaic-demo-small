@@ -50,6 +50,22 @@ class TurnRequest(BaseModel):
 class TurnResponse(BaseModel):
     turn: TurnModel
     suspended_turn_ids: list[str] = []
+    #: The FULL conversation after this call -- the authoritative state.
+    #:
+    #: Added because `turn` + `suspended_turn_ids` is provably insufficient
+    #: after an edit: `edit_turn` recomputes every turn following the edited
+    #: one (a real model call each), and those recomputed turns used to be
+    #: discarded here, so a caller could not learn their new message or spec.
+    #: A client deriving "the current draft" from its own stale copy would
+    #: then read a pre-edit QuerySpec and execute the wrong query -- found by
+    #: building the demo chat client against the real path.
+    #:
+    #: Returned on every call, not just edits, so a caller never has to
+    #: reconstruct state itself: replace your list with this one. `turn` and
+    #: `suspended_turn_ids` are kept (both still useful: which turn this call
+    #: was about, and what to surface for re-prompting) and are redundant
+    #: with, never contradictory to, this field.
+    turns: list[TurnModel] = []
 
 
 def create_conversational_app(
@@ -88,7 +104,11 @@ def create_conversational_app(
                 # its own discriminated "error" turn status (Decision 8) --
                 # from here, a loud transport-level failure is correct.
                 raise HTTPException(status_code=502, detail=str(exc)) from exc
-            return TurnResponse(turn=TurnModel(**redone), suspended_turn_ids=suspended)
+            return TurnResponse(
+                turn=TurnModel(**redone),
+                suspended_turn_ids=suspended,
+                turns=[TurnModel(**t) for t in new_turns],
+            )
 
         # Plain append: Decision 9 -- for now, Aperture's point-and-click
         # QuerySpec builder is locked while a chat is active, so the
@@ -115,7 +135,11 @@ def create_conversational_app(
             new_turns, new_turn = append_turn(turns, req.utterance, capabilities, **kw)
         except RuntimeError as exc:
             raise HTTPException(status_code=502, detail=str(exc)) from exc
-        return TurnResponse(turn=TurnModel(**new_turn), suspended_turn_ids=[])
+        return TurnResponse(
+            turn=TurnModel(**new_turn),
+            suspended_turn_ids=[],
+            turns=[TurnModel(**t) for t in new_turns],
+        )
 
     return app
 
