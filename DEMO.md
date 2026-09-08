@@ -3,7 +3,7 @@
 > **Run every command in this file from the repository root** (`mosaic-demo-small/`), which is
 > where this file lives. Paths like `evals/schema/capabilities.json` are relative to it.
 
-Last verified: 2026-08-18, against `../hippo@502991c`, the default `bedrock/global.anthropic.
+Last verified: 2026-08-18, against `../mosaic@502991c` (then named `../hippo`), the default `bedrock/global.anthropic.
 claude-haiku-4-5-20251001-v1:0`, and (for comparison) `bedrock/global.anthropic.claude-sonnet-5`
 (the default moved off local Ollama this session, once a Bedrock credential became available —
 see "What does not work yet" below for what changed and what didn't).

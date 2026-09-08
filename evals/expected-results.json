@@ -1,6 +1,6 @@
 {
   "_meta": {
-    "captured_against": "host-side `mosaic serve --config mosaic.yaml --graphql` on the fixed ../hippo checkout at commit ec59c90 (unreleased past v0.12.1) -- NOT the datahelix solo container. See README.md 'Two Mosaic builds in play'.",
+    "captured_against": "host-side `mosaic serve --config mosaic.yaml --graphql` on the fixed ../mosaic checkout at commit ec59c90 (repo named ../hippo at capture time; renamed per ADR-0004) (unreleased past v0.12.1) -- NOT the datahelix solo container. See README.md 'Two Mosaic builds in play'.",
     "data_snapshot": "3600 records (300 donors / 900 samples / 1200 workflows / 1200 datasets), generate.py --seed 0"
   },
   "q01": {

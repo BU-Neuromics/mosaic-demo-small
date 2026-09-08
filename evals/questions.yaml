@@ -1,7 +1,8 @@
 # Capability benchmark for mosaic-demo-small's live GraphQL endpoint.
 #
 # Captured against a host-side `mosaic serve --config mosaic.yaml --graphql`
-# on the fixed `../hippo` checkout (commit ec59c90, unreleased past v0.12.1)
+# on the fixed `../mosaic` checkout (commit ec59c90, unreleased past v0.12.1;
+#  the repo was named `hippo` at capture time, renamed per ADR-0004)
 # -- see README.md's "Two Mosaic builds in play" for why this isn't the
 # datahelix solo container. Each question's `graphql` field is the exact
 # query run to produce `expected-results.json`'s entry of the same id.
