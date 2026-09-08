@@ -195,10 +195,13 @@ during its own generation retry loop — exactly the relationship the single-sho
 yet.** No MCP client exists anywhere in this repo today — `exon/requirements.txt` has no MCP SDK,
 and the single-shot planner (`spec_planner.py`) only emits a `QuerySpec`; Mosaic validates it
 out-of-process, after the fact, not because Exon called `validate_query_spec` as a client.
-Creating that client is `add-mosaic-mcp-boundary` task 2.3's job, itself paused on an upstream
-aggregation/search gap. This design intent stands, but `tasks.md` 2.3 (the self-validation retry
-loop this decision motivates) is now recorded there as blocked on that migration shipping first,
-not merely an independent later increment. Separately, `converse_query_spec`
+Creating that client is `add-mosaic-mcp-boundary` task 2.3's job. That migration was paused on an
+upstream aggregation/search gap (`mosaic#195`/`#196`) — since closed, both merged upstream and
+verified live against this repo's own demo server the same day this correction was written (see
+`tasks.md` 2.3 for the numbers). So `add-mosaic-mcp-boundary` 2.3 is actionable now, just not yet
+done. This design intent stands, but `tasks.md` 2.3 (the self-validation retry loop this decision
+motivates) is recorded there as blocked on that migration happening, not on any further upstream
+work. Separately, `converse_query_spec`
 validates whatever `QuerySpec` Exon's HTTP response carries **in-process** — calling the validator
 function directly, not over MCP, since it's the same Mosaic process that already hosts it — before
 ever labeling a turn `proposal`. This is defense-in-depth, not busywork: it's what keeps "Mosaic

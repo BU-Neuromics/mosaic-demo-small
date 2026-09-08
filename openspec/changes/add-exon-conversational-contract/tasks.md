@@ -64,15 +64,23 @@ there's something real to verify against" order already used for `mosaic#195`/`#
       `mcp`/`modelcontextprotocol`/`fastmcp`), and neither `conversational_planner.py` nor
       `spec_planner.py` calls one. The single-shot planner emits a `QuerySpec` and stops; Mosaic
       validates it after the fact, out of process, not because Exon called it as a client.
-      Creating that client is `add-mosaic-mcp-boundary` task 2.3's job (still unchecked there),
-      and that migration is itself deliberately paused on the upstream aggregation/search gap
-      (`f430674`, "close the aggregation/search gap upstream before migrating Exon"). Building a
-      client here first would either duplicate that surface or invert a dependency order already
-      decided upstream-first.
+      Creating that client is `add-mosaic-mcp-boundary` task 2.3's job (still unchecked there).
 
-      **This task is therefore blocked on `add-mosaic-mcp-boundary` task 2.3 shipping**, not
-      merely deferred — and even once unblocked, it remains only a quality improvement, not a
-      correctness requirement, since Mosaic's `converse_query_spec` already re-validates
+      **Update (same day, later): the upstream reason that task was paused no longer applies.**
+      `f430674` paused the whole Exon migration on an aggregation/search gap, tracked as
+      `mosaic#195`/`#196`. Both shipped and merged upstream since — `mosaic#195` via PR #197,
+      `mosaic#196` via PR #198 — and verified live just now against this repo's own demo server:
+      `mosaic serve --mcp` exposes `count_query_spec`/`facet_query_spec`/`field_range_query_spec`/
+      `search_query_spec` alongside `validate_query_spec`/`execute_query_spec`, and
+      `facet_query_spec` on `Donor.cohort` returned `control: 125, case: 104, at_risk: 71` — the
+      exact q33 numbers the gap was blocking. `add-mosaic-mcp-boundary` task 2.3 (and its 2.4-2.7)
+      is therefore actionable now, not blocked on anything upstream — it just hasn't been done yet
+      in this repo. This task (conversational 2.3) is blocked on that migration happening, not on
+      any further upstream work.
+
+      Even once `add-mosaic-mcp-boundary` 2.3 ships and this becomes actionable, it remains only a
+      quality improvement, not a correctness requirement, since Mosaic's `converse_query_spec`
+      already re-validates
       authoritatively regardless (task 1.2, also unbuilt).
 - [x] 2.4 Restrict the turn-mode op vocabulary to `filter`/`exists-related-filter`
       (`FieldCondition`/`RelatedCondition`) — no aggregation, pivot, or set-op support. True by

@@ -34,6 +34,16 @@ change depends on (`specs/mosaic-query-boundary-contract/spec.md`), not as actio
       (`mosaic://schema`, `mosaic://capabilities`), both tools, and the `construct_query_spec`
       prompt; `execute_query_spec` returned real rows (900 Samples), and an unknown slot came back
       as `UNKNOWN_SLOT` at `$.criteria[0].slot`.
+
+      **Re-verified later the same day, boundary now six tools, not two.** `mosaic#195`/`#196`
+      (aggregation/search) merged upstream (PRs #197/#198) after this task was first checked off.
+      Re-ran the smoke test against the same demo server: `mosaic serve --mcp` now also exposes
+      `count_query_spec`/`facet_query_spec`/`field_range_query_spec`/`search_query_spec`;
+      `facet_query_spec` on `Donor.cohort` returned `control: 125, case: 104, at_risk: 71`. 2.3's
+      migration should be scoped against this six-tool boundary, not the two-tool one this task
+      originally confirmed — see 2.5c: routing to the aggregation tools instead of
+      `execute_query_spec` is now part of what the migrated planner has to decide, not something
+      deferred as "can't express yet."
 - [x] 2.2 Add a `QuerySpec` emitter **alongside** `exon/planner.py`'s `QueryPlan` one, rather than
       retargeting `PLAN_TOOL` in place. Additive first so the harness can grade both shapes against
       the same cases and prove equivalence before anything is retired — a straight retarget would
@@ -44,7 +54,10 @@ change depends on (`specs/mosaic-query-boundary-contract/spec.md`), not as actio
       it, since Phase 1 (#183) decided to reject `columns` outright rather than build a Mosaic-side
       compiler for its aggregate-vs-explode choice.
 - [ ] 2.3 Replace local calls to `validator.validate_plan`/`executor.execute_plan` with MCP client
-      calls to Mosaic's `validate_query_spec`/`execute_query_spec`.
+      calls to Mosaic's `validate_query_spec`/`execute_query_spec`. Paused (`f430674`) on the
+      aggregation/search gap this migration would otherwise regress on — **that gap closed
+      2026-09-07** (see 2.5b for the verification), so this task is actionable now; it just hasn't
+      been started.
 - [ ] 2.4 Retire `exon/validator.py`, `exon/executor.py`, `exon/ops.py` (the `QueryPlan`/
       `FilterStep`/`RelatedLookupStep` types and their validation/execution logic) once 2.3 is
       confirmed working end-to-end. Confirmed safe in principle: every check `validator.py`
@@ -73,11 +86,20 @@ change depends on (`specs/mosaic-query-boundary-contract/spec.md`), not as actio
         but NOT via the `QuerySpec` boundary, which has no aggregation tool at all. Leaving any of
         the three tagged `blocked` would score the new path *wrong* for correctly answering them
         (q32/q34) or hide a genuine boundary gap behind a stale "Mosaic can't do this" label (q33).
-        `q33` specifically **blocks this task**, not just its own re-tag: it depends on
+        `q33` specifically **blocked this task**, not just its own re-tag: it depended on
         `BU-Neuromics/mosaic#195` (aggregation tools) shipping — decided in `design.md` Decision 8
-        as extend-the-boundary-then-migrate, not accept-the-regression. Do not run the eval-suite
-        comparison in 2.5's parent task until #195 is live, or `q33` will read as a false
-        regression against the old GraphQL-calling path.
+        as extend-the-boundary-then-migrate, not accept-the-regression. The pause wasn't waiting on
+        someone else's schedule: `#195`/`#196` were filed *and* implemented upstream the same day
+        (PRs #197/#198), under the interim dual reviewer/implementer role — the blocker cleared in
+        hours, not on an external timeline.
+
+        **Update (2026-09-07): unblocked.** `mosaic#195` (PR #197) and `mosaic#196` (search,
+        PR #198) both shipped and merged upstream, and were verified live the same day against
+        this repo's own demo server: `mosaic serve --mcp` now exposes `count_query_spec`/
+        `facet_query_spec`/`field_range_query_spec`/`search_query_spec`, and `facet_query_spec` on
+        `Donor.cohort` returned `control: 125, case: 104, at_risk: 71` — the exact q33 numbers.
+        The eval-suite comparison in 2.5's parent task, and this task's own re-baseline, can
+        proceed; `q33` no longer reads as a false regression against the old GraphQL-calling path.
   - [ ] 2.5c **Grade the silent-degradation gap, which validation structurally cannot catch.**
         `q33` demonstrated it even before #195: asked for a per-cohort facet count, the emitter
         returned a *valid* spec listing all 300 donors sorted by cohort — a confidently wrong
