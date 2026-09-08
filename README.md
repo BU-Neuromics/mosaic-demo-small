@@ -102,8 +102,10 @@ the host's fixed `../hippo` checkout directly instead, until a new Mosaic
 release + digest bump lands:
 
 ```bash
-mosaic serve --config mosaic.yaml --host 127.0.0.1 --port 8080 --graphql
+mosaic serve --config mosaic.yaml --host 127.0.0.1 --port 8080 --graphql --mcp
 # -> http://localhost:8080/graphql (GraphiQL)
+# --mcp is only needed by exon/ (see exon/README.md), harmless otherwise -- but it is
+# easier to start it once with the flag than to rediscover why `python -m exon` 404s.
 ```
 
 Once `datahelix`'s certified-frontier pin moves past `ec59c90`, the solo

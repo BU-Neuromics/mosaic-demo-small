@@ -85,9 +85,13 @@ wrong ceiling (`num_ctx` when `max_tokens` bound), then gave advice that would h
 ```bash
 cd ~/Documents/schemas/mosaic-demo-small          # all commands run from here
 
-# Start the GraphQL server if it isn't already up (check: curl -s localhost:8080/graphql -X POST \
-#   -H 'content-type: application/json' -d '{"query":"{__typename}"}')
-mosaic serve --config mosaic.yaml --graphql --port 8080
+# Start the server if it isn't already up. --mcp is REQUIRED: `python -m exon` now reaches
+# Mosaic's MCP boundary for capability grounding, validation, and execution.
+# Check BOTH are up, not just GraphQL:
+#   curl -s localhost:8080/graphql -X POST -H 'content-type: application/json' \
+#     -d '{"query":"{__typename}"}'                     # -> {"data":{"__typename":"Query"}}
+#   curl -s -o /dev/null -w '%{http_code}\n' localhost:8080/mcp   # -> 307 (404 means no --mcp)
+mosaic serve --config mosaic.yaml --graphql --mcp --port 8080
 
 export EXON_MODEL=bedrock/global.anthropic.claude-haiku-4-5-20251001-v1:0   # default if unset
 ```

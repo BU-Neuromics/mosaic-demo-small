@@ -60,7 +60,12 @@ instruction --[planner.py, LLM]--> QueryPlan --[validator.py]--> validated plan
 
 ```bash
 pip install -r exon/requirements.txt
-mosaic serve --config mosaic.yaml --graphql --port 8080   # if not already running
+
+# --mcp is REQUIRED, not optional: `python -m exon` fetches its capability grounding from
+# mosaic://capabilities and validates/executes via Mosaic's MCP tools. Without the flag,
+# GraphQL still answers but /mcp 404s, and Exon exits 3 with "BOUNDARY UNREACHABLE ...
+# MCPError: Not Found" (an already-running server started without --mcp is the usual cause).
+mosaic serve --config mosaic.yaml --graphql --mcp --port 8080   # if not already running
 
 # Pick a provider by setting EXON_MODEL to a litellm model string, then set that
 # provider's own credential (litellm infers which one from the model prefix):
