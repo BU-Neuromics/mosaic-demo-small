@@ -131,8 +131,18 @@ upstream: `BU-Neuromics/mosaic#204`.
 
 ## Phase 4 — Aperture (external to this repo; informational only, no tasks owned here; sequenced internally as noted)
 
-- [ ] 4.1 *(informational, sequenced first within this phase)* Canonicalize `QuerySpec` v1→v2 onto
+- [x] 4.1 *(informational, sequenced first within this phase)* Canonicalize `QuerySpec` v1→v2 onto
       LinkML type/slot names (Decision 2), with a tolerant v1 read for existing saved views.
+      **Done (2026-09-11), with two corrections to this task's own framing.** (a) **The version is
+      not bumped.** `v: 1` is the *platform* wire version — Mosaic's parser hard-requires it and
+      Exon's tool schema says "Always 1" — so a `v: 2` would return `INVALID_QUERYSPEC_SHAPE`. What
+      changed is the *dialect*: Aperture addressed the anchor by its own collection id and prefixed
+      forward edges `fwd:<graphqlField>`; it now uses the LinkML class name and slot name. Both
+      dialects carry `v: 1`, so `canonicalizeQuerySpec` discriminates by content. (b) **There are no
+      saved views to be tolerant of** — `SavedViewState` carries `collection/page/q/filters/sort`
+      and never a `QuerySpec`, so the only persisted specs are bookmarked URLs. Reverse edges keep
+      the Aperture-local `rev:` key pending `mosaic#204`. Recorded as an ADR-0035 amendment;
+      verified end to end against the stub (handoff enabled, 2 conditions adopted, 3 rows not 60).
 - [x] 4.2 ~~*(informational, depends on 4.1)* Add the `headerNavMainInspector` layout to the layout
       registry (Decision 4).~~ **Superseded as built (2026-09-11).** Scoping in Aperture found the
       layout redundant: `headerNavMain` already declares and renders `inspector`, `App.tsx` already
@@ -142,8 +152,10 @@ upstream: `BU-Neuromics/mosaic#204`.
       **`queryWorkbench`** layout (nav + bounded composer column + wide main) selected by context
       in `shell/contexts.ts`, per ADR-0031's "selection, not composition." Recorded in ADR-0039's
       amended consequence.
-- [ ] 4.3 *(informational, depends on 4.1, 4.2, and Phase 1 shipping)* Build the chat panel to full
+- [x] 4.3 *(informational, depends on 4.1, 4.2, and Phase 1 shipping)* Build the chat panel to full
       parity with `chat.py` (Decision 5): turn history, spec view, rewind-and-edit, run.
+      **Done (2026-09-11)** — the gap below was 4.1's and closed with it; Run now executes a
+      received proposal. Original note follows.
       **Largely built (2026-09-11), one gap:** `web/src/query/ChatPanel.tsx` +
       `web/src/data/conversation.ts` ship turn history, the spec view (rendered as prose via
       `specProse.tsx`, JSON behind a toggle), and rewind-and-edit with suspend-don't-discard —
@@ -151,20 +163,40 @@ upstream: `BU-Neuromics/mosaic#204`.
       not this task's:** a received proposal is displayed but its Run affordance degrades honestly
       because Exon emits LinkML names (`anchor: "Sample"`) while the builder addresses collections
       by id. Closing 4.1 closes 4.3.
-- [ ] 4.4 *(informational, part of 4.3)* Implement the three UI-feel decisions: suspended-turn
+- [x] 4.4 *(informational, part of 4.3)* Implement the three UI-feel decisions: suspended-turn
       inline+banner treatment (Decision 9), in-flight typing-indicator+timer+cancel (Decision 10),
       and the builder-lock/reset affordance (Decision 11). **Partial (2026-09-11):** Decision 9 is
       done (inline `suspended` state per turn + a "N turns need re-wording after your edit" banner
       that scrolls to the first). Decision 10 is half — a "Planning" typing indicator exists; the
       **elapsed timer and in-flight cancel do not** (the composer's "Cancel" is the edit-cancel).
       Decision 11's builder-lock/reset affordance is **not built**.
+      **Completed (2026-09-11):** Decision 10 now has a real elapsed counter and a working cancel —
+      an `AbortSignal` threaded through urql's per-operation `fetchOptions`, so cancelling releases
+      the request rather than only hiding it. (Driving it showed urql does not reliably settle an
+      aborted operation, so cancel tears the UI down itself; a late-resolving cancelled turn is
+      orphaned.) Decision 11's lock ships: the form greys out but stays legible with "Clear
+      conversation & edit manually", and the reset now also clears the URL spec — previously the
+      transcript went and `qs` stayed, leaving the builder re-running a query nothing on screen
+      explained. The turn list moved to a `ConversationContext` since composer and builder are
+      different layout slots.
 - [x] 4.5 *(informational)* Start this work from a fresh branch off `origin/main` (Decision 6),
       cherry-picking the spike branch's two docs-only files if desired.
-- [ ] 4.6 *(informational)* At least one `npm run build && npm run preview` rehearsal before the
-      actual national-meeting presentation (Decision 8).
-- [ ] 4.7 *(informational, Aperture's own follow-up, not tracked further here)* Add a
+- [x] 4.6 *(informational)* At least one `npm run build && npm run preview` rehearsal before the
+      actual national-meeting presentation (Decision 8). **Done (2026-09-11) — and it earned its
+      keep:** `tsc -b` caught two type errors `tsc --noEmit` had not (the dev loop and the build
+      do not check the same thing). Both fixed; the production bundle was then served by
+      `vite preview` and driven in a browser, rendering the builder and panel correctly.
+- [x] 4.7 *(informational, Aperture's own follow-up, not tracked further here)* Add a
       `converseQuerySpec` assertion to `contracts/hippo-graphql-contract.json` and regenerate
-      `web/src/data/testing/realIntrospection.json`.
+      `web/src/data/testing/realIntrospection.json`. **Half done by design (2026-09-11).** The
+      assertion is added, plus a new `gated` flag in `contracts/check-contract.mjs`: the mutation is
+      registered only when a planning service is configured, so an unconditional assertion would
+      fail every deployment without one — `gated` says absence is legitimate while still pinning the
+      shape when present (ADR-0029). Verified discriminating: passes against the stub that has the
+      mutation, fails there when an arg type is wrong. **`realIntrospection.json` is deliberately
+      not edited** — it is a frozen capture from a real endpoint, and hand-adding a mutation no
+      endpoint has ever served would destroy the guarantee it exists to provide. Regenerate it once
+      `mosaic#205` ships.
 
 ## Validation
 
