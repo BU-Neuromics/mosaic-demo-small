@@ -15,7 +15,14 @@
       see `specs/mosaic-query-boundary-contract/spec.md` for the exact request/response contract.
       Precedent: `hippoSchema`, the existing hand-written meta field on the generated Query root.
 
-## Phase 2 — Exon (this repo; independent of Phase 1, can proceed in parallel)
+## Phase 2 — Exon (this repo; **blocked on upstream Mosaic reverse-edge support — `mosaic#204`**)
+
+**Correction found while implementing (2026-09-11):** the header above originally read
+"independent of Phase 1, can proceed in parallel." That remains true *of Phase 1* — nothing here
+waits on Mosaic's `converseQuerySpec` mutation — but it is not true of this phase. The work 2.1
+exists to do depends on a *different* Mosaic capability that does not exist at any layer, found
+only once implementation started. Only 2.2's negative half was shippable. The blocked note below
+is the evidence; it was appended beneath a header that still contradicted it.
 
 **Blocked, found while implementing (2026-09-11): Mosaic's QuerySpec layer has no reverse-edge
 support at all, at any level — this is a real capability gap, not a documentation lag.**
@@ -55,7 +62,10 @@ upstream: `BU-Neuromics/mosaic#204`.
       rejected: two independently-writable representations of one fact, no drift protection, and
       it doesn't compose across schemas). When this task unblocks, it should ground on whichever
       entity fields the manifest marks `inverse`/computed, not on every structurally-matching
-      reference pair.
+      reference pair. **Ownership (2026-09-11):** the implementation is Mosaic's, not this repo's
+      — see `design.md` Decision 3's ownership note. This repo's only share is authoring the
+      `inverse:` slot pair in `schemas/*.yaml`, and that is itself downstream of Mosaic's loader
+      change rather than parallel with it.
 - [x] 2.2 *(negative half only — see blocked note above for why the positive half is deferred)*
       Updated the shared grounding (`exon/spec_planner.py`'s `render_traversable_edges`, consumed
       by both `spec_planner.py` and `conversational_planner.py`) to state explicitly that only the
@@ -63,17 +73,17 @@ upstream: `BU-Neuromics/mosaic#204`.
       name plainly (or ask about, in turn mode) rather than guess an edge name that isn't listed.
       Verified no regression: `pytest tests/test_spec_planner.py tests/test_conversational_planner.py
       tests/test_conversational_orchestrator.py tests/test_conversational_server.py` — 72 passed.
-- [ ] 2.3 ~~Add multi-turn conversational fixtures to the eval harness...~~ **Blocked-by-2.1**: this
+- [ ] 2.3 ~~Add multi-turn conversational fixtures to the eval harness...~~ **Blocked-by-2.1 (2026-09-11)**: this
       task exists to measure 2.1/2.2's positive half, which is blocked (see above). Checked while
       scoping: `exon/harness/` has zero wiring to `conversational_orchestrator` today — its grading
       DSL (`StepExpectation`/`FilterExpectation`, `evals/plan-expectations.yaml`) is shaped
       entirely around single-shot plans. Building that instrument for a change that can't land
       yet is the wrong order; revisit once 2.1 unblocks.
 - [ ] 2.4 ~~Run the harness's existing model-comparison/fingerprint tooling... before/after...~~
-      **N/A as scoped**: with no "after" (2.1 blocked), there is no before/after to measure. Not
+      **N/A as scoped (2026-09-11)**: with no "after" (2.1 blocked), there is no before/after to measure. Not
       substituted with a single run — that would answer a different question than this task asked.
 - [ ] 2.5 ~~Update `exon/README.md`'s "Conversational mode" section to document the new edge
-      vocabulary.~~ **Blocked-by-2.1**: no new vocabulary shipped to document.
+      vocabulary.~~ **Blocked-by-2.1 (2026-09-11)**: no new vocabulary shipped to document.
 
 ## Phase 3 — This repo's local demo infrastructure (independent of Phases 1/2; needs only that Aperture's `web/` exists locally to test against)
 

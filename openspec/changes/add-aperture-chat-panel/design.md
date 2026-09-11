@@ -86,12 +86,22 @@ server itself rejects); a translation shim inside the new mutation (rejected —
 spelling authority, and the saved `qs` in the URL still wouldn't match what `execute_query_spec`
 takes).
 
-### 3. Reverse edges: extend Exon's grounding, FK-backed only
+### 3. Reverse edges: blocked upstream — the fix is LinkML `inverse:` slots in Mosaic, not Exon grounding
+
+**Heading rewritten 2026-09-11; it originally read "Reverse edges: extend Exon's grounding,
+FK-backed only."** Both of that framing's premises were wrong: the work is not this repo's, and the
+server-side capability it assumed does not exist. The original body paragraph below is kept
+verbatim with its false claim marked in place, per this repo's never-silently-rewrite norm.
 
 `exon/spec_planner.py`'s `render_traversable_edges` currently offers only forward edges (fields
-the anchor entity itself holds). Extend it to also offer single-valued FK-backed reverse edges —
+the anchor entity itself holds). ~~Extend it to also offer single-valued FK-backed reverse edges —
 mirroring what Aperture's own `planner.ts`'s `deriveEdges` already does client-side for the
-manual builder.
+manual builder.~~ (**Superseded 2026-09-11 — both clauses, for different reasons.** The
+*instruction*, because Mosaic rejects any spec carrying a reverse edge: see the blocked note
+below. The *cited precedent*, because it is simply false — `deriveEdges`' `rev:` keys are
+client-side bookkeeping for a compensated semijoin and never reach the wire, so there is no
+server-validated reverse edge anywhere to mirror. Read the blocked note and the corrected
+direction below, not this sentence.)
 
 **Rationale:** the contract document's own flagship conversational example — "show me the donors
 of those samples instead" — is a reverse edge from a `Sample` anchor. Forward-only chat cannot
@@ -119,14 +129,52 @@ this — `inverse` (`SlotDefinition.inverse`, bound to `owl:inverseOf`) — whos
 reverse direction is *logically entailed* by the forward slot, never an independently-asserted
 fact. The correct shape of the upstream fix is for Mosaic to treat an `inverse`-declared slot as
 computed/virtual (no relationships-table row, resolved at read time from the forward slot it
-inverts — reusing the reverse-FK-lookup primitive `query_service.py`'s graph-neighborhood resolver
-already proves works), so there is exactly one storage encoding regardless of which slot a query
+inverts), so there is exactly one storage encoding regardless of which slot a query
 traverses through. A schema-lint warning (flagging a same-shaped slot pair with no `inverse:` link
 between them) is the right guard against someone reaching for the unsafe manual pattern instead —
 not an attempt to auto-detect and reinterpret such a pair, which would be unsound: two slots
 between the same two classes can legitimately mean two different relationships, and only an
 explicit `inverse:` disambiguates "these are one fact viewed from two sides" from "these are two
 facts." See the `mosaic#204` discussion for the fuller reasoning.
+
+**Correction (2026-09-11): the sentence above originally continued "— reusing the reverse-FK-lookup
+primitive `query_service.py`'s graph-neighborhood resolver already proves works." It is wrong twice
+over.** *First, there is no primitive.* Checked against `mosaic` `main` (`943806a`): the reverse-FK
+logic is inlined inside `neighbors()` (`src/mosaic/core/query_service.py:666-821`, reverse loop at
+776-795) behind no callable boundary; it builds a flat `{"field","op","value"}` leaf rather than an
+`edge` node and never calls `_reference_edge`; it filters candidate classes with
+`registry.class_names()` rather than the manifest's `exposed_class_names()`; and it shares zero code
+with the `where:`-tree edge compiler a `QuerySpec` targets. It is a *proven pattern to
+re-implement*, not a *unit to reuse* — a materially different cost estimate. *Second, it fused two
+distinct implementation options into a hybrid that is neither.* What is settled here is the
+**semantics**: an `inverse:`-declared slot is logically entailed by its forward slot and is never an
+independently-stored, independently-writable fact. The **execution mechanism** remains open between
+the two options laid out on `mosaic#204` — (1) the schema loader synthesizes a virtual reference
+field and the compiler plus both storage adapters gain a reverse join direction (heavier, but keeps
+`compile_query_spec` a pure function and execution a single round trip), or (2) a
+compile/execute-time semijoin in the pattern `neighbors()` demonstrates (avoids the adapters
+entirely, but `compile_query_spec` stops being pure, or `execute_query_spec` grows a second round
+trip for specs carrying a reverse `RelatedCondition`). That choice is Mosaic's; this document does
+not make it.
+
+**Ownership (2026-09-11): the schema-level implementation is Mosaic's, and this repo's piece is
+downstream of it, not parallel.** Every surface the fix touches lives in `BU-Neuromics/mosaic`:
+`SlotModel` (`src/mosaic/core/schema_typing.py:87-107`) carries no `inverse` field, the LinkML
+bridge exposes no `inverse_slots` accessor, and `_classify_slot` ignores the keyword — so `inverse:`
+parses and round-trips through SchemaView/`yaml_dumper` today with no effect at all; authoring it is
+neither an error nor a capability. Landing it means the capability manifest must surface the reverse
+edge in `EntityCapability.fields_by_name` as a first-class `SlotKind.REFERENCE` entry, because two
+independent gates reject anything less (`query_spec.py:357-358` → `UNKNOWN_EDGE`, and both adapters'
+`_reference_edge`, which resolves only against `registry.induced_slots(anchor)`), plus a reverse
+branch in each adapter. Cost is asymmetric: postgres to-one is close to a parameter flip against its
+single `entities` table, while sqlite to-one is the expensive case — per-class tables mean reversing
+needs a UNION or OR-of-EXISTS fan-out across every referencing class. One thing comes free:
+`RelatedCondition` combined with `asOf` already raises `ASOF_RELATIONSHIP_FILTER_UNSUPPORTED`, so
+reverse edges inherit that restriction without new work. **This repo's only share is authoring the
+`inverse:` slot pair in `schemas/*.yaml`, and it is blocked on Mosaic's loader change rather than
+parallel with it**: `ddl_generator.py` maps every reference-range slot to real storage, so an
+`inverse:` slot authored today would be handed a second, empty link table shadowing the real FK
+column — actively wrong, not merely inert. Exon's grounding (`tasks.md` 2.1) is downstream of both.
 
 ### 4. Placement: a new `inspector`-slot layout, not a mode inside the query view
 
@@ -241,7 +289,11 @@ the wire/turn divergence problem Decision 9 was written to prevent).
 ## Migration Plan
 
 1. Mosaic: add the `converseQuerySpec` mutation (external repo, tracked as an issue there).
-2. This repo, in parallel: Exon reverse-edge grounding + harness multi-turn coverage.
+2. ~~This repo, in parallel: Exon reverse-edge grounding + harness multi-turn coverage.~~
+   **Update (2026-09-11): neither in parallel nor this repo's to start.** Blocked on Mosaic landing
+   `inverse:`-slot support (Decision 3, `mosaic#204`); the harness multi-turn coverage (`tasks.md`
+   2.3) exists to measure that change and is blocked with it. Steps 3–5 are unaffected; step 3 has
+   shipped (`tasks.md` 3.1/3.2).
 3. This repo: extend `run-chat-demo.sh` for the local three-service launcher.
 4. Aperture (external, sequenced): `QuerySpec` v2 canonicalization, then the inspector layout, then
    the panel itself (turn state, lock, suspended-turn and in-flight UI).
