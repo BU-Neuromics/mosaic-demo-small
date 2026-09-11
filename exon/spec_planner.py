@@ -215,6 +215,14 @@ def render_traversable_edges(capabilities: dict) -> str:
                 )
     if not lines:
         lines.append("- (this schema exposes no traversable references)")
+    lines.append(
+        "- Only the forward direction is offered above (a reference field the anchor "
+        "entity itself holds). There is no reverse traversal -- an anchor cannot reach "
+        "entities that merely hold a reference back to it. If the instruction requires "
+        "that direction, this is a real capability limitation: say so plainly (or ask a "
+        "clarifying question, in turn mode) rather than inventing an edge name that "
+        "isn't listed above."
+    )
     return "\n".join(lines)
 
 

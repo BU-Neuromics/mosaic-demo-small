@@ -1,24 +1,37 @@
 #!/usr/bin/env bash
 # One command to run the conversational MVP demo.
 #
-# Starts the two services the path needs, wires them together, and drops you
-# into the chat client:
+# Starts the services the path needs, wires them together, and drops you into
+# the chat client:
 #
-#   Mosaic  (:8080)  -- GraphQL + the MCP boundary, incl. converse_query_spec
-#   Exon    (:9100)  -- the stateless turn-taking planning service
-#   chat             -- stands in for Aperture's UI; talks only to Mosaic
+#   Mosaic        (:8080)  -- GraphQL + the MCP boundary, incl. converse_query_spec
+#   Exon          (:9100)  -- the stateless turn-taking planning service
+#   Aperture web  (:5173)  -- the browser SPA, dev server (vite); optional --
+#                              set APERTURE_WEB_DIR to enable, see below
+#   chat                   -- terminal stand-in for Aperture's UI; talks only to Mosaic
 #
-# Both services are stopped again on exit. Run from the repo root.
+# Aperture's web dev server is started only when APERTURE_WEB_DIR points at a
+# checkout with dependencies installed (`npm install` in that directory) --
+# see openspec/changes/add-aperture-chat-panel/tasks.md 3.1/3.2. It boots
+# alongside Mosaic/Exon but, until Mosaic's converseQuerySpec mutation and
+# Aperture's own chat panel both exist (tracked external to this repo), it has
+# nothing new to demo over the terminal chat -- starting it now just proves
+# the launcher wiring ahead of that landing.
+#
+# All started services are stopped again on exit. Run from the repo root.
 set -uo pipefail
 
 MOSAIC_PORT="${MOSAIC_PORT:-8080}"
 EXON_PORT="${EXON_TURN_PORT:-9100}"
 EXON_URL="http://127.0.0.1:${EXON_PORT}/turn"
+APERTURE_WEB_DIR="${APERTURE_WEB_DIR:-}"
+APERTURE_WEB_PORT="${APERTURE_WEB_PORT:-5173}"
 LOGDIR="$(mktemp -d)"
 
 cleanup() {
   echo ""
   echo "Shutting down..."
+  [[ -n "${APERTURE_PID:-}" ]] && kill "$APERTURE_PID" 2>/dev/null
   [[ -n "${EXON_PID:-}" ]] && kill "$EXON_PID" 2>/dev/null
   [[ -n "${MOSAIC_PID:-}" ]] && kill "$MOSAIC_PID" 2>/dev/null
   wait 2>/dev/null
@@ -107,7 +120,16 @@ fi
 require_free_port "$MOSAIC_PORT" "Mosaic"
 require_free_port "$EXON_PORT" "Exon's turn service"
 
-echo "1/3  Starting Mosaic on :${MOSAIC_PORT} (GraphQL + MCP, Exon at ${EXON_URL}) ..."
+STEP_COUNT=3
+if [[ -n "$APERTURE_WEB_DIR" ]]; then
+  [[ -d "$APERTURE_WEB_DIR" ]] || die "APERTURE_WEB_DIR=$APERTURE_WEB_DIR does not exist."
+  [[ -d "$APERTURE_WEB_DIR/node_modules" ]] || die \
+    "$APERTURE_WEB_DIR has no node_modules -- run 'npm install' there first."
+  require_free_port "$APERTURE_WEB_PORT" "Aperture's web dev server"
+  STEP_COUNT=4
+fi
+
+echo "1/${STEP_COUNT}  Starting Mosaic on :${MOSAIC_PORT} (GraphQL + MCP, Exon at ${EXON_URL}) ..."
 MOSAIC_EXON_URL="$EXON_URL" \
   mosaic serve --config mosaic.yaml --graphql --mcp --port "$MOSAIC_PORT" \
   > "$LOGDIR/mosaic.log" 2>&1 &
@@ -116,7 +138,7 @@ wait_for "http://127.0.0.1:${MOSAIC_PORT}/graphql" "$MOSAIC_PID" \
          "$LOGDIR/mosaic.log" "Mosaic" "$MOSAIC_PORT"
 echo "     Mosaic up."
 
-echo "2/3  Starting Exon's turn service on :${EXON_PORT} ..."
+echo "2/${STEP_COUNT}  Starting Exon's turn service on :${EXON_PORT} ..."
 EXON_TURN_PORT="$EXON_PORT" \
   MOSAIC_MCP_URL="http://127.0.0.1:${MOSAIC_PORT}/mcp" \
   python3 -m exon.conversational_server > "$LOGDIR/exon.log" 2>&1 &
@@ -126,6 +148,21 @@ wait_for "http://127.0.0.1:${EXON_PORT}/docs" "$EXON_PID" \
          "$LOGDIR/exon.log" "Exon" "$EXON_PORT"
 echo "     Exon up, grounded in the live schema."
 
-echo "3/3  Starting chat."
+if [[ -n "$APERTURE_WEB_DIR" ]]; then
+  echo "3/${STEP_COUNT}  Starting Aperture's web dev server on :${APERTURE_WEB_PORT} ..."
+  ( cd "$APERTURE_WEB_DIR" && \
+    VITE_HIPPO_GRAPHQL_URL="http://127.0.0.1:${MOSAIC_PORT}/graphql" \
+    npm run dev -- --port "$APERTURE_WEB_PORT" --strictPort \
+    > "$LOGDIR/aperture-web.log" 2>&1 ) &
+  APERTURE_PID=$!
+  wait_for "http://127.0.0.1:${APERTURE_WEB_PORT}/" "$APERTURE_PID" \
+           "$LOGDIR/aperture-web.log" "Aperture web" "$APERTURE_WEB_PORT"
+  echo "     Aperture web up at http://127.0.0.1:${APERTURE_WEB_PORT}/"
+  echo "     (no chat panel there yet -- see openspec/changes/add-aperture-chat-panel)"
+  echo "4/${STEP_COUNT}  Starting chat."
+else
+  echo "3/${STEP_COUNT}  Starting chat."
+  echo "     (set APERTURE_WEB_DIR to also boot Aperture's web dev server alongside this)"
+fi
 echo ""
 MOSAIC_MCP_URL="http://127.0.0.1:${MOSAIC_PORT}/mcp" python3 -m exon.chat
