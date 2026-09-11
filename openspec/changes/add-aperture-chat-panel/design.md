@@ -172,9 +172,38 @@ needs a UNION or OR-of-EXISTS fan-out across every referencing class. One thing 
 `RelatedCondition` combined with `asOf` already raises `ASOF_RELATIONSHIP_FILTER_UNSUPPORTED`, so
 reverse edges inherit that restriction without new work. **This repo's only share is authoring the
 `inverse:` slot pair in `schemas/*.yaml`, and it is blocked on Mosaic's loader change rather than
-parallel with it**: `ddl_generator.py` maps every reference-range slot to real storage, so an
-`inverse:` slot authored today would be handed a second, empty link table shadowing the real FK
-column — actively wrong, not merely inert. Exon's grounding (`tasks.md` 2.1) is downstream of both.
+parallel with it**. Exon's grounding (`tasks.md` 2.1) is downstream of both.
+
+**Correction (2026-09-11, second pass): the hazard named above was wrong, and the real one is
+worse.** This paragraph originally claimed `ddl_generator.py` would hand an `inverse:` slot "a
+second, empty link table shadowing the real FK column." It would not — Mosaic's `DDLGenerator`
+already drops every table that is not a concrete class, so LinkML's `SQLTableGenerator` output for
+the slot is discarded. The actual hazard is that **ADR-0002 treats the slot as a *stored*
+multivalued reference**, so a write payload carrying `samples: [...]` materializes relationship
+rows — a second, independently-writable encoding of the one fact `Sample.donor` already stores,
+which is precisely the drift this whole direction exists to prevent. The conclusion is unchanged
+(do not author the pair before Mosaic lands support); the mechanism is not. Source: Mosaic's own
+**ADR-0011**, which checked it against the live tree — see the upstream-status note below.
+
+**Upstream status (2026-09-11): Mosaic has implemented this.** `mosaic` branch
+`claude/funny-brown-29g6av` (8 commits, ~1,767 insertions, 6 new test suites; core suites verified
+green locally at 54 passed) adds **ADR-0011 — "`inverse`-declared slots are virtual reverse edges
+over the forward foreign key"**, matching this decision's direction closely: LinkML's own
+`inverse:` construct, no column/link table/relationship rows of its own, a write carrying the
+derived slot accepted-and-ignored ("it is derived, so dropping it is the definition, not data
+loss"), reverse-of-a-multivalued-slot rejected at load time (the same scope boundary `mosaic#204`
+draws), and explicitly **no auto-detection of hand-authored pairs** — on our reasoning, that two
+slots between the same classes can legitimately be two different facts. Our proposed schema-lint
+warning became load-time `SchemaError` validation instead, which is stronger. **No PR is open for
+that branch yet, so nothing has merged**; `2.1` stays blocked until it does.
+
+One scope claim of ours it narrows: the validator and compiler need **no code**, only tests
+("they gain tests, not code" — ADR-0011 Decision item 5). Once the slot is *declared*, it is a real
+slot on the anchor class, so `fields_by_name` resolves it and `build_capability_manifest` classifies
+it as a filterable reference with no change. Only the storage adapters were actually failing. That
+is a vindication of choosing `inverse:` — declaring the slot sidesteps the validator entirely — but
+`tasks.md`'s blocked note and `mosaic#204`'s body both describe a wider blast radius than the fix
+turned out to need.
 
 ### 4. Placement: a new `inspector`-slot layout, not a mode inside the query view
 

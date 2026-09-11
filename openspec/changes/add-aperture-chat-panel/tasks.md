@@ -1,15 +1,26 @@
 ## Phase 0 — Aperture, records (external to this repo; informational, no tasks owned here)
 
-- [ ] 0.1 *(informational)* File an ADR in `BU-Neuromics/aperture` recording the chat panel as an
+- [x] 0.1 *(informational)* File an ADR in `BU-Neuromics/aperture` recording the chat panel as an
       additive, capability-gated surface (ADR-0029) — not a reversal of ADR-0021/0026's MVP
       deferral of in-app chat, since it appears only when Mosaic advertises
-      `converseQuerySpec`/`MOSAIC_EXON_URL`.
-- [ ] 0.2 *(informational)* File the GitHub issue(s) in `BU-Neuromics/aperture` tracking Phase 4
-      below, per that repo's own ADR + issue convention (no `openspec/` there).
+      `converseQuerySpec`/`MOSAIC_EXON_URL`. **Done (2026-09-11):** Aperture **ADR-0039**,
+      "A conversational query panel, gated on an endpoint-advertised capability" (`Proposed`),
+      on branch `feat/conversational-chat-panel`. One correction to this task's own framing: the
+      live Aperture deferral is ADR-0021 alone — ADR-0026 was superseded to Reel ADR-0005 in the
+      2026-06-22 data-story split and is a tombstone, so it is not a deferral this could reverse.
+- [x] 0.2 *(informational)* File the GitHub issue(s) in `BU-Neuromics/aperture` tracking Phase 4
+      below, per that repo's own ADR + issue convention (no `openspec/` there). **Done
+      (2026-09-11):** [`aperture#60`](https://github.com/BU-Neuromics/aperture/issues/60) —
+      records what shipped, the five remaining items (4.1 canonicalization first, since it gates
+      the rest), and both upstream gates.
 
 ## Phase 1 — Mosaic (external to this repo; not implementable from `mosaic-demo-small`)
 
-- [ ] 1.1 *(informational, track as an issue in `BU-Neuromics/mosaic`)* Expose
+- [x] 1.1 *(informational, track as an issue in `BU-Neuromics/mosaic`)* **Filed (2026-09-11):**
+      [`mosaic#205`](https://github.com/BU-Neuromics/mosaic/issues/205). This task was to *track*
+      it upstream, and that is now done; the implementation is Mosaic's. **This is the real gate on
+      the end-to-end demo** — independent of `mosaic#204`, which gates only the reverse-direction
+      pivot. Expose
       `converse_query_spec`'s existing in-process handler as a `converseQuerySpec` GraphQL
       mutation on the generated Mutation root, registered only when `MOSAIC_EXON_URL` is set —
       see `specs/mosaic-query-boundary-contract/spec.md` for the exact request/response contract.
@@ -66,6 +77,15 @@ upstream: `BU-Neuromics/mosaic#204`.
       — see `design.md` Decision 3's ownership note. This repo's only share is authoring the
       `inverse:` slot pair in `schemas/*.yaml`, and that is itself downstream of Mosaic's loader
       change rather than parallel with it.
+      **Upstream status (2026-09-11):** Mosaic has *implemented* this — branch
+      `claude/funny-brown-29g6av`, ADR-0011 "`inverse`-declared slots are virtual reverse edges
+      over the forward foreign key," 8 commits and 6 new test suites, matching the direction above
+      (virtual/computed, one storage encoding, derived slot ignored on write, no auto-detection of
+      hand-authored pairs). **No PR is open for it yet, so it has not merged** — this task stays
+      blocked on the merge, not on the design. When it lands, `inverse_of` is serialized in the MCP
+      `schema`/`capabilities` resources and GraphQL's `MosaicSlotInfo`, which is exactly the
+      manifest marking this note says to ground on. Sequence from there: (1) merge upstream,
+      (2) declare the `inverse:` pair in this repo's `schemas/*.yaml`, (3) this task.
 - [x] 2.2 *(negative half only — see blocked note above for why the positive half is deferred)*
       Updated the shared grounding (`exon/spec_planner.py`'s `render_traversable_edges`, consumed
       by both `spec_planner.py` and `conversational_planner.py`) to state explicitly that only the
@@ -113,14 +133,32 @@ upstream: `BU-Neuromics/mosaic#204`.
 
 - [ ] 4.1 *(informational, sequenced first within this phase)* Canonicalize `QuerySpec` v1→v2 onto
       LinkML type/slot names (Decision 2), with a tolerant v1 read for existing saved views.
-- [ ] 4.2 *(informational, depends on 4.1)* Add the `headerNavMainInspector` layout to the layout
-      registry (Decision 4).
+- [x] 4.2 ~~*(informational, depends on 4.1)* Add the `headerNavMainInspector` layout to the layout
+      registry (Decision 4).~~ **Superseded as built (2026-09-11).** Scoping in Aperture found the
+      layout redundant: `headerNavMain` already declares and renders `inspector`, `App.tsx` already
+      binds it, and `FacetPanel` already vacates it whenever a cross-class view is open. A variant
+      adding only an inspector would have been dead chrome. What was actually needed is a different
+      *shape* — the 264px inspector is wrong for a transcript — so Aperture added a
+      **`queryWorkbench`** layout (nav + bounded composer column + wide main) selected by context
+      in `shell/contexts.ts`, per ADR-0031's "selection, not composition." Recorded in ADR-0039's
+      amended consequence.
 - [ ] 4.3 *(informational, depends on 4.1, 4.2, and Phase 1 shipping)* Build the chat panel to full
       parity with `chat.py` (Decision 5): turn history, spec view, rewind-and-edit, run.
+      **Largely built (2026-09-11), one gap:** `web/src/query/ChatPanel.tsx` +
+      `web/src/data/conversation.ts` ship turn history, the spec view (rendered as prose via
+      `specProse.tsx`, JSON behind a toggle), and rewind-and-edit with suspend-don't-discard —
+      driven end to end against a stub endpoint, 296 tests green. **Run is the gap, and it is 4.1's,
+      not this task's:** a received proposal is displayed but its Run affordance degrades honestly
+      because Exon emits LinkML names (`anchor: "Sample"`) while the builder addresses collections
+      by id. Closing 4.1 closes 4.3.
 - [ ] 4.4 *(informational, part of 4.3)* Implement the three UI-feel decisions: suspended-turn
       inline+banner treatment (Decision 9), in-flight typing-indicator+timer+cancel (Decision 10),
-      and the builder-lock/reset affordance (Decision 11).
-- [ ] 4.5 *(informational)* Start this work from a fresh branch off `origin/main` (Decision 6),
+      and the builder-lock/reset affordance (Decision 11). **Partial (2026-09-11):** Decision 9 is
+      done (inline `suspended` state per turn + a "N turns need re-wording after your edit" banner
+      that scrolls to the first). Decision 10 is half — a "Planning" typing indicator exists; the
+      **elapsed timer and in-flight cancel do not** (the composer's "Cancel" is the edit-cancel).
+      Decision 11's builder-lock/reset affordance is **not built**.
+- [x] 4.5 *(informational)* Start this work from a fresh branch off `origin/main` (Decision 6),
       cherry-picking the spike branch's two docs-only files if desired.
 - [ ] 4.6 *(informational)* At least one `npm run build && npm run preview` rehearsal before the
       actual national-meeting presentation (Decision 8).
