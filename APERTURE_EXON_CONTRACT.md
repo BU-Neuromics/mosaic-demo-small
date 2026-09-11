@@ -164,6 +164,14 @@ browser entirely (`scopedClient.ts`'s own stated principle).
    query re-derives the relationship as a filter rule ("donors who have a hippocampus sample")
    rather than locking onto the exact previously-matched result set. Simpler, no new hand-off
    plumbing, and matches current data rather than a frozen snapshot.
+   **Update (2026-09-11): this decision's own example is not expressible today.** "Donors who have
+   a hippocampus sample" is a reverse `RelatedCondition` on a `Donor` anchor, and Mosaic's
+   `QuerySpec` validator resolves `RelatedCondition.edge` only against the anchor's own forward
+   reference slots. Filed as `BU-Neuromics/mosaic#204`; the settled direction is LinkML
+   `inverse:`-declared slots treated as computed/virtual, implemented in Mosaic — see
+   `openspec/changes/add-aperture-chat-panel/design.md` Decision 3. The decision *itself* (pivots
+   re-derive a rule against current data, never freeze a result set) is unchanged and still
+   correct; only its availability is deferred.
 3. **No conversation persistence for MVP.** A page refresh loses the chat transcript. The thing
    that actually matters long-term — the resulting `QuerySpec` — still survives via Aperture's
    existing URL mechanism. Matches Aperture's own honest-degradation posture (ADR-0029) rather
