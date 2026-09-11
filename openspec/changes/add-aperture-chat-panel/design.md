@@ -102,6 +102,32 @@ express the example the contract was written around.
 platform limitation — there is no GraphQL query to compensate against such a lookup, so offering
 it as a chat edge would produce a spec that fails at validation or execution, not one that works.
 
+**Blocked, found while implementing (2026-09-11) — this decision assumed a Mosaic capability that
+doesn't exist.** Mosaic's `QuerySpec` validator and compiler resolve a `RelatedCondition`'s `edge`
+only against the anchor's *own* forward reference fields; there is no reverse-traversal path at
+any layer, and the cited Aperture precedent turned out to be a client-side-only compensation tier
+that never reaches the wire. Full evidence and current task status: `tasks.md` Phase 2. Filed
+upstream as `BU-Neuromics/mosaic#204`.
+
+**Corrected schema-side direction, from the same investigation.** The natural fix is *not* a
+hand-authored back-reference slot on the target entity (e.g. adding a plain `Donor.samples:
+{range: Sample, multivalued: true}` alongside `Sample.donor`) — that creates two independently-
+stored, independently-writable representations of one fact with nothing keeping them in sync, and
+it doesn't compose: every relationship pair needing reverse traversal would need its own
+hand-synchronized shadow slot, in every schema. LinkML already has the idiomatic construct for
+this — `inverse` (`SlotDefinition.inverse`, bound to `owl:inverseOf`) — whose own semantics say the
+reverse direction is *logically entailed* by the forward slot, never an independently-asserted
+fact. The correct shape of the upstream fix is for Mosaic to treat an `inverse`-declared slot as
+computed/virtual (no relationships-table row, resolved at read time from the forward slot it
+inverts — reusing the reverse-FK-lookup primitive `query_service.py`'s graph-neighborhood resolver
+already proves works), so there is exactly one storage encoding regardless of which slot a query
+traverses through. A schema-lint warning (flagging a same-shaped slot pair with no `inverse:` link
+between them) is the right guard against someone reaching for the unsafe manual pattern instead —
+not an attempt to auto-detect and reinterpret such a pair, which would be unsound: two slots
+between the same two classes can legitimately mean two different relationships, and only an
+explicit `inverse:` disambiguates "these are one fact viewed from two sides" from "these are two
+facts." See the `mosaic#204` discussion for the fuller reasoning.
+
 ### 4. Placement: a new `inspector`-slot layout, not a mode inside the query view
 
 Add a `headerNavMainInspector` layout to Aperture's layout registry; the chat panel lives in the
@@ -200,15 +226,17 @@ the wire/turn divergence problem Decision 9 was written to prevent).
 ## Risks / Trade-offs
 
 - **Two-repo release coordination.** The mutation (Mosaic) and the reverse-edge grounding (Exon,
-  this repo) are independent and can land in parallel; Aperture's canonicalization must land
-  before its own panel work, but neither blocks this repo's tasks. See `tasks.md` for the explicit
-  ordering.
+  this repo) were assumed independent and able to land in parallel; **update (2026-09-11): not
+  true for reverse edges** — that half now also depends on Mosaic, per Decision 3's blocked note
+  above (`mosaic#204`). Aperture's canonicalization must land before its own panel work; neither
+  blocks this repo's other tasks. See `tasks.md` for the explicit ordering.
 - **Aperture's `QuerySpec` v1→v2 migration touches saved views** (control-plane documents,
   ADR-0032). Owned entirely by Aperture's own repo/process — named here so it isn't lost, not
   designed here.
 - **This proposal's Exon-side changes (reverse edges) change model behavior** that the harness
-  should measure before/after, per decision in `tasks.md` Phase 2 — treated as a required task,
-  not an afterthought, so "it works" is measured, not assumed.
+  should measure before/after, per decision in `tasks.md` Phase 2. **Update (2026-09-11):** moot
+  for now — with the positive half blocked (Decision 3), there is no "after" to measure; see
+  `tasks.md` 2.3/2.4.
 
 ## Migration Plan
 
