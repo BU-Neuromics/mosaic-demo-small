@@ -48,6 +48,14 @@ upstream: `BU-Neuromics/mosaic#204`.
 - [ ] 2.1 ~~Extend `exon/spec_planner.py`'s `render_traversable_edges` to include FK-backed
       single-valued reverse edges...~~ **Blocked** on the Mosaic-side gap above. Shipping this
       without matching server support would produce specs Mosaic's own re-validation rejects.
+      **Corrected direction (2026-09-11):** the right upstream fix is not generic reverse-edge
+      support but `inverse`-declared LinkML slots treated as computed/virtual (no independent
+      relationships-table storage) — see `design.md` Decision 3 and the follow-up on
+      `mosaic#204` for the full reasoning (a hand-authored back-reference slot was considered and
+      rejected: two independently-writable representations of one fact, no drift protection, and
+      it doesn't compose across schemas). When this task unblocks, it should ground on whichever
+      entity fields the manifest marks `inverse`/computed, not on every structurally-matching
+      reference pair.
 - [x] 2.2 *(negative half only — see blocked note above for why the positive half is deferred)*
       Updated the shared grounding (`exon/spec_planner.py`'s `render_traversable_edges`, consumed
       by both `spec_planner.py` and `conversational_planner.py`) to state explicitly that only the
