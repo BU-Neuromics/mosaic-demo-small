@@ -14,12 +14,53 @@ credential became available — see "What does not work yet" below for what chan
 
 ## Status
 
+### Where this stands as of 2026-09-17
+
+**Three things changed today, and one of them is the headline.**
+
+1. **The conversational panel ran end to end in a real browser for the first time.** Until today
+   it had only ever been driven against a stub endpoint. Plain English in, a valid
+   LinkML-spelled `QuerySpec` out, through Aperture's actual UI against a live
+   `converseQuerySpec`. Full detail and the exact commands: **§7**.
+
+2. **The Docker workaround is retired.** This repo used to require a hand-started
+   `mosaic serve` because the certified container crash-looped on our schema (mosaic
+   #143/#144). That was fixed and released in mosaic 0.13.0; the container was verified
+   working against this project today — healthy, no crash-loop, all 3600 records served.
+   `PROJECT_DIR=... make up` is the normal path again. See README, "Two Mosaic builds in play".
+
+3. **A broken release was caught before it shipped.** Mosaic's Dockerfile omitted the `mcp`
+   extra, which is the only source of `httpx2`. A release cut before the fix would have put
+   `converseQuerySpec` in the image where it appears in introspection and then dies on the
+   first real call. Fixed upstream and pushed.
+
+**What is proven, and what is not.** The proposal path, the clarification path, and the error
+path are all verified live (§7). **Not yet exercised in the browser:** multi-turn refinement,
+rewind-and-edit, the builder lock, cancel, and the elapsed timer — the last two have no
+automated coverage at all, and every ChatPanel integration test uses snake_case fixtures while
+the real endpoint sends camelCase.
+
+**The one open capability gap.** "Show me the donors of those samples" — the contract's own
+flagship example — still does not work. It fails *correctly*: Mosaic's re-validation rejects the
+spec before execution and returns a structured `error` turn, so no wrong query runs. Closing it
+needs **two** changes, not one: `BU-Neuromics/mosaic#210` (open, mergeable — the `inverse` slot
+machinery) **and** an `inverse:` declaration in `schemas/demo.yaml`, which today has none. That
+second half was only discovered by running it. Tracked in
+`openspec/changes/add-aperture-chat-panel/tasks.md` task 2.1.
+
+**Benchmark.** Re-audited against the released version rather than inferred from issue state:
+**31 of 35 questions verified byte-identical, 0 regressions, 1 legitimately blocked** (q34, and
+it now records *which version* it is blocked at). Two questions previously marked impossible —
+sorting and facet counts — turned out to work in 0.13.0; the markers were stale.
+
+---
+
 **What Exon is.** Ask a question in plain English, get real data back. The model never writes
 GraphQL: it emits a typed `QueryPlan`, a validator checks every field and capability against the
 *live* schema before anything runs, and only then does the executor compile and run it.
 Unsupported requests are refused with a reason rather than approximated.
 
-**What works today**
+**What works today** *(Exon's CLI/harness track — predates the browser work above; still accurate)*
 
 - The full pipeline, end to end, on straightforward questions. Verified:
   `python3 -m exon "How many donors are in the case cohort?"` → **104**, matching the
@@ -34,7 +75,7 @@ Unsupported requests are refused with a reason rather than approximated.
   cost, and a fingerprint path keyed per exact model string so probing one model never clobbers
   another's measured capabilities.
 
-**What does not work yet — stated plainly**
+**What does not work yet — stated plainly** *(model faithfulness, measured 2026-08-18; unchanged by today's work)*
 
 Switching off local Ollama and onto a real hosted model (Bedrock Claude Haiku 4.5) fixed the
 reliability half of the problem — no more dropped filters, no more ignored tool calls — but not
