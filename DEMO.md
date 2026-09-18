@@ -2,7 +2,7 @@
 
 > Run every command from the repository root (`mosaic-demo-small/`).
 
-**Updated: 2026-09-17.**
+**Updated: 2026-09-18.**
 
 ---
 
@@ -35,7 +35,12 @@ That last part is the point. A confident wrong answer is worse than a refusal.
   was verified against this project on 2026-09-17 and serves all 3,600 records, UI included.
 - **The chat panel works in a real browser.** Until today it had only ever been driven against a
   fake backend. It now runs against the real MCP-backed path end to end.
-- **The benchmark is current.** 31 of 35 questions verified against live data, no regressions.
+- **You can ask about the data itself.** "What fields are available on datasets?" used to be
+  refused — the planner had the answer and no way to give it. The schema now describes itself as
+  ordinary data, so that question is just a query, and comes back as a table like any other. It
+  works for any schema, not only this one: verified against an unrelated bibliography schema with
+  no code changes.
+- **The benchmark is current.** 34 of 38 questions verified against live data, no regressions.
   Two previously marked impossible turned out to work once we tried them.
 
 **Not working yet**
@@ -94,7 +99,7 @@ cd ../aperture/web
 VITE_HIPPO_GRAPHQL_URL=/graphql npm run dev -- --config vite.proxy.config.ts --port 5173
 ```
 
-**Two silent failures, both of which cost us time today:**
+**Two silent failures, both of which cost us time:**
 
 - Miss `MOSAIC_EXON_URL` and the chat feature is never registered. The panel just doesn't appear —
   no error anywhere.
@@ -139,6 +144,29 @@ curl -s localhost:8080/graphql -H 'content-type: application/json' \
 ```
 
 These are the numbers the benchmark checks against, so they are the ones to trust.
+
+### Ask about the schema itself
+
+In the chat panel, try:
+
+> what fields are available on datasets?
+
+Expect a proposal — a real query over `SchemaField` — returning all ten Dataset fields with their
+types, whether they are required, the schema author's own description, and the permissible values
+for the enum-constrained ones.
+
+The planner never writes those rows. It identifies which entity you asked about; the rows come
+from the schema itself. Ask about an entity that does not exist and you get a question back, not
+an invented table.
+
+The same two collections also appear in Aperture's navigation at **http://localhost:8080** —
+browsable without the chat at all, because they are ordinary entity types like any other.
+
+**If they are missing, the server has not reloaded the schema.** They arrive via a recipe
+(`recipes/schema-metadata/`), and a server that started before it was applied will not show them.
+Restart it: `docker restart solo-solo-1` for the container, or restart `mosaic serve`. Note also
+that `mosaic.yaml` must point at `schemas/` — the directory — not at `schemas/demo.yaml`, or the
+server never sees the recipe at all.
 
 ---
 
