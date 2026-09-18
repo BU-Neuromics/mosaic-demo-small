@@ -358,3 +358,35 @@
     a reference to other questions that a STATELESS planner cannot resolve.
     Verified live: 26 hippocampus tissue samples, 9 of which have at least
     one rna_seq-typed referencing workflow.
+
+- id: q36
+  category: schema_metadata
+  question: What fields are available on datasets?
+  graphql: '{ schemaFields(filters:[{field: "entity", value: "Dataset"}]) { total } }'
+  capability: filter
+  note: >-
+    The question that motivated the schema-metadata recipe. Before it, the
+    conversational planner declined this as "a metadata question rather than a
+    query refinement" — it had the answer in its grounding and no way to give
+    it. With the schema described as data the question is an ordinary query,
+    and the planner answers it as a proposal.
+
+- id: q37
+  category: schema_metadata
+  question: Which fields are constrained to a fixed set of values?
+  graphql: '{ schemaFields(filters:[{field: "kind", value: "enum"}]) { total } }'
+  capability: filter
+  note: >-
+    Answerable only because the description carries `kind` per slot. A
+    description that flattened every slot to a name and a type string could
+    not distinguish an enum from a plain string.
+
+- id: q38
+  category: schema_metadata
+  question: What entity types does this deployment describe?
+  graphql: '{ schemaEntityTypes { total } }'
+  capability: filter
+  note: >-
+    Four for this schema. The recipe excludes its own two classes by default,
+    so this counts the domain schema rather than itself.
+

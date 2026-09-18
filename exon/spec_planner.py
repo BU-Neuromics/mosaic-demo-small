@@ -193,7 +193,35 @@ def render_capability_grounding(capabilities: dict) -> str:
             if f.get("orderable"):
                 detail += "; orderable"
             lines.append(detail)
+
+    # A deployment carrying the schema-metadata recipe describes its OWN schema
+    # as ordinary entities. Without this note the model treats "what fields are
+    # on datasets?" as a metadata lookup it is not allowed to perform -- observed
+    # 2026-09-17, where it declined a question it was fully equipped to answer.
+    # It is a query like any other; it just happens to be about the schema.
+    meta = _schema_metadata_collections(capabilities)
+    if meta:
+        lines.append("")
+        lines.append(
+            "- This deployment describes its own schema as data, in the "
+            f"collections above ({', '.join(meta)}). A question about what "
+            "fields or entity types EXIST is therefore an ordinary query over "
+            "those collections -- anchor on the field collection and filter by "
+            "entity -- not a metadata lookup outside your remit. Answer it the "
+            "same way you would any other question."
+        )
     return "\n".join(lines)
+
+
+#: Class names the schema-metadata recipe installs. Recognized by name because
+#: the recipe is opt-in: a deployment without it gets no note, and one that
+#: renamed the classes gets none either, which is honest rather than wrong.
+_SCHEMA_METADATA_CLASSES = ("SchemaEntityType", "SchemaField")
+
+
+def _schema_metadata_collections(capabilities: dict) -> list[str]:
+    """Which schema-self-description collections this deployment exposes."""
+    return [name for name in _SCHEMA_METADATA_CLASSES if name in capabilities]
 
 
 def render_traversable_edges(capabilities: dict) -> str:
