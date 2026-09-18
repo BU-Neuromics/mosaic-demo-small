@@ -4,11 +4,13 @@
 Emits one ``SchemaEntityType`` row per class and one ``SchemaField`` row per
 slot, in the shape the ``schema-metadata`` recipe declares.
 
-WHY THE MCP RESOURCE AND NOT GRAPHQL. ``mosaic://schema`` carries all thirteen
-attributes Mosaic models about a slot. GraphQL's ``MosaicSlotInfo`` carries
-eleven -- it drops ``has_default`` and ``is_external_xref``. Reading GraphQL
-would produce a description that is incomplete *by construction*, which is the
-one thing this recipe exists to prevent, so the MCP resource is the source.
+WHY THE MCP RESOURCE AND NOT GRAPHQL. Mosaic models thirteen attributes per
+slot (``SlotModel``). ``mosaic://schema`` serializes twelve of them; GraphQL's
+``MosaicSlotInfo`` exposes eleven, dropping ``has_default`` as well. Neither
+carries ``is_external_xref`` -- so the recipe declares that column and no
+transport currently populates it (filed upstream). The MCP resource is the
+richer of the two, so it is the source; reading GraphQL would lose
+``has_default`` on top.
 
 WHY THE SERVER AND NOT THE SCHEMA FILE. A schema file edited but not migrated
 describes data the deployment is not serving. Drift is the failure this guards
