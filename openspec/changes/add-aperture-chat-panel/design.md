@@ -3,7 +3,7 @@
 ## Context
 
 Three repos are load-bearing here: this repo (Exon's planning core + the demo's Mosaic instance),
-`../mosaic` (`BU-Neuromics/mosaic`, hosts the MCP boundary), and `../aperture-spike`/`aperture`
+`../mosaic` (`BU-Neuromics/mosaic`, hosts the MCP boundary), and `../aperture`
 (`BU-Neuromics/aperture`, the SPA). `APERTURE_EXON_CONTRACT.md` already resolved nine design
 decisions for the wire contract between Exon and Mosaic; this document does not revisit those. It
 covers the *next* layer: how a browser actually reaches that contract, and how it looks and feels

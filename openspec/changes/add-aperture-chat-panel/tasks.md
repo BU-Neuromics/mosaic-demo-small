@@ -81,11 +81,21 @@ upstream: `BU-Neuromics/mosaic#204`.
       `claude/funny-brown-29g6av`, ADR-0011 "`inverse`-declared slots are virtual reverse edges
       over the forward foreign key," 8 commits and 6 new test suites, matching the direction above
       (virtual/computed, one storage encoding, derived slot ignored on write, no auto-detection of
-      hand-authored pairs). **No PR is open for it yet, so it has not merged** — this task stays
-      blocked on the merge, not on the design. When it lands, `inverse_of` is serialized in the MCP
+      hand-authored pairs). **Update 2026-09-17: PR is now open — `BU-Neuromics/mosaic#210`**, merged up
+      to date with `main` (only `CHANGELOG.md` conflicted; both entries kept) and green
+      at 391 tests across graphql/mcp/api/config. This task stays blocked on the *merge*,
+      not on the design or on a missing PR. When it lands, `inverse_of` is serialized in the MCP
       `schema`/`capabilities` resources and GraphQL's `MosaicSlotInfo`, which is exactly the
       manifest marking this note says to ground on. Sequence from there: (1) merge upstream,
       (2) declare the `inverse:` pair in this repo's `schemas/*.yaml`, (3) this task.
+      **Confirmed empirically 2026-09-17** against the live stack (Aperture :5173 →
+      Mosaic `main` :8099 → Exon :8091): asked for a Donor-anchored reverse criterion,
+      the planner proposed one and Mosaic's re-validation rejected it as
+      `UNKNOWN_EDGE at $.criteria[0].edge: 'Donor' has no relationship 'donor'.
+      Known relationships: []. Nothing was applied.` — surfaced as a structured `error`
+      turn, no wrong query executed. Note `Known relationships: []` confirms step (2) is
+      genuinely required: `schemas/demo.yaml` declares `Sample.donor` as a forward FK and
+      contains no `inverse:` anywhere, so merging #210 alone will not close this.
 - [x] 2.2 *(negative half only — see blocked note above for why the positive half is deferred)*
       Updated the shared grounding (`exon/spec_planner.py`'s `render_traversable_edges`, consumed
       by both `spec_planner.py` and `conversational_planner.py`) to state explicitly that only the

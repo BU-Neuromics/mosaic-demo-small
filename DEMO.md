@@ -3,10 +3,12 @@
 > **Run every command in this file from the repository root** (`mosaic-demo-small/`), which is
 > where this file lives. Paths like `evals/schema/capabilities.json` are relative to it.
 
-Last verified: 2026-08-18, against `../mosaic@502991c` (then named `../hippo`), the default `bedrock/global.anthropic.
-claude-haiku-4-5-20251001-v1:0`, and (for comparison) `bedrock/global.anthropic.claude-sonnet-5`
-(the default moved off local Ollama this session, once a Bedrock credential became available —
-see "What does not work yet" below for what changed and what didn't).
+Last verified: **2026-09-17** — see §7 for the first end-to-end run through Aperture's real
+browser chat panel (not the CLI stand-in). Earlier verification: 2026-08-18 against
+`../mosaic@502991c` (then named `../hippo`), the default
+`bedrock/global.anthropic.claude-haiku-4-5-20251001-v1:0`, and (for comparison)
+`bedrock/global.anthropic.claude-sonnet-5` (the default moved off local Ollama once a Bedrock
+credential became available — see "What does not work yet" below for what changed and what didn't).
 
 ---
 
@@ -325,6 +327,72 @@ unconfigured deployment does not advertise a tool it cannot serve, so if the cha
 the tool missing, that env var on terminal 1 is why.
 
 ---
+
+## 7. The real browser path — Aperture's chat panel (verified 2026-09-17)
+
+§6's CLI client *stands in for* Aperture's UI. This is the UI itself, and this is the first time
+the panel has been driven against a live `converseQuerySpec` rather than a stub — which is
+exactly what ADR-0039's ratification criterion asked for.
+
+```
+browser :5173  ->  Mosaic :8099  ->  Exon :8091  ->  Bedrock
+Aperture SPA       converseQuerySpec   the planner
+(chat panel)       (+ --mcp)
+```
+
+**Why these ports and not §6's.** `run-chat-demo.sh` defaults to `MOSAIC_PORT=8080`, which the
+certified solo container now occupies (see README's "Two Mosaic builds in play"). Run it with
+`MOSAIC_PORT=8099` to coexist, or use the three commands below.
+
+```bash
+# 1. Mosaic from the ../mosaic checkout on main — NOT the container.
+#    converseQuerySpec is env-gated at schema-build time: if MOSAIC_EXON_URL is
+#    unset the mutation is not registered at all, and the panel stays hidden with
+#    no error anywhere. --mcp is required because Exon grounds over it at startup.
+MOSAIC_EXON_URL=http://127.0.0.1:8091/turn \
+  mosaic serve --config mosaic.yaml --graphql --mcp --port 8099
+
+# 2. Exon. Fetches mosaic://capabilities ONCE at startup, so Mosaic must be up first.
+EXON_TURN_PORT=8091 MOSAIC_MCP_URL=http://127.0.0.1:8099/mcp \
+  python3 -m exon.conversational_server
+
+# 3. Aperture. VITE_HIPPO_GRAPHQL_URL has NO default — without it the SPA renders a
+#    "configure the endpoint" message instead of the app. `/graphql` (relative) routes
+#    through vite.proxy.config.ts to :8099, which keeps the browser same-origin.
+cd ../aperture/web
+VITE_HIPPO_GRAPHQL_URL=/graphql npm run dev -- --config vite.proxy.config.ts --port 5173
+```
+
+**Verified this way on 2026-09-17:**
+
+| Behaviour | Result |
+|---|---|
+| Proposal from plain English | ✅ "tissue samples from the hippocampus" → valid spec |
+| LinkML spelling in the spec | ✅ `anchor: "Sample"`, `slot: "brain_region"` — not collection ids |
+| Honest refusal | ✅ a donor-count request returned a `clarification`, no fabricated spec |
+| Ambiguity → clarification | ✅ "the donors of those samples" asked which interpretation, twice |
+| **Reverse edge correctly blocked** | ✅ see below |
+
+The reverse-edge result is the important one. Forced to an unambiguous Donor-anchored reverse
+criterion, the planner proposed one and **Mosaic's re-validation rejected it before execution**:
+
+```
+UNKNOWN_EDGE at $.criteria[0].edge: 'Donor' has no relationship 'donor'.
+Known relationships: []. Nothing was applied.
+```
+
+Surfaced as a structured `error` turn, not a crash — ADR-0010's "every failure is a structured
+error turn" holding on the real path. No wrong query ran.
+
+`Known relationships: []` also proves the unblock needs **two** changes, not one:
+`BU-Neuromics/mosaic#210` (the `inverse` machinery, open as of 2026-09-17) **and** an
+`inverse:` slot pair declared in `schemas/demo.yaml`, which today has none. Tracked in
+`openspec/changes/add-aperture-chat-panel/tasks.md` task 2.1.
+
+**Not yet exercised in the browser:** multi-turn refinement, rewind-and-edit (the
+suspend-don't-discard banner), the builder lock, cancel, and the elapsed timer. The last two have
+no automated coverage at all, and all ChatPanel integration tests use snake_case fixtures while
+the real endpoint sends camelCase.
 
 ## What to expect, so nothing surprises you
 
