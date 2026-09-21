@@ -167,7 +167,7 @@ worth a dry run before you present.
 
 > **what do we have on donors about toxicology reports?**
 
-✅ There is no toxicology field in this schema. It **says so**, then point at `notes`
+✅ There is no toxicology field in this schema. It **says so**, then points at `notes`
 and `cause_of_death` as free text that might mention it — rather than inventing a field.
 
 This is the most reassuring thing in the demo.
