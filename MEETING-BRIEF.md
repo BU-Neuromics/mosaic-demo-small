@@ -16,7 +16,7 @@ Updated 2026-09-21.
 6. [Queries to try](#6-queries-to-try)
 7. [How the Docker stack was made to work](#7-how-the-docker-stack-was-made-to-work) ← *the part worth reading twice*
 8. [Where the planner now lives](#8-where-the-planner-now-lives)
-9. [Where we stand](#9-where-we-stand)
+9. [Where we stand](#9-where-we-stand) · [Measuring it](#9a-measuring-it)
 10. [Questions for the room](#10-questions-for-the-room)
 
 ---
@@ -185,14 +185,17 @@ worth a dry run before you present.
 | ✅ **which fields tell us whether a dataset can be shared outside the project?** | Two fields: `access_level` *and* `is_public` |
 | **how are donors and samples connected?** | Tests whether *reference* descriptions surface the traversal |
 
-### The honesty case — worth doing live
+### It doesn't invent fields — worth doing live
 
 > **what do we have on donors about toxicology reports?**
 
-✅ There is no toxicology field in this schema. It **says so**, then points at `notes`
-and `cause_of_death` as free text that might mention it — rather than inventing a field.
+✅ This schema models nothing about toxicology, so it **says so**, then points at free
+text that might mention it — rather than reaching for the nearest plausible field.
 
-This is the most reassuring thing in the demo.
+The point is a refusal to invent, not a gap in the data. A planner that always finds
+*something* reads as confident and is occasionally wrong; this is the behaviour that
+shows it isn't doing that. It's the most reassuring thing in the demo, and it's now a
+standing eval case (`d06`) rather than a thing we check by hand.
 
 ### The two-step, if you want to show the full loop
 
@@ -335,8 +338,47 @@ than a rewrite, and the container slot is identical either way.
 | --- | --- |
 | **`make chat` from pinned images** | Needs a Mosaic newer than v0.13.0 — for `--mcp` and the Host fix. `make chat-dev` works today. |
 | **A certified deployment** | `ide` builds from source and is exempt from the deploy gate. Real users on `solo` need a Mosaic release *and* a Reel release to certify against. |
-| **Harness coverage** | The reliability suite grades the *older* query-plan emitter, so it can neither confirm nor catch a regression in the conversational path. Verification so far is live runs — honest, but not CI. |
+| **Harness coverage** | **Now covered.** Discovery is graded on the slots a turn names — see below. The *older* reliability suite still grades the retired query-plan emitter and is a separate, unfinished job. |
 | **Prompt behaviour** | Tuned, not proven. The questions in §6 were verified against live data; a different phrasing may still surprise us. |
+
+---
+
+## 9a. Measuring it
+
+The goal statement fixes what to assert, so this wasn't a judgement call:
+
+> *"…identifying the specific data elements they wish to include in a query. The response
+> is only useful for constructing a query spec that pulls back specific fields."*
+
+The unit of success is therefore **which slots a turn named** — never prose quality,
+never row counts, never a table of field metadata. An answer that reads beautifully and
+names the wrong field has failed.
+
+```bash
+MOSAIC_MCP_URL=http://localhost:8099/mcp REEL_EVAL_CASES=../mosaic-demo-small/evals/discovery.yaml     python -m reel.evals.run
+```
+
+Three design choices worth stating:
+
+- **Subset, not equality.** Offering `cause_of_death` alongside `history_of_rhi` is a
+  better answer; an equality check would train the planner to be stingy.
+- **A filter and a sentence both count.** The user learns the field either way.
+- **A negative case.** `d06` asserts the turn names *no* slot for a topic the schema
+  doesn't model. A planner that always finds something is only caught this way — no
+  quantity of positive cases will do it.
+
+**Current score: 5 of 7.** Both failures are kept failing, as findings:
+
+| | |
+| --- | --- |
+| **d04** — *"how long did each processing run take?"* | The `columns` gap made measurable. The planner reaches for `completed_at` because the user is asking which **field** to look at, and a QuerySpec can only express which **rows** to return. `duration_hours` is already in the envelope; there's nothing to filter on. |
+| **d07** — *"the main study group"* | A real weakness. The phrase is genuinely ambiguous so asking back is fine — asking back *without naming `cohort`* is not, because it leaves the user nothing to put in a query. |
+
+The first run also found two bugs in the grader itself, both now tested: `donor`/`name`/
+`notes` are slot names *and* ordinary words, so crediting the bare word scored prose as a
+hit; and conversely "storage condition" communicates the field as well as
+`storage_condition` does, so scoring only the underscored spelling marked correct answers
+wrong.
 
 ---
 
