@@ -108,6 +108,28 @@ Three smaller pieces went with it:
   cascade-suspend everything after a discovery turn. Now only a genuinely blocking
   question does.
 
+### Then making the answer readable
+
+The first working version was correct and unusable. Asked about head injuries, it
+listed three fields, quoted each schema description verbatim — trailing `(facet)` and
+all — said *"On the Donor entity:"*, and closed with a four-option menu. Meanwhile the
+builder sat locked and empty and the results pane read *"Nothing run yet"*.
+
+Three rounds of fixes, each from watching someone use it:
+
+| Symptom | Fix |
+| --- | --- |
+| A wall of text and no data | **Prefer a proposal.** When one field clearly answers, filter on it and say so in a sentence. A second turn to reach rows is worse than a first turn that shows them. |
+| Schema vocabulary leaking to a researcher | **Write for the reader.** No verbatim description text, no `(facet)`, no "entity", no headers, no menus, at most one follow-up question. |
+| *"What fields are available on datasets?"* bounced back as *"do you mean schema discovery or records?"* | **Separate the two shapes.** "What exists?" → just answer it. "What do we have about X?" → build the query. And never ask the user to choose between those two — that is the question restated as a menu. |
+| A locked builder showing the *previous* anchor, beside a proposal it claimed to own | **Adopt the proposal into the builder's draft** the moment it arrives. |
+| *"Use in builder"* | Renamed **"Run this query"** — because that is what it does. Writing the spec to the URL *is* execution here; the old label undersold it. |
+
+One thing deliberately **not** done: auto-running the proposal. The first attempt wrote
+the spec straight to the URL, which this builder treats as already-executed — so a model
+proposal would have run with no human gesture at all. ADR-0039 exists to prevent exactly
+that. The proposal is now *visible* immediately and still *runs* only when you say so.
+
 ---
 
 ## 5. Running it
