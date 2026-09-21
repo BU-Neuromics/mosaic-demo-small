@@ -1,0 +1,88 @@
+# Discovery cases for this schema.
+#
+# Graded by `python -m reel.evals.run` (Reel), which reads this file through
+# REEL_EVAL_CASES. It lives here rather than in Reel because a case set is
+# domain-bearing: it describes THIS schema, and a planner that shipped its own
+# could only ever plan for one project.
+#
+# The assertion is which SLOTS a turn named -- by filtering on them or by
+# saying their names. Never prose, never row counts. A subset check, so naming
+# additional relevant fields is a better answer rather than a failure.
+#
+# Phrase every utterance in a researcher's vocabulary, NOT in field names. A
+# question containing the field name measures string matching, which is the one
+# thing that worked before any of this.
+
+- id: d01
+  utterance: what do we have on donors about head injuries?
+  expect_slots: [history_of_rhi]
+  note: >-
+    The reference case. `history_of_rhi` shares no word with the question and is
+    findable only through its description ("repetitive head impacts (RHI)").
+    Naming cause_of_death and notes alongside it is a better answer, not a worse
+    one, which is why this is a subset check.
+
+- id: d02
+  utterance: which fields tell us whether a dataset can be shared outside the project?
+  expect_slots: [access_level, is_public]
+  note: >-
+    Two fields answer it and a complete answer names both. Neither contains
+    "shared" or "outside". Naming only one is a partial answer and fails.
+
+- id: d03
+  utterance: is there anything that tells us how a sample was kept before analysis?
+  expect_slots: [storage_condition]
+  note: >-
+    Resolves through "How the sample is stored". Phrased as a yes/no to check
+    the answer names the FIELD rather than replying "yes" -- an answer that does
+    not name the slot cannot be built on in the next turn.
+
+- id: d04
+  utterance: how long did each processing run take?
+  expect_slots: [duration_hours]
+  note: >-
+    FAILING, and the failure is the interesting one. The planner reaches for
+    completed_at/started_at instead, because the user is asking which FIELD to
+    look at and a QuerySpec can only express which ROWS to return. There is
+    nothing to filter on here: `duration_hours` is already in the envelope.
+
+    This is the `columns` gap made measurable -- projection is reserved and
+    hard-rejected (COLUMNS_NOT_SUPPORTED), so "pulls back specific fields", the
+    literal wording of the goal, is not expressible today. Keep this case
+    failing until it is; it is the cheapest standing reminder that the goal is
+    half-delivered.
+
+- id: d05
+  utterance: what part of the brain did these specimens come from?
+  expect_slots: [brain_region]
+  note: >-
+    "specimens" is the researcher's word for Sample; the field is found through
+    "Anatomical brain region this sample was collected from".
+
+- id: d06
+  utterance: what do we have on donors about toxicology reports?
+  expect_none: true
+  note: >-
+    THE NEGATIVE CASE, and the one that earns its place. This schema models
+    nothing about toxicology, so the turn must name no slot and say so. A
+    planner that always finds *something* reads as confident and is
+    occasionally wrong, and no number of positive cases catches that.
+
+    Not a gap in the data being demonstrated -- a refusal to invent. The day
+    toxicology IS modelled, this becomes an ordinary positive case with
+    expect_slots, and the file follows the schema.
+
+- id: d07
+  utterance: can we tell which donors were part of the main study group?
+  expect_slots: [cohort]
+  forbid_slots: [is_available]
+  note: >-
+    FAILING. `cohort` is right ("Study cohort this donor belongs to"), and
+    "main study group" IS genuinely ambiguous -- case, control, at_risk -- so
+    asking back is defensible. What is not defensible is asking back without
+    naming the field: the reply listed the three values but never said `cohort`,
+    leaving the user nothing to put in a query. A clarification still has to
+    hand over the data element.
+
+    `is_available` is the lexical trap: a system field about record
+    availability, nothing to do with study participation.
