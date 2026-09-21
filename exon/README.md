@@ -98,14 +98,21 @@ for the formal spec. Shipped in three layers, each independently tested:
 - `conversational_planner.py` — one stateless call, `(existing QuerySpec | none, prior turns, new
   utterance) → {status, message, query_spec}`. Reuses `spec_planner.py`'s capability grounding and
   `QuerySpec` shape directly. `status` is discriminated: `proposal` (an updated `QuerySpec` plus a
-  plain-language restatement) or `clarification` (a question back, no spec change) — the model
-  defaults to `proposal` whenever a reasonable interpretation exists. "Updated" here means
+  plain-language restatement) or `clarification` (no spec change) — the model defaults to
+  `proposal` whenever a reasonable interpretation exists. A `clarification` carries EITHER a
+  question back (genuine ambiguity) or an ANSWER, marked `resolution: "answered"`: a user asking
+  what the data holds is working out which fields to query, so the reply names the relevant
+  slots and the next turn builds the spec over them
+  (`openspec/changes/add-schema-discovery-for-query-building/`). "Updated" here means
   shape-conforming to `SPEC_TOOL`'s tool-call schema, not re-validated against live data — see
   "Not yet built" below for where authoritative validation actually lives.
 - `conversational_orchestrator.py` — turn-list bookkeeping: assigns each turn an `id`, derives
   "the current draft" from the turn list, and implements rewind-and-edit (`edit_turn`):
   redoing an earlier turn recomputes every turn after it, cascading to `suspended` (never
-  silently dropped or reinterpreted) the moment a recompute can no longer resolve.
+  silently dropped or reinterpreted) the moment a recompute can no longer resolve. Only a
+  BLOCKING clarification cascades — one that answered leaves the draft untouched and passes
+  through as an ordinary recomputed turn, so a discovery answer never suspends the turns after
+  it.
 - `conversational_server.py` — the HTTP endpoint (`create_conversational_app`), a thin wrapper
   translating the wire contract's `{utterance, query_spec, turns, edit_turn_id}` request /
   `{turn, suspended_turn_ids}` response shape to and from `append_turn`/`edit_turn` calls.

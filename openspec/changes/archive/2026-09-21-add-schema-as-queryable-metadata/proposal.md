@@ -1,5 +1,48 @@
 # Describe the schema as data, shipped as a recipe
 
+> ## SUPERSEDED (2026-09-21) by `add-schema-discovery-for-query-building`
+>
+> **The goal was restated.** What Exon needs to support is schema discovery *in
+> service of query construction* — a researcher asks what the data model holds so
+> they can decide which data elements to pull back ("what information do we have
+> on donors about toxicology reports?"). A rendered table of field metadata does
+> not serve that and is not otherwise useful in the app.
+>
+> Against that goal this change is not merely unnecessary but obstructive:
+> `converse_query_spec` never executes, so the planner cannot read the rows while
+> planning. The only in-contract path is a *proposal* over `SchemaField` that the
+> user must execute and read before asking again — which makes the unwanted table
+> a mandatory intermediate step.
+>
+> **Two claims below are wrong, and they were load-bearing for the decision:**
+>
+> 1. "The status enum is exactly `proposal | clarification`." It is
+>    `{proposal, clarification, suspended}` (`converse_query_spec.py:49`), plus
+>    `error`.
+> 2. "A metadata answer is none of those, so declining is the only in-contract
+>    move." `_reject_malformed_turn` (`:120`) requires a clarification to carry a
+>    `message` string and `query_spec: null`, and constrains the message no
+>    further. An answer in a clarification message was in-contract all along.
+>
+> **What survives:** the *cascade* objection under "Alternatives considered" is
+> real and verified — `conversational_orchestrator.py:186` marks any recomputed
+> `clarification` as suspended and cascades. The superseding change addresses it
+> rather than accepting it (its `design.md` Decision 2), by branching the cascade
+> on whether a clarification blocks.
+>
+> **The real gap this change worked around:** `render_capability_grounding`
+> (`exon/spec_planner.py:166`) drops each slot's `description`, though the
+> manifest carries it. The rows put that prose into an FTS-indexed column so the
+> planner could *retrieve* what it should simply have been *shown*.
+>
+> **Also worth keeping:** the introspection-coverage findings this work turned up
+> — `slot_model_to_dict` omits `is_external_xref`; `MosaicSlotInfo` omits it and
+> `has_default`. Carried into the superseding change's `design.md` for filing
+> upstream.
+>
+> The implementation described below shipped in `a5d1553` and is removed by the
+> superseding change. This record is kept unarchived until that removal lands.
+
 ## Why
 
 Asked "what fields are available on datasets?", the conversational panel refuses

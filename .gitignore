@@ -4,9 +4,6 @@
 *.db-wal
 *.db-journal
 data/bundle.yaml
-# Derived from the live schema by `make metadata`; committing it would
-# create a second copy that can disagree with the schema it describes.
-data/schema_metadata.yaml
 
 # Python
 __pycache__/

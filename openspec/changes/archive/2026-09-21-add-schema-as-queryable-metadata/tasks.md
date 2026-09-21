@@ -44,8 +44,12 @@
 
 - [x] 3.1 Apply the recipe (`recipe_import`) as part of setup, and add the
       generator to `make migrate` after migration, before `make ingest`.
-- [ ] 3.2 Confirm `make clean && make generate && make migrate && make ingest`
-      still succeeds end to end.
+- [x] 3.2 ~~Confirm `make clean && make generate && make migrate && make ingest`
+      still succeeds end to end.~~ STRUCK on supersede (2026-09-21): the recipe
+      and its `make migrate` step were removed by
+      `add-schema-discovery-for-query-building`, so there is no longer a
+      metadata-carrying pipeline to confirm. The equivalent check now lives in
+      that change's task 5.5, against the pipeline WITHOUT the recipe.
 - [x] 3.3 Confirm the synthetic-data seed is unaffected — `generate.py --seed 0`
       must still reproduce the benchmark's ids, or
       `evals/expected-results.json` silently invalidates.

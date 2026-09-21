@@ -36,6 +36,14 @@ def _clarification(message: str = "which one?") -> TurnAttempt:
     return TurnAttempt(protocol="tool_call", turn={"status": "clarification", "message": message, "query_spec": None})
 
 
+def _discovery(message: str = "tox_screen_result holds that.") -> TurnAttempt:
+    """A clarification that ANSWERED -- a schema-discovery reply."""
+    return TurnAttempt(protocol="tool_call", turn={
+        "status": "clarification", "message": message,
+        "query_spec": None, "resolution": "answered",
+    })
+
+
 class _ScriptedModel:
     """Stub for conversational_planner.request_turn: returns queued
     TurnAttempts in order, and records every call's kwargs for assertions
@@ -234,3 +242,60 @@ class TestEditTurn:
 
 if __name__ == "__main__":
     raise SystemExit(pytest.main([__file__, "-q"]))
+
+
+class TestAnsweredClarificationDoesNotCascade:
+    """add-schema-discovery-for-query-building, design.md Decision 2.
+
+    A discovery answer is a clarification that SUCCEEDED. Suspending it on
+    edit -- and cascading to everything after it -- would break conversations
+    that are entirely coherent, and discovery is the normal opening move.
+    """
+
+    def test_editing_upstream_of_a_discovery_turn_preserves_later_proposals(self, monkeypatch):
+        model = _ScriptedModel(
+            _proposal(SPEC_A), _discovery(), _proposal(SPEC_B),   # build the conversation
+            _proposal(SPEC_C), _discovery(), _proposal(SPEC_B),   # the edit's recomputes
+        )
+        monkeypatch.setattr("exon.conversational_orchestrator.request_turn", model)
+
+        turns, first = append_turn([], "donors over 60", CAPS)
+        turns, _ = append_turn(turns, "what do we have about toxicology?", CAPS)
+        turns, _ = append_turn(turns, "add those fields", CAPS)
+
+        turns, _, suspended = edit_turn(turns, first["id"], "donors over 70", CAPS)
+
+        assert suspended == []
+        assert [t["status"] for t in turns] == ["proposal", "clarification", "proposal"]
+        assert _current_query_spec(turns) == SPEC_B
+
+    def test_a_blocking_clarification_still_cascades(self, monkeypatch):
+        model = _ScriptedModel(
+            _proposal(SPEC_A), _proposal(SPEC_B), _proposal(SPEC_C),
+            _proposal(SPEC_C), _clarification("which region?"), _proposal(SPEC_B),
+        )
+        monkeypatch.setattr("exon.conversational_orchestrator.request_turn", model)
+
+        turns, first = append_turn([], "first", CAPS)
+        turns, second = append_turn(turns, "second", CAPS)
+        turns, third = append_turn(turns, "third", CAPS)
+
+        turns, _, suspended = edit_turn(turns, first["id"], "edited", CAPS)
+
+        assert suspended == [second["id"], third["id"]]
+        assert [t["status"] for t in turns] == ["proposal", "suspended", "suspended"]
+
+    def test_an_answered_discovery_turn_is_not_reported_as_suspended(self, monkeypatch):
+        model = _ScriptedModel(
+            _proposal(SPEC_A), _discovery(),
+            _proposal(SPEC_C), _discovery(),
+        )
+        monkeypatch.setattr("exon.conversational_orchestrator.request_turn", model)
+
+        turns, first = append_turn([], "first", CAPS)
+        turns, disco = append_turn(turns, "what do we have about toxicology?", CAPS)
+
+        turns, _, suspended = edit_turn(turns, first["id"], "edited", CAPS)
+
+        assert disco["id"] not in suspended
+        assert turns[-1]["status"] == "clarification"

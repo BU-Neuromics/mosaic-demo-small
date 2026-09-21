@@ -33,6 +33,17 @@
 #                   unfixable case, most likely by writing the four regions into the context --
 #                   exactly the answer-key memorization the lint exists to prevent. q35 is the
 #                   fully self-contained form of the same question and is used instead.
+#   q36, q37, q38   SCHEMA DISCOVERY. These ask what the data holds so the researcher can
+#                   decide which fields to query, and a correct answer is a conversational
+#                   turn naming slots -- not a plan. This harness evaluates every sample as
+#                   an independent single-turn call into the PLAN emitter, so it has no
+#                   shape to assert them in: `required_filters` describes a QuerySpec, and a
+#                   discovery reply has none. Grading them needs a conversational case type
+#                   routed through `request_turn`, asserting that the reply is a
+#                   clarification marked `resolution: answered` whose message names the
+#                   expected slots. Tracked as a follow-up on
+#                   add-schema-discovery-for-query-building; excluded here rather than
+#                   scored by a proxy that would measure something else.
 # Get-by-id questions (q18/q19/q30) ARE included: `id` is an ordinary filterable slot, so
 # `samples(filters:[{field:"id",...}])` is the semantically equivalent supported form.
 

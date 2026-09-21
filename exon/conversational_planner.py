@@ -53,7 +53,16 @@ TURN_TOOL = {
             "manifest, emit status='clarification' with a question and NO query_spec. "
             "Default to proposal whenever a reasonable interpretation exists -- never "
             "guess and call it a proposal when the ambiguity is real, and never ask a "
-            "clarifying question when the instruction was actually clear."
+            "clarifying question when the instruction was actually clear. "
+            "THE THIRD CASE -- SCHEMA DISCOVERY: when the user asks what the data holds "
+            "rather than asking for records (e.g. 'what information do we have on donors "
+            "about toxicology reports?'), they are working out which fields to put IN a "
+            "query. Answer it: emit status='clarification' with "
+            "resolution='answered', and in the message NAME the relevant fields from the "
+            "grounding -- the entity each belongs to, and what its description says it "
+            "holds -- then invite the user to include them. Do NOT refuse it as a "
+            "reference lookup rather than a query refinement, and do NOT anchor a "
+            "query on a field-listing entity type."
         ),
         "parameters": {
             "type": "object",
@@ -69,6 +78,18 @@ TURN_TOOL = {
                         "query's current interpretation, e.g. 'Filtering to samples "
                         "from female donors, collected after March 2026.' For "
                         "status=clarification: the question to ask the user."
+                    ),
+                },
+                "resolution": {
+                    "type": "string",
+                    "enum": ["answered", "blocked"],
+                    "description": (
+                        "Only meaningful when status=clarification. 'answered': the turn "
+                        "ANSWERED what was asked (a schema-discovery question) -- the draft "
+                        "is unchanged and nothing is required from the user before the "
+                        "conversation can continue. 'blocked' (the default when omitted): "
+                        "the turn asks a question that must be answered before the draft "
+                        "can move. Omit entirely when status=proposal."
                     ),
                 },
                 "query_spec": {
@@ -156,7 +177,11 @@ DEFAULT_SYSTEM_PROMPT = (
     "utterance is genuinely ambiguous -- a contradictory constraint, or a value that "
     "doesn't resolve against the manifest -- ask a clarifying question instead of "
     "guessing. Never produce a QuerySpec that quietly waters down or drops a stated "
-    "constraint just to avoid asking a question."
+    "constraint just to avoid asking a question. Each field in the manifest below "
+    "carries the schema author's own description of what it holds; use those to "
+    "resolve what the user is asking for, including when they ask what the data "
+    "holds rather than for records -- that question is how a user works out which "
+    "fields to query, so answer it by naming the fields that bear on it."
 )
 
 
@@ -312,4 +337,11 @@ def _normalize_turn(raw: dict) -> dict:
             "status='clarification' must not carry a 'query_spec' -- a response can't "
             "simultaneously ask a question and propose a change"
         )
-    return {"status": "clarification", "message": message, "query_spec": None}
+    turn = {"status": "clarification", "message": message, "query_spec": None}
+    # `resolution` is carried ONLY when the model declared "answered". Absent means
+    # blocked, which is the pre-existing behavior and the safe default: an answered
+    # turn misread as blocking degrades to over-suspension on edit, never to a wrong
+    # answer. See add-schema-discovery-for-query-building design.md Decision 2.
+    if raw.get("resolution") == "answered":
+        turn["resolution"] = "answered"
+    return turn

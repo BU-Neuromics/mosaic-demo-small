@@ -75,6 +75,7 @@ class TestToolSchema:
         assert "status" in params["required"] and "message" in params["required"]
         assert "query_spec" not in params["required"]
         assert set(params["properties"]["status"]["enum"]) == {"proposal", "clarification"}
+        assert set(params["properties"]["resolution"]["enum"]) == {"answered", "blocked"}
 
 
 class TestNormalizeTurn:
@@ -97,6 +98,29 @@ class TestNormalizeTurn:
     def test_valid_clarification_round_trips(self):
         turn = _normalize_turn({"status": "clarification", "message": "Which donor's samples?"})
         assert turn == {"status": "clarification", "message": "Which donor's samples?", "query_spec": None}
+
+    def test_a_blocking_clarification_carries_no_resolution_key(self):
+        # Absent means blocking -- the pre-existing behavior. Only an explicitly
+        # answered turn is marked, so nothing about the existing shape changes.
+        turn = _normalize_turn({"status": "clarification", "message": "Which donor?"})
+        assert "resolution" not in turn
+
+    def test_an_answered_discovery_clarification_is_marked(self):
+        # add-schema-discovery-for-query-building design.md Decision 2: the marker is
+        # what lets edit_turn tell a discovery answer from a blocking question.
+        turn = _normalize_turn({
+            "status": "clarification", "resolution": "answered",
+            "message": "tox_screen_result and cause_of_death_notes bear on toxicology.",
+        })
+        assert turn["resolution"] == "answered"
+        assert turn["query_spec"] is None
+
+    def test_resolution_is_ignored_on_a_proposal(self):
+        turn = _normalize_turn({
+            "status": "proposal", "resolution": "answered", "message": "ok",
+            "query_spec": {"v": 1, "anchor": "Sample", "mode": "AND", "criteria": []},
+        })
+        assert "resolution" not in turn
 
     def test_unknown_status_is_rejected(self):
         with pytest.raises(ValueError, match="status"):

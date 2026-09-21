@@ -35,13 +35,14 @@ That last part is the point. A confident wrong answer is worse than a refusal.
   was verified against this project on 2026-09-17 and serves all 3,600 records, UI included.
 - **The chat panel works in a real browser.** Until today it had only ever been driven against a
   fake backend. It now runs against the real MCP-backed path end to end.
-- **You can ask about the data itself.** "What fields are available on datasets?" used to be
-  refused — the planner had the answer and no way to give it. The schema now describes itself as
-  ordinary data, so that question is just a query, and comes back as a table like any other. It
-  works for any schema, not only this one: verified against an unrelated bibliography schema with
-  no code changes.
-- **The benchmark is current.** 34 of 38 questions verified against live data, no regressions.
-  Two previously marked impossible turned out to work once we tried them.
+- **You can ask what the data holds, in your own words.** "What do we have on donors about head
+  injuries?" now resolves to `history_of_rhi` — a field whose name shares no word with the
+  question. The planner reads each field's description from the schema, so discovery is answered
+  in the conversation and leads straight into the query, instead of being refused as "a reference
+  lookup rather than a query refinement."
+- **The benchmark is current.** 31 of 35 executable questions verified against live data, no
+  regressions. Two previously marked impossible turned out to work once we tried them. Three
+  further schema-discovery questions (q36–q38) assert on the planner's reply rather than on rows.
 
 **Not working yet**
 
@@ -145,28 +146,40 @@ curl -s localhost:8080/graphql -H 'content-type: application/json' \
 
 These are the numbers the benchmark checks against, so they are the ones to trust.
 
-### Ask about the schema itself
+### Ask what the data holds
+
+Verified live 2026-09-21 against `mosaic serve` on this repo's schema, with
+`bedrock/global.anthropic.claude-haiku-4-5`.
 
 In the chat panel, try:
 
-> what fields are available on datasets?
+> what do we have on donors about head injuries?
 
-Expect a proposal — a real query over `SchemaField` — returning all ten Dataset fields with their
-types, whether they are required, the schema author's own description, and the permissible values
-for the enum-constrained ones.
+Expect an answer, not a query: the panel names `history_of_rhi` and says what it holds, then
+offers to put it in the query. Say yes and the next turn is an ordinary proposal filtered on that
+field.
 
-The planner never writes those rows. It identifies which entity you asked about; the rows come
-from the schema itself. Ask about an entity that does not exist and you get a question back, not
-an invented table.
+The point is the field's NAME shares no word with the question. `history_of_rhi` is findable only
+because the schema's own description — "a documented history of repetitive head impacts (RHI)" —
+is now part of what the planner reads. Two more worth trying:
 
-The same two collections also appear in Aperture's navigation at **http://localhost:8080** —
-browsable without the chat at all, because they are ordinary entity types like any other.
+> which fields tell us whether a dataset can be shared outside the project?
 
-**If they are missing, the server has not reloaded the schema.** They arrive via a recipe
-(`recipes/schema-metadata/`), and a server that started before it was applied will not show them.
-Restart it: `docker restart solo-solo-1` for the container, or restart `mosaic serve`. Note also
-that `mosaic.yaml` must point at `schemas/` — the directory — not at `schemas/demo.yaml`, or the
-server never sees the recipe at all.
+> is there anything that tells us how a sample was kept before analysis?
+
+The first names both `access_level` and `is_public`; the second, `storage_condition`. On the
+2026-09-21 run all three resolved correctly, and the follow-up turn for the first produced
+`history_of_rhi eq true` — which Mosaic validated and executed to 50 donors, the same number
+q05 has carried since August.
+
+**Nothing is stored to make this work.** The descriptions come from `schemas/demo.yaml`, reach the
+planner through the live capability manifest, and are rendered into its grounding. There are no
+schema-describing rows to regenerate, and nothing that can go stale: edit a description in the
+schema, restart the server, and the next answer reflects it.
+
+**A discovery answer does not derail the conversation.** It is a clarification that *answered*, so
+editing an earlier turn recomputes it without suspending the turns that follow — unlike a
+clarification that is genuinely waiting on you.
 
 ---
 

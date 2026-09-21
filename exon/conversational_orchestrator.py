@@ -64,6 +64,27 @@ def _prior_turns_view(turns: list[dict]) -> tuple:
     return tuple({"utterance": t["utterance"], "message": t["message"]} for t in turns)
 
 
+def _blocks(turn: dict) -> bool:
+    """Whether a freshly recomputed turn should suspend, and cascade.
+
+    A clarification used to mean one thing: the model could not resolve the
+    utterance, so every later turn was built on a base state that no longer
+    holds. Schema discovery adds a second kind -- a clarification that
+    ANSWERED what was asked. It leaves the draft untouched and needs nothing
+    from the user, so the turns after it are still coherent and suspending
+    them would break a conversation that is fine.
+
+    Read ONLY from a fresh `_request_turn_with_retry` result, never from a
+    caller-supplied `prior_turns` entry. That is what lets the marker stay
+    internal: it never has to survive the round trip through Mosaic, where
+    GraphQL's typed ConversationTurn would drop an unrecognized key.
+
+    Absent marker means blocking -- the pre-existing behavior, and the safe
+    direction to be wrong in.
+    """
+    return turn["status"] == "clarification" and turn.get("resolution") != "answered"
+
+
 def _find_turn_index(turns: list[dict], turn_id: str) -> int:
     for i, t in enumerate(turns):
         if t["id"] == turn_id:
@@ -183,7 +204,7 @@ def edit_turn(
             prior_turns=_prior_turns_view(new_turns),
             **kw,
         )
-        if recompute["status"] == "clarification":
+        if _blocks(recompute):
             new_turns.append({
                 "id": old["id"], "utterance": old["utterance"],
                 "status": "suspended", "query_spec": None,

@@ -169,3 +169,24 @@ class TestEdit:
 
 if __name__ == "__main__":
     raise SystemExit(pytest.main([__file__, "-q"]))
+
+
+def test_the_answered_marker_survives_the_http_layer_without_breaking_it():
+    """add-schema-discovery-for-query-building design.md Decision 2.
+
+    `resolution` is an Exon-internal marker: `edit_turn` reads it only off a
+    fresh recompute, so it never needs to cross this boundary. What it MUST
+    not do is break it. TurnModel does not declare the field, so a future
+    `extra="forbid"` here would raise on every discovery turn -- a failure
+    the orchestrator's own tests cannot see, because they never build a
+    TurnModel.
+    """
+    from exon.conversational_server import TurnModel
+
+    turn = TurnModel(**{
+        "id": "t1", "utterance": "what do we have about head injuries?",
+        "status": "clarification", "message": "history_of_rhi holds that.",
+        "query_spec": None, "resolution": "answered",
+    })
+    assert turn.status == "clarification"
+    assert "resolution" not in turn.model_dump()

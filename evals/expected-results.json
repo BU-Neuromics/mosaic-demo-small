@@ -1758,35 +1758,5 @@
     "samples_with_rna_seq_workflow": 9,
     "call_count": 26,
     "note": "The project's verbatim driving question. Fully self-contained, unlike q20/q25 which reference 'the tissue-request example'."
-  },
-  "q36": {
-    "status": "ok",
-    "graphql": "{ schemaFields(filters:[{field: \"entity\", value: \"Dataset\"}]) { total } }",
-    "response": {
-      "schemaFields": {
-        "total": 10
-      }
-    },
-    "note": "Captured 2026-09-18 against the schema-metadata recipe on this demo's schema."
-  },
-  "q37": {
-    "status": "ok",
-    "graphql": "{ schemaFields(filters:[{field: \"kind\", value: \"enum\"}]) { total } }",
-    "response": {
-      "schemaFields": {
-        "total": 9
-      }
-    },
-    "note": "Captured 2026-09-18 against the schema-metadata recipe on this demo's schema."
-  },
-  "q38": {
-    "status": "ok",
-    "graphql": "{ schemaEntityTypes { total } }",
-    "response": {
-      "schemaEntityTypes": {
-        "total": 4
-      }
-    },
-    "note": "Captured 2026-09-18 against the schema-metadata recipe on this demo's schema."
   }
 }

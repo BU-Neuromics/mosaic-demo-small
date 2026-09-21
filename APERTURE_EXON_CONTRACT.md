@@ -120,8 +120,14 @@ browser entirely (`scopedClient.ts`'s own stated principle).
   not a rewrite. The turn `id` is included because of the edit-semantics decision below —
   Aperture needs to be able to say "redo from this specific turn."
 - **Response is discriminated: `proposal` vs. `clarification`.** Default to proposing a visible,
-  correctable `QuerySpec` update; fall back to asking a clarifying question only on genuine
-  ambiguity (contradictory constraints, an enum value that doesn't resolve).
+  correctable `QuerySpec` update; fall back to a `clarification` only on genuine ambiguity
+  (contradictory constraints, an enum value that doesn't resolve). A `clarification` is not
+  always a question: schema-discovery replies use the same status to ANSWER what was asked —
+  naming the fields that bear on the user's topic so the next turn can build a spec over them —
+  and are marked `resolution: "answered"` so an edit does not suspend the turns after them.
+  Aperture renders that status as "needs an answer", which is wrong chrome for an answer; the
+  label fix lives on Aperture's side
+  (`openspec/changes/add-schema-discovery-for-query-building/` design.md Decision 4).
 - **Resolved during implementation: what the wire's `query_spec` field means when it could
   diverge from the turn history.** Since Aperture tracks the current draft independently (its
   URL) as well as sending it on the wire, the two could in principle disagree. As implemented:
