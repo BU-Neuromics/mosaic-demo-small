@@ -86,3 +86,49 @@
 
     `is_available` is the lexical trap: a system field about record
     availability, nothing to do with study participation.
+
+- id: d08
+  utterance: what do we record about how samples are stored?
+  expect_slots: [storage_condition]
+  note: >-
+    d03 asks the same thing in different words and passed; this phrasing failed,
+    with the planner handing back a menu: "Are you asking what fields we track
+    about sample storage (schema discovery), or do you want to retrieve samples
+    filtered by how they're stored?"
+
+    The cause was a classification branch in the prompt -- decide whether this is
+    a question ABOUT THE DATA or one asking WHAT EXISTS -- and "what do we record
+    about X" is honestly both. A model that cannot classify asks, which is
+    exactly the refusal the contract forbids. The branch is gone: name the fields
+    always, and decide about rows yourself.
+
+    Kept as a separate case from d03 on purpose. Two phrasings of one question
+    behaving differently is the whole risk with prompt-shaped behaviour, and one
+    case per phrasing is the only way that stays visible.
+
+# --- Metadata listing. The original motivating questions, pinned so no amount
+# --- of prompt tuning for other cases can quietly take them away again.
+
+- id: d09
+  utterance: what fields are available on datasets?
+  expect_slots: [access_level, dataset_type, file_size_bytes, is_public, produced_by]
+  note: >-
+    THE question this whole line of work started from; it used to be refused. A
+    complete answer lists every Dataset field, so this asserts a representative
+    spread rather than all ten -- enough that a partial answer fails, without
+    pinning wording.
+
+- id: d10
+  utterance: which fields only accept a fixed set of values?
+  expect_slots: [access_level, dataset_type, cohort, sex, brain_region, sample_type, storage_condition, status, workflow_type]
+  note: >-
+    Every enum in the schema, across all four entity types. Asserts the answer
+    spans entities rather than stopping at the first.
+
+- id: d11
+  utterance: what kinds of things does this dataset hold, and how do they relate?
+  expect_slots: [donor, input_samples, produced_by]
+  note: >-
+    Entity types and the edges between them. The expected slots are the three
+    references, because naming the edge is what tells a user a traversal is
+    possible -- listing entity names alone does not.
