@@ -1,14 +1,16 @@
-# Ask the data what it holds
+# The conversational query surface
 
-**A conversational query surface over a LinkML schema — running in Docker, one port.**
+Ask a LinkML-backed store what it holds, in plain language, and get a runnable query
+back. Runs in Docker behind one port.
 
-Updated 2026-09-21.
+Updated 2026-09-21. Covers what it does, how it was built, how to run it, how it is
+measured, and what is not done.
 
 ---
 
 ## Contents
 
-1. [The result](#1-the-result)
+1. [What it does](#1-what-it-does)
 2. [What we set out to do](#2-what-we-set-out-to-do)
 3. [The wrong turn, and why it was wrong](#3-the-wrong-turn-and-why-it-was-wrong)
 4. [What actually fixed it](#4-what-actually-fixed-it)
@@ -16,13 +18,13 @@ Updated 2026-09-21.
 6. [Queries to try](#6-queries-to-try)
 7. [How the Docker stack was made to work](#7-how-the-docker-stack-was-made-to-work) ← *the part worth reading twice*
 8. [Where the planner now lives](#8-where-the-planner-now-lives)
-9. [Where we stand](#9-where-we-stand)
+9. [What works and what doesn't](#9-what-works-and-what-doesnt)
 10. [Measuring it](#10-measuring-it)
-11. [Questions for the room](#11-questions-for-the-room)
+11. [Open work](#11-open-work)
 
 ---
 
-## 1. The result
+## 1. What it does
 
 A researcher asks, in their own words, what the data holds — and gets either a straight
 answer or a runnable query, without knowing a single field name.
@@ -177,8 +179,10 @@ schema, or point at a different project, and it keeps answering about the old on
 
 ## 6. Queries to try
 
-✅ = run against live data and confirmed. Everything else is expected-but-unverified —
-worth a dry run before you present.
+✅ = run against live data and confirmed. Everything else is expected but unverified.
+
+Note the ✅ marks predate the last two prompt changes, so they are worth re-running
+rather than trusted.
 
 ### About the data — these return rows
 
@@ -202,7 +206,7 @@ worth a dry run before you present.
 | ✅ **which fields tell us whether a dataset can be shared outside the project?** | Two fields: `access_level` *and* `is_public` |
 | **how are donors and samples connected?** | Tests whether *reference* descriptions surface the traversal |
 
-### It doesn't invent fields — worth doing live
+### It doesn't invent fields
 
 > **what do we have on donors about toxicology reports?**
 
@@ -210,21 +214,19 @@ worth a dry run before you present.
 text that might mention it — rather than reaching for the nearest plausible field.
 
 The point is a refusal to invent, not a gap in the data. A planner that always finds
-*something* reads as confident and is occasionally wrong; this is the behaviour that
-shows it isn't doing that. It's the most reassuring thing in the demo, and it's now a
-standing eval case (`d06`) rather than a thing we check by hand.
+*something* reads as confident and is occasionally wrong. This is now a standing eval
+case (`d06`) rather than something checked by hand.
 
 ### Choosing what comes back
 
 After any query returns rows, the **Fields** button beside the exports narrows the table
-to the columns you care about — and both exports follow it. Worth showing right after a
-discovery question: it closes the loop from *"which field holds this?"* to *"show me just
-that."*
+to the columns you care about, and both exports follow it. That closes the loop from
+*"which field holds this?"* to *"show me just that."*
 
-The honest footnote, if anyone asks: every field still crosses the wire. This is
-client-side projection, because the query artifact cannot yet carry a field list.
+Every field still crosses the wire — this is client-side projection, because the query
+artifact cannot yet carry a field list.
 
-### The two-step, if you want to show the full loop
+### Two-turn refinement
 
 > **what do we have on donors about head injuries?** → then → **yes, and only the case cohort**
 
@@ -350,7 +352,7 @@ than a rewrite, and the container slot is identical either way.
 
 ---
 
-## 9. Where we stand
+## 9. What works and what doesn't
 
 ### Working
 
@@ -365,11 +367,12 @@ than a rewrite, and the container slot is identical either way.
 
 | | |
 | --- | --- |
-| **`make chat` from pinned images** | Needs a Mosaic newer than v0.13.0 — for `--mcp` and the Host fix. `make chat-dev` works today. |
-| **A certified deployment** | `ide` builds from source and is exempt from the deploy gate. Real users on `solo` need a Mosaic release *and* a Reel release to certify against. |
-| **Field selection in the *spec*** | The user can choose which fields to read, but the **planner** cannot express that choice — `columns` is rejected at parse. This is why eval case `d04` stays red. [mosaic#215](https://github.com/BU-Neuromics/mosaic/issues/215). |
-| **The older reliability suite** | It still grades the *retired* query-plan emitter. Separate, unfinished, and carrying an undecided design question of its own (how to route facet- and range-shaped questions). |
-| **Prompt behaviour** | Tuned, not proven. The questions in §6 were verified against live data; a different phrasing may still surprise us. |
+| **Field selection in the *spec*** | The user can choose which fields to read; the **planner** cannot express that choice. `columns` is rejected at parse, which is why eval case `d04` stays red. |
+| **`make chat` from pinned images** | Needs a Mosaic newer than v0.13.0, for `--mcp` and the Host allow-list. `make chat-dev` works today. |
+| **A certified deployment** | `ide` builds from source and is exempt from the deploy gate. `solo` needs a Mosaic release *and* a Reel release. |
+| **The older reliability suite** | Still grading the *retired* query-plan emitter. |
+
+Each of these is expanded in [§11](#11-open-work).
 
 ---
 
@@ -419,38 +422,50 @@ wrong.
 
 ---
 
-## 11. Questions for the room
+## 11. Open work
 
-1. **Certification path.** Reaching real users means cutting a **Mosaic** release and a
-   **Reel** release. `make chat` from pinned images doesn't work until the first, and
-   `solo` can't carry the planner until both. What's the appetite?
+Ordered by what blocks what, not by size.
 
-2. **Field selection in the spec** — [mosaic#215](https://github.com/BU-Neuromics/mosaic/issues/215).
-   The goal's last clause is *"a query spec that pulls back specific fields"*, and the
-   spec can't say it. The issue proposes an increment: accept a flat list of anchor-owned
-   slots and project server-side, leaving ADR-0035's harder to-many `aggregate`/`explode`
-   choice for later. **Is that increment acceptable, and who takes it?**
+**`columns` — field selection in the spec.** The goal's last clause is *"a query spec that
+pulls back specific fields"*, and the spec cannot say it. `columns` is rejected at parse,
+so the planner cannot emit it even speculatively. [mosaic#215](https://github.com/BU-Neuromics/mosaic/issues/215)
+proposes an increment: accept a flat list of anchor-owned slots and project server-side,
+leaving ADR-0035's harder to-many `aggregate`/`explode` choice for later. This is what
+keeps `d04` red.
 
-3. **Retiring the old query-plan path.** It's dead code the reliability suite still
-   grades, and retiring it is the precondition the Reel migration is waiting on. It also
-   contains a genuinely undecided design question — how to route facet- and range-shaped
-   questions, where the obvious fix would leak into the conversational contract.
+**Retiring the old query-plan path.** Dead code that the reliability suite still grades,
+and the precondition the Reel migration is waiting on. It carries an undecided design
+question of its own: how to route facet- and range-shaped questions, where the obvious
+fix (a `result_shape` field on the spec tool) would leak into the conversational contract
+and break its no-aggregation guarantee. Two options are written down; neither is chosen.
 
-4. **Cost exposure.** Every turn spends a model invocation, and the boundary has no
-   authentication — anyone who can reach it can cause spend, with no attribution. This was
-   **accepted deliberately** when ADR-0010 was ratified, with rate limiting deferred. It
-   should be a decision the room has made, not one it inherits.
+**Releases.** `make chat` from pinned images needs a Mosaic newer than v0.13.0, for both
+`--mcp` and the Host allow-list. `solo` — the path real users would reach — needs that
+*and* a Reel release to certify against.
+
+**Nothing is on `main`.** Five branches:
+
+| Repo | Branch |
+| --- | --- |
+| `reel` | `main` (the repo's own default; runtime, image, evals) |
+| `mosaic` | `docs/ratify-adr-0010` |
+| `mosaic-demo-small` | `exon-conversational-turn-core` |
+| `aperture` | `fix/discovery-turn-chrome` |
+| `datahelix` | `feat/ide-planning-service` |
+
+They want reviewing as a set — several only make sense together.
 
 ---
 
-## What I'd want agreed before the next stretch
+## Notes for whoever picks this up
 
-Not decisions for the room so much as things that will rot if nobody owns them:
-
-- **The grader is young.** Two of its bugs surfaced on its first live run. Treat 5/7 as a
-  starting line, not a score — and resist tuning the grader to make cases pass, which is
-  how a suite stops measuring anything.
+- **The grader is young.** Two of its bugs surfaced on its first live run. 5/7 is a
+  starting line, not a score — and tuning the grader to make cases pass is how a suite
+  stops measuring anything.
 - **`d04` and `d07` should stay red** until the things they describe are fixed. They are
-  the cheapest reminder that the goal is not fully delivered.
-- **Nothing here is on `main`** — five branches, listed in §9. They want reviewing as a
-  set, because several changes only make sense together.
+  the cheapest standing reminder that the goal is not fully delivered.
+- **Prompt behaviour is tuned, not proven.** Three rounds of fixes came from watching
+  someone use it, and each found something the previous round had not.
+- **The planner grounds once, at startup.** Every schema change needs
+  `make restart-planner`, and forgetting produces confidently stale answers rather than
+  an error.

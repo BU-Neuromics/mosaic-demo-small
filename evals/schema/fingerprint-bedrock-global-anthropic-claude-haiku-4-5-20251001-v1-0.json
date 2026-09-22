@@ -1,0 +1,134 @@
+{
+  "model": "bedrock/global.anthropic.claude-haiku-4-5-20251001-v1:0",
+  "honours_system_role": true,
+  "supports_json_schema": true,
+  "supports_tool_call": true,
+  "supports_json_object": false,
+  "honours_stop_sequences": true,
+  "determinism_at_temp_0": 1.0,
+  "preamble_tendency": 0.0,
+  "max_context_tokens": 200000,
+  "recommended_protocol": "json_schema",
+  "checks": {
+    "system_role": {
+      "name": "system_role",
+      "passed": 5,
+      "total": 5,
+      "detail": "",
+      "evidence": [
+        "ACK",
+        "ACK",
+        "ACK",
+        "ACK",
+        "ACK"
+      ]
+    },
+    "protocol:json_schema": {
+      "name": "protocol:json_schema",
+      "passed": 5,
+      "total": 5,
+      "detail": "",
+      "evidence": [
+        "{\"entity\": \"Sample\"}",
+        "{\"entity\": \"Sample\"}",
+        "{\"entity\": \"Sample\"}",
+        "{\"entity\": \"Sample\"}",
+        "{\"entity\": \"Sample\"}"
+      ]
+    },
+    "protocol:tool_call": {
+      "name": "protocol:tool_call",
+      "passed": 5,
+      "total": 5,
+      "detail": "",
+      "evidence": [
+        "{\"entity\": \"Sample\"}",
+        "{\"entity\": \"Sample\"}",
+        "{\"entity\": \"Sample\"}",
+        "{\"entity\": \"Sample\"}",
+        "{\"entity\": \"Sample\"}"
+      ]
+    },
+    "protocol:json_object": {
+      "name": "protocol:json_object",
+      "passed": 0,
+      "total": 5,
+      "detail": "",
+      "evidence": [
+        "<error: JSONDecodeError: Expecting value: line 1 column 1 (char 0)>",
+        "<error: JSONDecodeError: Expecting value: line 1 column 1 (char 0)>",
+        "<error: JSONDecodeError: Expecting value: line 1 column 1 (char 0)>",
+        "<error: JSONDecodeError: Expecting value: line 1 column 1 (char 0)>",
+        "<error: JSONDecodeError: Expecting value: line 1 column 1 (char 0)>"
+      ]
+    },
+    "protocol:delimited": {
+      "name": "protocol:delimited",
+      "passed": 5,
+      "total": 5,
+      "detail": "",
+      "evidence": [
+        "<answer>Sample</answer>",
+        "<answer>Sample</answer>",
+        "<answer>Sample</answer>",
+        "<answer>Sample</answer>",
+        "<answer>Sample</answer>"
+      ]
+    },
+    "protocol:raw": {
+      "name": "protocol:raw",
+      "passed": 5,
+      "total": 5,
+      "detail": "",
+      "evidence": [
+        "Sample",
+        "Sample",
+        "Sample",
+        "Sample",
+        "Sample"
+      ]
+    },
+    "stop_sequences": {
+      "name": "stop_sequences",
+      "passed": 5,
+      "total": 5,
+      "detail": "",
+      "evidence": [
+        "You counted: **6 items**\n\nThe words in order are:\n1. one\n2. two\n3.",
+        "You counted: **6 items**\n\nThe words in order are:\n1. one\n2. two\n3.",
+        "You counted: **6 items**\n\nThe words in order are:\n1. one\n2. two\n3.",
+        "You counted: **6 items**\n\nThe words in order are:\n1. one\n2. two\n3.",
+        "You counted: **6 items**\n\nThe words in order are:\n1. one\n2. two\n3."
+      ]
+    },
+    "determinism_temp_0": {
+      "name": "determinism_temp_0",
+      "passed": 5,
+      "total": 5,
+      "detail": "5/5 byte-identical to the first reply",
+      "evidence": [
+        "Cerebellum.",
+        "Cerebellum.",
+        "Cerebellum.",
+        "Cerebellum.",
+        "Cerebellum."
+      ]
+    },
+    "preamble": {
+      "name": "preamble",
+      "passed": 5,
+      "total": 5,
+      "detail": "",
+      "evidence": [
+        "Sample",
+        "Sample",
+        "Sample",
+        "Sample",
+        "Sample"
+      ]
+    }
+  },
+  "is_thinking_model": false,
+  "probe_temperature": 0.0,
+  "id": "362f6e7fc32589f7"
+}
