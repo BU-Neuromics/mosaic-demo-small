@@ -104,3 +104,68 @@ drift, and nothing to execute.
 - **WHEN** a user views the fields available on an entity
 - **THEN** no query is executed and no query result is consumed — the presentation is not
   an answer returned by the query path
+
+### Requirement: The panel shows what the answer was about, not what the anchor happens to be
+The fields panel SHALL present the collection the latest conversational turn
+was about, when that turn named fields belonging to a collection other than
+the current query anchor. When no turn has named fields, or the named fields
+belong to the anchor, the panel SHALL present the anchor.
+
+Following the answer SHALL be presentational only: it never changes the
+draft query spec, never changes the URL, and never executes anything. The
+user SHALL be offered an explicit action to adopt the presented collection
+as the query anchor, so discovery leads into query building by a deliberate
+gesture rather than automatically.
+
+The subject SHALL be identified from slots that belong to exactly one
+collection. Slots every collection carries — `id`, `name`, `is_available`
+and the like — SHALL NOT contribute, because they identify nothing.
+
+#### Scenario: A metadata answer about another collection moves the panel
+- **WHEN** the query anchor is `Aliquot` and a turn answers a question about
+  toxicology by naming `panel_type` and `specimen_matrix`
+- **THEN** the panel presents `ToxicologyReport`, states that this is what the
+  answer was about, and offers to make it the anchor
+- **AND** the draft query spec still has `Aliquot` as its anchor until the
+  user takes that action
+
+#### Scenario: A shared slot name does not move the panel
+- **WHEN** a turn names only `name`, `id` or `notes` — slots several
+  collections carry
+- **THEN** the panel continues to present the anchor, because no collection is
+  distinctively indicated
+
+#### Scenario: Adopting the subject changes only the draft
+- **WHEN** the user takes the offered action on a presented collection
+- **THEN** the draft query spec's anchor becomes that collection and no query
+  runs, consistent with Run remaining the only execution gesture
+
+### Requirement: Navigation agrees with itself about where the user is
+Exactly one navigation entry SHALL be marked current at a time. While a
+query view is open, the query entry SHALL be the current one and no
+collection SHALL be marked current.
+
+#### Scenario: Opening the query surface moves the current marker
+- **WHEN** the user opens the query surface from a collection
+- **THEN** the query navigation entry is marked current and that collection is
+  no longer marked current
+
+#### Scenario: Changing the anchor does not strand the marker
+- **WHEN** the user changes the query anchor while the query surface is open
+- **THEN** no collection entry is marked current, so no entry contradicts the
+  anchor control
+
+### Requirement: The cold-start anchor is the deployment's declared default
+The query surface SHALL take its cold-start anchor from the deployment's
+navigation configuration — the collection that configuration declares as its
+default — rather than whichever collection happens to sort first, whenever the
+URL implies no anchor of its own.
+
+#### Scenario: The configured default is used
+- **WHEN** the query surface is opened cold and the navigation configuration
+  declares a default collection
+- **THEN** that collection is the anchor
+
+#### Scenario: No configured default still yields a usable anchor
+- **WHEN** no default is declared, or the declared default cannot be an anchor
+- **THEN** the first anchorable collection is used, as before

@@ -75,6 +75,28 @@
 
 ## 7. The surface is a place, and says what it is (amendment)
 
+- [x] 7.0a **The panel follows the answer, not the anchor.** Found by driving
+      the page at 15 collections: ask about toxicology, read a correct
+      toxicology answer beside a panel showing `Aliquot`. Pick the subject
+      from slots belonging to exactly ONE collection — `name`/`id`/`notes`
+      identify nothing — and offer "use as anchor" rather than adopting
+      silently. Presentational only: no URL write, no run.
+- [x] 7.0b **Exactly one nav entry is current.** `CollectionsNav.tsx:43`
+      marks a collection current whenever no workflow is open, including
+      while the query surface is showing, and the query entry carries no
+      `aria-current` at all. Switching the anchor then leaves the nav
+      contradicting the anchor control.
+- [x] 7.0c **Cold start uses the deployment's declared default anchor**
+      (`navView.defaultId`) instead of `anchored[0]`, which is alphabetical
+      — it is why a fresh page lands on `Aliquot`. Narrower than 7.3, which
+      wants the question asked rather than answered; this removes the
+      arbitrariness without blocking on that redesign.
+      **Partial, and say so.** The builder and the nav now agree, which they
+      previously need not have. But `buildNavView` falls back to
+      `visible[0]` when no `defaultCollection` is configured, and this demo
+      configures none — so the demo still opens on `Aliquot`, now for the
+      nav's reason rather than the builder's own. The visible symptom needs
+      either a `VITE_NAV` default for the deployment or 7.3.
 - [ ] 7.1 Rename the nav LABEL "Query builder" → "Ask". Leave `data-testid`
       `nav-query-builder` alone — it is load-bearing in two vitest suites and
       `e2e-smoke.mjs`, and renaming both in one pass breaks the only arrangement

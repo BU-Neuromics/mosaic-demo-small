@@ -539,6 +539,15 @@ happened. Anything grading or running `exon/` is grading a copy nobody executes.
   all fifteen, the anchor picker offers all fifteen, the Fields panel renders the new
   collections with their real descriptions, enum values and reference targets, and a
   query on a new collection runs and returns rows. §6 has the measured results.
+- **The panel follows the answer.** Ask about toxicology while the builder is anchored on
+  something else and the panel presents `ToxicologyReport` — the named fields ranked to
+  the top, *"5 relevant to your question"*, and a line saying why it moved with a **Return
+  rows of Toxicology reports** button. Adopting changes the draft only: verified live that
+  the URL stays `?view=query` and nothing runs, so Run remains the only execution gesture
+  (ADR-0039). Scored on slots belonging to exactly one collection, so a shared `name` or
+  `notes` never moves it.
+- **The nav agrees with itself.** Exactly one entry is current, and it is the query entry
+  while a query view is open.
 
 ### Doesn't
 
@@ -552,9 +561,8 @@ happened. Anything grading or running `exon/` is grading a copy nobody executes.
 | **A certified deployment** | `ide` builds from source and is exempt from the deploy gate. `solo` needs a Mosaic release *and* a Reel release. |
 | **The older reliability suite** | Still grading the *retired* query-plan emitter. |
 | **`exon/` has forked** | The prompt work went to Reel only; this repo's copy is stale and Phase C3 hasn't happened. |
-| **The Fields panel doesn't follow the answer** | Ask about toxicology and you get a correct answer about `ToxicologyReport` — beside a panel still showing whatever collection the anchor happens to be on. At 4 collections that was untidy. At 15, with `Aliquot` as the alphabetically-first default, the panel beside a toxicology answer shows aliquots. |
-| **The nav selection desyncs from the anchor** | Switching the query anchor to Toxicology reports and running leaves the left nav still highlighting Aliquots. Two controls disagree about what you are looking at. |
 | **Answers describe fields instead of naming them** | *"whether a screen was run and came back positive"* is readable and correct, and a user cannot type it into a filter. This is one reason cases score lower than the answers read — see §10. |
+| **A cold page still opens on whichever collection sorts first** | Partly fixed: the builder now takes its cold-start anchor from the nav's declared default instead of its own alphabetical index, so the two agree. But `buildNavView` itself falls back to `visible[0]` when no `defaultCollection` is configured, and this demo configures none — so it still lands on `Aliquot`, now for the nav's reason. Needs a `VITE_NAV` default, or task 7.3 (ask instead of defaulting). |
 
 ### Honest caveats about the evidence
 
@@ -1024,11 +1032,12 @@ simultaneously, and field-finding, the one everybody worries about, is not among
   `Instrument` is hardware. The planner fails this in both directions (`n07`, `n09`).
 - **Name the edges, not just the entities.** Still the `d09`/`d11` cause, unchanged.
 
-**2a. Make the Fields panel follow the conversation.** Ask about toxicology, get a
-correct toxicology answer, and read it beside a panel showing aliquots. The panel and the
-left nav also disagree with the anchor picker about what you are looking at. This was
-cosmetic at four collections; at fifteen it is the first thing someone will point at.
-Belongs with `add-schema-field-panel` tasks 7–10, which are still open.
+**2a. ~~Make the Fields panel follow the conversation.~~ Done 2026-09-22** —
+`add-schema-field-panel` tasks 7.0a–7.0c, with the cold-start anchor only partly fixed
+(§9). What remains of that change is the larger redesign: rename the surface to "Ask"
+(7.1), make the anchor the page's heading (7.2), ask what to return rows of instead of
+defaulting (7.3), group the panel by entity (8.x), and search it (9.x) — which matters
+more now that it lists fifteen collections' worth of fields.
 
 **3. `columns` upstream.** [mosaic#215](https://github.com/BU-Neuromics/mosaic/issues/215).
 The goal's last clause, unexpressible in the artifact. The flat-list increment would be
