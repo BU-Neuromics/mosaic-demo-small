@@ -674,12 +674,35 @@ Donor:
     samples: { range: Sample, multivalued: true, inverse: donor }
 ```
 
-**`schemas/demo.yaml` declares none**, which is why `Donor` has zero forward references and
-why every traversal from it currently runs as a capped client-side semijoin in Aperture
-rather than natively. Declaring the obvious inverses (`Donor.samples`,
-`Sample.workflows`, `Workflow.datasets`) is a small change with a large payoff — it is the
-difference between the flagship cross-class example running natively or through a
-fallback.
+**What #210 fixed, precisely.** Before it, declaring an inverse produced a query that
+*silently returned nothing*: the validator passed it, the manifest classified it as
+filterable, the compiler emitted a to-many node — and the storage adapter resolved every
+multivalued edge against the ADR-0002 `relationships` link table, which the reverse side of
+an FK never writes. It ran and returned zero rows.
+
+**It deliberately did not make reverse edges automatic**, for two reasons worth more than
+the feature:
+
+1. **One physical encoding per fact.** LinkML binds `inverse` to `owl:inverseOf` — the
+   reverse is *entailed* by the forward slot, never asserted. Without the virtual treatment,
+   ADR-0002 would treat `samples` as a *stored* multivalued reference, so a write carrying
+   `samples: [...]` would materialise relationship rows: a second, independently writable
+   encoding of the one fact `Sample.donor` already stores. Two encodings drift.
+2. **Every transport derives from one type model.** If `Donor.samples` appears there,
+   GraphQL grows a resolver, a `DonorFilter.samples` some/none input and a `samplesCount`;
+   REST and the TUI list it; MCP advertises it. Auto-deriving a reverse for every FK would
+   inflate every surface with edges nobody modelled.
+
+So declaring `inverse:` is the schema author saying *"this direction is part of my model."*
+It is the intended interface, not a workaround.
+
+**`schemas/demo.yaml` declares none** — which is why `Donor` has zero forward references and
+why traversal from it falls through to Aperture's capped client-side semijoin. That is not a
+gap to patch; it is a capability this schema has not opted into. Whether it should is a
+modelling question about the data, not a mechanical one.
+
+*(ADR-0011 is `Status: Proposed`, deciders "labadorf (pending)" — implemented and merged,
+not yet ratified. Same pattern as ADR-0010.)*
 
 ### A note on one issue that was filed wrongly
 

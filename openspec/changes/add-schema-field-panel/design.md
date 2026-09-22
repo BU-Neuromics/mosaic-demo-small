@@ -224,10 +224,14 @@ Two consequences:
 1. The panel marks a hop by **how it will actually run** — native reference vs compensated
    semijoin — rather than by direction. Once a schema declares `inverse`, the same hop
    silently becomes native and the mark disappears on its own.
-2. **`schemas/demo.yaml` should declare the inverse slots** it obviously wants
-   (`Donor.samples`, `Sample.workflows`, `Workflow.datasets`). That is a separate,
-   small schema change with a large payoff here, and it is the difference between the
-   flagship cross-class example running natively or through a capped fallback.
+2. **`schemas/demo.yaml` has not opted into this capability.** Declaring `inverse:` is
+   the intended interface, not a workaround: #210 made reverse edges *work* (they used to
+   validate, compile, run, and return zero rows, because the storage adapter looked in a
+   link table the reverse side of an FK never writes) but deliberately did **not** make
+   them automatic. LinkML binds `inverse` to `owl:inverseOf`, so the reverse is entailed
+   rather than asserted — auto-deriving one per FK would both risk two writable encodings
+   of one fact and inflate every transport with edges nobody modelled. Whether this schema
+   *should* declare them is a modelling question about the data, not a mechanical one.
 
 *(Verified: this repo's mosaic checkout sits 3 commits behind `origin/main` and predates
 #210 — the feature is real, the local tree just has not caught up.)*

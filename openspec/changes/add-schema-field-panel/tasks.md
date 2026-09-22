@@ -123,9 +123,11 @@ unusable at forty collections, which is where this is heading.
 
 ## 10. Follow-on, not in this change
 
-- [ ] 10.1 Declare `inverse` slots in `schemas/demo.yaml` (`Donor.samples`,
-      `Sample.workflows`, `Workflow.datasets`). Small schema change, large payoff: it is
-      the difference between the flagship cross-class example running natively or through
-      a capped client-side fallback
+- [ ] 10.1 DECIDE whether `schemas/demo.yaml` should declare `inverse` slots. Not a
+      workaround — declaring is the intended interface, and #210 deliberately did not make
+      reverse edges automatic (one physical encoding per fact; every transport derives from
+      one type model). So this is a modelling question: is "a donor's samples" part of the
+      model, or only "a sample's donor"? If yes, it makes the flagship cross-class example
+      run natively instead of through Aperture's capped semijoin
 - [ ] 10.2 Bump this repo's mosaic checkout past #210 so the inverse support is actually
       present locally (currently 3 commits behind origin/main)
