@@ -57,7 +57,10 @@
       publications, 75 reagent lots) and every pool non-empty.
 - [x] 3.5 Extend `hints.yaml` with faker providers, weighted choices and
       numeric distributions for the new slots — no uniform-random
-      categoricals.
+      categoricals. **A hint whose slot is later derived is a lie**:
+      `is_expired` is set by `_fix_intervals` from `expires_on`, so its
+      `choices` weight was silently overwritten. Hint removed, receipt
+      window moved to 2022–2026 so the derived value is non-degenerate.
 - [x] 3.6 Extend `_check_referential_integrity` to cover every new edge:
       `ToxicologyReport.donor`, `Diagnosis.donor`, `Assessment.donor`,
       `ConsentRecord.donor`, `Aliquot.sample`, `Aliquot.location`,
@@ -82,6 +85,12 @@
       expected created count per class and zero errors.
 - [x] 4.4 Bring up the Docker stack and confirm Aperture lists 15
       collections, each with at least one row.
+- [x] 4.5 **Not in the plan, and the one scenario nothing else covered**:
+      check every facetable field for degeneracy, not just that facets
+      exist. A nine-row collection can collapse a weighted boolean to one
+      value by chance. All 24 new facets carry more than one value;
+      `ReagentLot.is_expired` came back 72/3 against a hint claiming
+      71/29 and was fixed at the source (see 3.5).
 
 ## 5. Measure the scaling result
 

@@ -107,10 +107,17 @@ an id that actually exists in the dataset, across all fifteen classes.
   errors
 
 ### Requirement: Aperture-facing facet, search, and traversal support
-The schema SHALL expose enum-backed facets on at least two fields per
-entity class, full-text search on at least one free-text field per class
-that has one, and a multi-hop relationship traversal path spanning the
-original four entity classes.
+The schema SHALL expose at least two facetable fields per entity class —
+enum-backed or boolean-backed, since Aperture facets both and the schema
+already describes `Dataset.is_public` as a "boolean facet" — full-text
+search on at least one free-text field per class that has one, and a
+multi-hop relationship traversal path spanning the original four entity
+classes.
+
+No facet may be degenerate: every facetable field SHALL carry more than
+one distinct value across the generated dataset. This binds hardest on
+the small dimension collections, where nine or twenty-four rows can
+collapse a weighted boolean to a single value by chance.
 
 #### Scenario: Faceting works per class
 - **WHEN** browsing any of the fifteen collections in Aperture

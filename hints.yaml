@@ -302,13 +302,22 @@ classes:
     reagent_kind:
       choices: {library_prep: 34, sequencing: 28, extraction: 19, staining: 11, calibration: 8}
     received_on:
-      date_start: "2018-01-01"
-      date_end: "2024-12-31"
+      # Reaches close to the present on purpose. `_fix_intervals` re-derives
+      # expires_on as received_on + 90..1095 days and then sets is_expired from
+      # that date, so a receipt window that stops years ago makes almost every
+      # lot expired and the facet near-degenerate (measured 72/3 with a
+      # 2018-2024 window).
+      date_start: "2022-01-01"
+      date_end: "2026-06-30"
     expires_on:
-      date_start: "2018-06-01"
-      date_end: "2027-12-31"
-    is_expired:
-      choices: {false: 71, true: 29}
+      # Sampled here only so the slot is populated; _fix_intervals overwrites it
+      # with received_on + a positive offset, because two independently drawn
+      # dates expire before they arrive about half the time.
+      date_start: "2022-06-01"
+      date_end: "2029-12-31"
+    # is_expired is NOT hinted: _fix_intervals derives it from expires_on, and a
+    # `choices` weight here would be silently overwritten — a hint that reads as
+    # a fact and is not one.
 
   QcFlag:
     name:

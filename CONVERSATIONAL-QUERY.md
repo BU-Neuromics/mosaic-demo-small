@@ -680,6 +680,14 @@ first, for the reason below.
 | Share of Haiku's 200K window | 1.2% | 4.2% |
 | **d01–d11 @ n=3** | **5 / 11** | **6 / 11** |
 
+**Both arms are labelled n=3; only the baseline actually got it.** Bedrock
+throttled during the fifteen-collection runs, and the runner scores a
+transport failure separately rather than counting it as a discovery failure —
+so `d04`, `d05` and `d10` were decided on two runs each, not three. The
+baseline had no errored runs. This does not rescue a conclusion: it is the
+same direction as the noise argument below, and a document whose subject is
+measurement honesty should not round a throttled run up to n=3.
+
 **Grounding cost grew sub-linearly.** Per-entity cost went *down*, because the
 dimension classes are small — the naive `583 × 15` projection would have
 overstated it by about 15%. At this rate the window does not bind until roughly
@@ -739,6 +747,20 @@ The pattern across every failure is lexical collision, not schema size.
   homonym-discrimination work, not field-finding, which is already fine.
 - The eval suite now has a negative case again (`n11`), and it is failing — which
   is the correct state for a case that has just identified a real defect.
+
+#### One thing the small collections nearly broke
+
+Every facetable field was checked for degeneracy rather than assumed, because
+a nine-row collection can collapse a weighted boolean to a single value by
+chance — `Instrument.is_decommissioned` is weighted 78/22, so nine rows come up
+all-`false` about 11% of the time, which would fail the schema's own facet
+requirement on a collection we shipped. It came out 7/2.
+
+One facet did degenerate, for a different reason: `ReagentLot.is_expired` read
+72/3 against a hint declaring 71/29, because `_fix_intervals` derives it from
+`expires_on` and the receipt window stopped in 2024 — so nearly every lot had
+expired by now. The hint was a statement that looked like a fact and was not.
+Removed, with the receipt window moved to 2022–2026; it now reads 52/23.
 
 ## 11. Upstream — filed, fixed, and still open
 
