@@ -636,21 +636,50 @@ The issue proposes an increment: accept a flat list of anchor-owned slots and pr
 server-side, leaving the harder to-many `aggregate`/`explode` choice for later. That alone
 would let the planner answer "which fields" questions correctly.
 
-### Found, not yet filed
+### Already fixed upstream — I was reporting stale findings
 
-Three findings from mapping the introspection surfaces, all still unfiled because the
-GitHub MCP server failed to connect for most of this session (`Authorization header is
-badly formatted`); `gh` was used instead for the two above.
+Two of the three introspection gaps recorded earlier in this session **were already fixed**
+by [#212](https://github.com/BU-Neuromics/mosaic/pull/212), which landed on `main` before
+they were written down. Verified in the merged tree:
 
-- **`slot_model_to_dict` omits `is_external_xref`**, so `mosaic://schema` carries 12 of
-  `SlotModel`'s 13 attributes.
-- **`MosaicSlotInfo` omits `is_external_xref` *and* `has_default`**, so `hippoSchema`
-  carries 11 of 13.
-- **The "mirrors REST `GET /schemas`" claims** in three docstrings overstate the
-  correspondence. REST is a separately-implemented projection off a *different* tap
+- ~~`slot_model_to_dict` omits `is_external_xref`~~ — `mcp/serialize.py` now emits both it
+  and `has_default`. `mosaic://schema` carries all **13** of `SlotModel`'s attributes.
+- ~~`MosaicSlotInfo` omits `is_external_xref` and `has_default`~~ — `graphql/resolvers.py`
+  now declares and populates both. `hippoSchema` carries all **13**.
+
+The lesson is the finding: this repo's mosaic checkout had drifted three commits behind
+`origin/main`, so a claim that was true when first investigated had stopped being true and
+nothing said so. **Check the merge base before reporting an upstream gap.** The branch has
+since been merged up.
+
+### Still open, verified against current `main`
+
+- **The "mirrors REST `GET /schemas`" claims** (`resolvers.py:582` and two others) overstate
+  the correspondence. REST is a separately-implemented projection off a *different* tap
   (`registry.induced_slots()` rather than `build_type_model()`), emitting five slot
-  attributes and **no descriptions** — so GraphQL and MCP are strict supersets, not
-  mirrors.
+  attributes and **no descriptions** — so GraphQL and MCP are strict supersets, not mirrors.
+  Unfiled.
+
+### Reverse traversal is native now, and this schema does not use it
+
+[mosaic#204](https://github.com/BU-Neuromics/mosaic/issues/204) — *"QuerySpec has no
+reverse-edge traversal"* — was **closed 2026-09-19** by
+[#210](https://github.com/BU-Neuromics/mosaic/pull/210) (ADR-0011). Reverse references are
+declared with LinkML's own `inverse` keyword and resolved as virtual fields, never
+separately stored:
+
+```yaml
+Donor:
+  attributes:
+    samples: { range: Sample, multivalued: true, inverse: donor }
+```
+
+**`schemas/demo.yaml` declares none**, which is why `Donor` has zero forward references and
+why every traversal from it currently runs as a capped client-side semijoin in Aperture
+rather than natively. Declaring the obvious inverses (`Donor.samples`,
+`Sample.workflows`, `Workflow.datasets`) is a small change with a large payoff — it is the
+difference between the flagship cross-class example running natively or through a
+fallback.
 
 ### A note on one issue that was filed wrongly
 
