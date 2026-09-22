@@ -122,3 +122,157 @@ Rollback is per-step; nothing persists and no data migrates.
 
 - Whether the entity-level description (available from `__schema` today, currently
   discarded) belongs in the panel header or the page header. Settle when building it.
+
+---
+
+## Amendment (2026-09-22): the surface is not a builder, and not a lens
+
+Driven by using it. The fields panel landed and immediately exposed an information
+architecture problem it did not create — the empty grid had been hiding it.
+
+### What was wrong
+
+**"Query builder" sits in the nav as a peer of Datasets / Donors / Samples / Workflows,
+but it is not a peer.** `openQueryBuilder()` takes no argument: it opens with whatever
+`collection` is in the URL, falling back to `anchored[0]`. So the page has an anchor, the
+nav has a selection, and they are one piece of state wearing two hats. Both paths feel
+wrong for the same reason:
+
+- *collection → Query builder* is indirect: you already said "Donors", then had to go
+  somewhere else to use it
+- *Query builder cold* is arbitrary: it silently picks one for you
+
+### The reading that was tried and rejected
+
+**"The query surface is a lens on a collection"** — each collection offering Browse |
+Query, the anchor always being the thing you clicked.
+
+**Rejected, and the reason matters more than the rejection.** It breaks on exactly the
+case the surface exists for. "Samples from female donors" is not a lens on Samples: it
+needs Donor's fields too. Framing the page as *"you are in Donors"* fights cross-class
+querying, which is the point of ADR-0035.
+
+### The reading that holds
+
+**The anchor is the shape of the answer, not a location.** A QuerySpec has exactly one
+anchor — the type of rows returned — and criteria that traverse outward. "Rows of Samples,
+constrained by something about their Donor." That is a property of *the query*, not of
+navigation. Three things follow:
+
+1. **Nav peerage is correct.** The surface is a place. It is not a mode of a collection.
+2. **The page must state its subject where a heading goes.** Today the anchor is a
+   `<select>` buried inside `.query-frame`, so nothing on screen says whether you are
+   building rows of Donors or rows of Samples.
+3. **Cold start asks the real question** — *what do you want rows of?* — rather than
+   defaulting to `anchored[0]`.
+
+### The name is the diagnosis
+
+"Query builder" names the *form*, not the job, which is why it reads as a place, behaves as
+a lens, and is neither. Renaming it around what it produces makes the rest follow.
+
+**Recommended: "Ask."** It matches the composer's own verb ("Describe the query"), it
+covers the discovery half — which is most of what the surface now does — and it is honest
+for a user who does not yet know what they are looking for. *"Find"* is the alternative and
+is better for retrieval, worse for discovery. *"Explore"* is unavailable: the results bar
+already has "Explore as graph".
+
+**Change the LABEL only.** `nav-query-builder` is a load-bearing testid across two vitest
+suites and `e2e-smoke.mjs`; renaming both in one pass buys nothing and breaks the only
+thing asserting arrangement — which cannot currently be run here (no Playwright browsers).
+
+### Grouping the fields panel, and its real limit
+
+The panel as built shows the **anchor's fields only**. Ask *"which samples came from female
+donors?"* and it shows Sample's fields while the answer talks about `sex`, which is on
+Donor. That breaks on the first cross-class question.
+
+So it groups by entity: the anchor, then the entities reachable in **one hop**.
+
+**One hop, and no further.** That is what a `RelatedCondition` can express. Showing two
+hops would list fields the artifact cannot filter on — the same class of error as discovery
+eval `d04`, where the planner reached for a field it could not project.
+
+**Both directions — and the reverse story changed under us.**
+
+`deriveEdges` returns forward edges (a reference the anchor holds) and reverse edges
+(`rev:`, a reference something else holds back). Aperture resolves the reverse kind with a
+capped client-side semijoin, which the results bar labels "semijoin tier".
+
+**That compensation is no longer the only option.** Mosaic
+[#204](https://github.com/BU-Neuromics/mosaic/issues/204) — *"QuerySpec has no reverse-edge
+traversal"* — was **closed on 2026-09-19** by
+[#210](https://github.com/BU-Neuromics/mosaic/pull/210), ADR-0011: reverse references are
+now **native**, declared with LinkML's own `inverse` keyword and resolved as virtual fields
+that are never separately stored.
+
+```yaml
+Donor:
+  attributes:
+    samples:
+      range: Sample
+      multivalued: true
+      inverse: donor        # Sample.donor is the stored FK; this side is derived
+```
+
+**But this schema declares none**, which is why `Donor` measured **zero forward
+references**. So today every traversal from Donor is a compensated semijoin — not because
+Mosaic cannot do better, but because the schema has not asked it to.
+
+Two consequences:
+
+1. The panel marks a hop by **how it will actually run** — native reference vs compensated
+   semijoin — rather than by direction. Once a schema declares `inverse`, the same hop
+   silently becomes native and the mark disappears on its own.
+2. **`schemas/demo.yaml` should declare the inverse slots** it obviously wants
+   (`Donor.samples`, `Sample.workflows`, `Workflow.datasets`). That is a separate,
+   small schema change with a large payoff here, and it is the difference between the
+   flagship cross-class example running natively or through a capped fallback.
+
+*(Verified: this repo's mosaic checkout sits 3 commits behind `origin/main` and predates
+#210 — the feature is real, the local tree just has not caught up.)*
+
+### Designing for a schema that gets much bigger
+
+The measurement above is the **small** case: four entity types, ~20 cards at one hop. The
+schemas this is heading for are substantially larger — many more collections, each with
+more fields. A grouped list that works at four entities is unusable at forty.
+
+So the panel is a **field finder**, not a field list:
+
+- **Search is a primary control, not a nicety.** Match on field name, slot name, and
+  description text — the description is the whole reason a user's vocabulary finds a field
+  whose name shares none of its words, so it must be searchable, not merely displayed.
+- **Only the anchor's group is expanded.** Reachable entities are named and collapsed, so
+  the cost of a large schema is a longer list of *group headers*, not of cards.
+- **The conversation stays the primary finder.** At scale, asking is faster than browsing,
+  and the panel is the browsable fallback and the confirmation surface — not the main way
+  in. That division is what keeps the page honest as the schema grows.
+
+This also sets a hard boundary: the panel must never try to present *every* entity in the
+deployment. It presents the anchor, and what the anchor can reach in one hop. Everything
+else is reached by changing the anchor.
+
+### Measured, because it decides the layout
+
+Field counts on the demo schema — four entity types, the small case:
+
+| Anchor | Own | One hop | Total cards |
+| --- | --- | --- | --- |
+| Dataset | 10 | Workflow | 19 |
+| Sample | 11 | Donor | 20 |
+| Workflow | 9 | Sample | 20 |
+| Donor | 9 | Sample *(reverse)* | 20 |
+
+**~20 cards on the smallest realistic schema**, on a page that must also hold results. So
+grouping is **collapsed by default with the anchor expanded** — not all-open. A schema with
+twenty entity types would otherwise make the panel unusable at exactly the scale where
+discovery matters most.
+
+### Constraints this must not relitigate
+
+- `+ filter` writes the **draft**, never the URL. Pinned by a test.
+- A related-field filter must produce a `RelatedCondition` with `edge` + nested `criteria`,
+  **not** a flat condition. `e2e-smoke.mjs` asserts sub-conditions remain descendants of
+  `query-related`.
+- The `AppShell` slot contract and the 1100px breakpoint stay untouched.

@@ -72,3 +72,60 @@
       question highlights the field it named; `+ filter` adds a condition without running;
       Run replaces the panel with results
 - [x] 6.5 Confirm no metadata question leaves a screen that is mostly empty grid
+
+## 7. The surface is a place, and says what it is (amendment)
+
+- [ ] 7.1 Rename the nav LABEL "Query builder" → "Ask". Leave `data-testid`
+      `nav-query-builder` alone — it is load-bearing in two vitest suites and
+      `e2e-smoke.mjs`, and renaming both in one pass breaks the only arrangement
+      assertion for no benefit
+- [ ] 7.2 Make the anchor the page's identity: "Rows of **Samples**" as the heading,
+      replacing the bare "Query" title and demoting the `<select>` inside `.query-frame`
+      to a change-affordance on that heading
+- [ ] 7.3 Cold start asks *what do you want rows of?* instead of silently defaulting to
+      `anchored[0]`. Arriving from a collection keeps that collection as the answer —
+      the question is already answered, so do not ask it again
+
+## 8. Group the fields panel by entity (amendment)
+
+- [ ] 8.1 Group: the anchor's own fields, then each entity reachable in ONE hop via
+      `deriveEdges`. No second hop — a `RelatedCondition` cannot express it, and showing
+      fields that cannot be filtered on repeats discovery eval `d04`'s mistake
+- [ ] 8.2 **Collapsed by default, anchor expanded.** Measured on the demo schema: every
+      anchor reaches ~20 cards at one hop with only four entity types
+- [ ] 8.3 Mark a hop by HOW IT WILL RUN — native reference vs compensated semijoin — not
+      by direction. Mosaic #204 was closed by #210 (ADR-0011): reverse references are
+      native when a schema declares LinkML `inverse`. This schema declares none, which is
+      why Donor measures ZERO forward references. Once it does, the same hop becomes
+      native and the mark disappears on its own
+- [ ] 8.4 `+ filter` on a RELATED field appends a `RelatedCondition` (`edge` + nested
+      `criteria`), never a flat one — and still writes the DRAFT, never the URL
+- [ ] 8.5 Test that a related filter nests: the sub-condition must be a DESCENDANT of the
+      `query-related` block, which `e2e-smoke.mjs` asserts
+- [ ] 8.6 Highlighting spans groups — a turn naming `sex` on Donor while anchored on
+      Sample must emphasise it in the Donor group, and expand that group
+
+## 9. Scale, because the schema is about to get much bigger (amendment)
+
+The ~20-card measurement is the FOUR-entity case. A grouped list that works there is
+unusable at forty collections, which is where this is heading.
+
+- [ ] 9.1 Search as a primary control on the panel — matching field name, slot name AND
+      description text. The description is the whole reason a user's vocabulary finds a
+      field whose name shares none of its words, so it has to be searchable, not just
+      displayed
+- [ ] 9.2 Only the anchor's group expands; reachable entities are named and collapsed, so
+      a bigger schema costs a longer list of group HEADERS, not of cards
+- [ ] 9.3 The panel never presents every entity in the deployment — only the anchor and
+      what it reaches in one hop. Everything else is reached by changing the anchor
+- [ ] 9.4 Re-measure against a large schema (hippo-benchmark is ~90 tables) before calling
+      this done. Four entity types proves nothing about forty
+
+## 10. Follow-on, not in this change
+
+- [ ] 10.1 Declare `inverse` slots in `schemas/demo.yaml` (`Donor.samples`,
+      `Sample.workflows`, `Workflow.datasets`). Small schema change, large payoff: it is
+      the difference between the flagship cross-class example running natively or through
+      a capped client-side fallback
+- [ ] 10.2 Bump this repo's mosaic checkout past #210 so the inverse support is actually
+      present locally (currently 3 commits behind origin/main)
