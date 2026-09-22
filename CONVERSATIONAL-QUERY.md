@@ -614,6 +614,58 @@ branch"* loses. It produced exactly the bounce-back the whole contract exists to
 The pattern across all four rounds says the prompt now needs a **considered rewrite**
 rather than another patch. Patching has stopped converging.
 
+### Scaling the schema: the 4 → 15 collection experiment
+
+Every claim in this section was measured against **four** entity classes and about forty
+slots. That is not a scale at which "put every class and slot description in the prompt"
+can fail, so it has never told us whether the strategy works or merely hasn't been
+stressed. `grow-demo-schema-collections` grows the schema to fifteen classes and re-runs
+the *same eleven cases, same prompt, same model*, so the difference is attributable.
+
+**Context is not the constraint.** The planner runs Haiku 4.5, whose window is 200K
+tokens. The grounding block costs 2,332 of them at four classes. Even at fifteen it stays
+an order of magnitude inside the window; what is expected to degrade first is
+**field-selection accuracy**, because there are simply more near-miss slot names to choose
+between.
+
+#### Measuring grounding cost honestly
+
+Not a character-count estimate and not a per-class average extrapolated from a different
+schema size. Two otherwise-identical planning calls — one with the full grounding, one
+with none — and the difference in **Bedrock's own `prompt_tokens`**:
+
+```python
+from reel.planner.boundary import fetch_capabilities
+from reel.story.turn import request_turn
+
+caps = fetch_capabilities()
+full = request_turn("what fields are available on datasets?", caps).usage["prompt_tokens"]
+bare = request_turn("what fields are available on datasets?", {}).usage["prompt_tokens"]
+print(full - bare)          # grounding tokens
+```
+
+#### Baseline — four collections
+
+Recorded before any schema edit, `bedrock/global.anthropic.claude-haiku-4-5-20251001-v1:0`:
+
+| | |
+| --- | --- |
+| Entity types | 4 |
+| Grounding block | 8,014 chars |
+| `prompt_tokens` with grounding | 5,410 |
+| `prompt_tokens` without | 3,078 |
+| **Grounding tokens** | **2,332** (583/entity) |
+| **d01–d11 @ n=3** | **5 / 11** |
+
+Failing: d04 (2/3), d06 (0/3), d07 (0/3), d09 (2/3), d10 (0/3), d11 (0/3).
+
+**One case will change meaning, not degrade.** `d06` — *"what do we have on donors about
+toxicology reports?"* — is the negative case, asserting the planner names nothing for a
+topic the schema does not model. After this change the schema *does* model toxicology, so
+d06's correct answer becomes a set of real slots. That is bookkeeping, not a regression,
+and it is recorded as such rather than being quietly folded into either score.
+
+
 ## 11. Upstream — filed, fixed, and still open
 
 ### Filed and fixed
