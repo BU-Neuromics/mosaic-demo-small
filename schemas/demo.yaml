@@ -191,6 +191,459 @@ classes:
           Inlined quality-control metrics for this dataset (a value object,
           not its own entity — exercises the structured/JSON slot kind).
 
+  ToxicologyReport:
+    is_a: Entity
+    description: >-
+      A post-mortem toxicology screen run on a single donor. Not every donor
+      has one — screens are ordered selectively, so this collection is
+      deliberately sparser than its parent.
+    attributes:
+      name:
+        required: true
+        description: Human-readable label for this toxicology report.
+      donor:
+        range: Donor
+        required: true
+        description: >-
+          The donor this screen was run on (single-valued reference — a real
+          FK column).
+      panel_type:
+        range: ToxPanelTypeEnum
+        required: true
+        description: Which assay panel was run (facet).
+      specimen_matrix:
+        range: SpecimenMatrixEnum
+        required: true
+        description: >-
+          The biological matrix the screen was run on (facet). Distinct from
+          `Sample.sample_type` — this is what the toxicologist tested, not
+          what was banked.
+      substances_detected:
+        multivalued: true
+        description: >-
+          Substances the panel returned above its reporting threshold, by
+          common name (e.g. `ethanol`, `fentanyl`). Empty when the screen was
+          negative.
+      is_positive:
+        range: boolean
+        required: true
+        description: Whether any substance was detected above threshold (boolean facet).
+      reported_at:
+        range: date
+        description: Date the toxicology result was reported back.
+      findings_summary:
+        description: >-
+          Free-text narrative of the toxicology findings. Full-text
+          searchable.
+        annotations:
+          hippo_search: fts5
+
+  Diagnosis:
+    is_a: Entity
+    description: >-
+      A neuropathological diagnosis assigned to a donor. A donor may carry
+      several, of which at most one is marked primary.
+    annotations:
+      # Mosaic derives bundle/accessor names as snake_case(ClassName) + "s",
+      # which makes this one `diagnosiss`. `hippo_accessor` is the framework's
+      # own override for exactly that case (hippo_ext.yaml names `analyses`
+      # among its examples) — the only class in this schema that needs it.
+      hippo_accessor: diagnoses
+    attributes:
+      name:
+        required: true
+        description: Human-readable label for this diagnosis record.
+      donor:
+        range: Donor
+        required: true
+        description: The donor this diagnosis was assigned to.
+      condition_name:
+        required: true
+        description: >-
+          Name of the diagnosed condition, as recorded by the
+          neuropathologist.
+      certainty:
+        range: DiagnosisCertaintyEnum
+        required: true
+        description: How confidently the diagnosis was made (facet).
+      braak_stage:
+        range: integer
+        description: >-
+          Braak neurofibrillary tangle stage, 0–6. Specific to tau pathology
+          — absent for diagnoses where it does not apply.
+      is_primary:
+        range: boolean
+        required: true
+        description: >-
+          Whether this is the donor's primary diagnosis, as opposed to a
+          contributing or incidental one (boolean facet).
+      diagnosed_at:
+        range: date
+        description: Date the diagnosis was recorded.
+
+  Assessment:
+    is_a: Entity
+    description: >-
+      A cognitive or clinical assessment administered to a donor during life.
+    attributes:
+      name:
+        required: true
+        description: Human-readable label for this assessment.
+      donor:
+        range: Donor
+        required: true
+        description: The donor this assessment was administered to.
+      instrument_name:
+        range: AssessmentInstrumentEnum
+        required: true
+        description: >-
+          Which standardised instrument was administered (facet). "Instrument"
+          here is a clinical questionnaire — unrelated to the `Instrument`
+          collection, which models laboratory hardware.
+      raw_score:
+        range: float
+        required: true
+        description: >-
+          The instrument's raw total score, before any normalisation. Scales
+          differ per instrument and are not comparable across them.
+      percentile_rank:
+        range: float
+        description: >-
+          Score expressed as a percentile against the instrument's reference
+          population, where one is published.
+      is_baseline:
+        range: boolean
+        required: true
+        description: >-
+          Whether this was the donor's first administration of this
+          instrument (boolean facet).
+      administered_at:
+        range: date
+        description: Date the assessment was administered.
+      administered_by:
+        description: Name or initials of the administering clinician.
+
+  ConsentRecord:
+    is_a: Entity
+    description: >-
+      A donor's recorded research consent, including withdrawal. Governance
+      data — it constrains what may be done with the donor's samples and
+      datasets rather than describing them.
+    attributes:
+      name:
+        required: true
+        description: Human-readable label for this consent record.
+      donor:
+        range: Donor
+        required: true
+        description: The donor who gave (or withdrew) this consent.
+      scope:
+        range: ConsentScopeEnum
+        required: true
+        description: What the donor consented their material to be used for (facet).
+      signed_at:
+        range: date
+        required: true
+        description: Date the consent was signed.
+      withdrawn_at:
+        range: date
+        description: >-
+          Date consent was withdrawn, when it was. Sparse — most consents are
+          never withdrawn, and this is always later than `signed_at` when
+          present.
+      is_active:
+        range: boolean
+        required: true
+        description: Whether this consent is currently in force (boolean facet).
+      restrictions:
+        description: >-
+          Free-text description of any donor-specified restriction on use.
+
+  Aliquot:
+    is_a: Entity
+    description: >-
+      A sub-divided portion of a sample, tracked individually because
+      freeze-thaw cycles and volume are per-portion rather than per-sample.
+    attributes:
+      name:
+        required: true
+        description: Human-readable label for this aliquot.
+      sample:
+        range: Sample
+        required: true
+        description: The sample this aliquot was divided from.
+      location:
+        range: StorageLocation
+        required: true
+        description: Where this aliquot is physically stored.
+      volume_ul:
+        range: float
+        required: true
+        description: Remaining volume, in microlitres.
+      container_type:
+        range: ContainerTypeEnum
+        required: true
+        description: Physical container the aliquot is held in (facet).
+      thaw_count:
+        range: integer
+        required: true
+        description: >-
+          Number of freeze-thaw cycles this aliquot has undergone. Skewed —
+          most aliquots have never been thawed.
+      is_depleted:
+        range: boolean
+        required: true
+        description: Whether the aliquot has been used up (boolean facet).
+      notes:
+        description: >-
+          Free-text handling notes for this aliquot. Deliberately shares a
+          name with `Donor.notes` — the two are different fields about
+          different things.
+
+  StorageLocation:
+    is_a: Entity
+    description: >-
+      A physical storage position — a freezer, shelf and rack within a
+      facility. A small dimension collection: many aliquots share few
+      locations.
+    attributes:
+      name:
+        required: true
+        description: Human-readable label for this storage location.
+      facility_type:
+        range: FacilityTypeEnum
+        required: true
+        description: Kind of facility this location sits in (facet).
+      freezer_id:
+        required: true
+        description: >-
+          Asset tag of the freezer or cabinet. Exact-match lookup key, not
+          meant for full-text search.
+        annotations:
+          hippo_index: true
+      shelf:
+        description: Shelf or rack position within the freezer.
+      temperature_celsius:
+        range: float
+        required: true
+        description: Set-point temperature of this location, in degrees Celsius.
+      capacity_slots:
+        range: integer
+        description: Total number of aliquot positions this location holds.
+      is_at_capacity:
+        range: boolean
+        required: true
+        description: Whether the location is currently full (boolean facet).
+
+  RunConfiguration:
+    is_a: Entity
+    description: >-
+      The hardware, reagents and software a workflow run was executed with.
+      Separate from `Workflow` because the same pipeline is re-run on
+      different instruments and reagent lots over time.
+    attributes:
+      name:
+        required: true
+        description: Human-readable label for this run configuration.
+      workflow:
+        range: Workflow
+        required: true
+        description: The workflow run this configuration describes.
+      instrument:
+        range: Instrument
+        required: true
+        description: The instrument the run was executed on.
+      reagent_lots:
+        range: ReagentLot
+        multivalued: true
+        description: >-
+          Reagent lots consumed by this run (multivalued reference — stored in
+          Mosaic's `relationships` table, forward-resolved only).
+      software_version:
+        required: true
+        description: >-
+          Version string of the pipeline software, e.g. `2.14.1`. Exact-match
+          lookup key.
+        annotations:
+          hippo_index: true
+      parameter_preset:
+        range: ParameterPresetEnum
+        required: true
+        description: Named parameter set the run was launched with (facet).
+      compute_hours:
+        range: float
+        description: >-
+          CPU-hours consumed by the run. Distinct from
+          `Workflow.duration_hours`, which is wall-clock.
+      is_reproducible:
+        range: boolean
+        required: true
+        description: >-
+          Whether every input needed to re-run this configuration is still
+          available (boolean facet).
+
+  Instrument:
+    is_a: Entity
+    description: >-
+      A piece of laboratory hardware that workflow runs execute on. A small
+      dimension collection.
+    attributes:
+      name:
+        required: true
+        description: Human-readable label for this instrument.
+      platform:
+        range: InstrumentPlatformEnum
+        required: true
+        description: Technology platform this instrument implements (facet).
+      manufacturer:
+        required: true
+        description: Manufacturer name.
+      model_name:
+        required: true
+        description: Manufacturer's model designation.
+      serial_number:
+        required: true
+        description: >-
+          Manufacturer serial number. Unique per instrument; exact-match
+          lookup key.
+        annotations:
+          hippo_index: true
+      commissioned_on:
+        range: date
+        description: Date the instrument entered service.
+      is_decommissioned:
+        range: boolean
+        required: true
+        description: Whether the instrument has been retired (boolean facet).
+      notes:
+        description: >-
+          Free-text service notes. Shares a name with `Donor.notes` and
+          `Aliquot.notes` deliberately.
+
+  ReagentLot:
+    is_a: Entity
+    description: >-
+      A single manufactured lot of a laboratory reagent. Tracked because lot
+      variation is a known source of batch effects.
+    attributes:
+      name:
+        required: true
+        description: Human-readable label for this reagent lot.
+      lot_number:
+        required: true
+        description: >-
+          Manufacturer lot number. Exact-match lookup key, not meant for
+          full-text search.
+        annotations:
+          hippo_index: true
+      vendor:
+        required: true
+        description: Supplier the lot was purchased from.
+      reagent_kind:
+        range: ReagentKindEnum
+        required: true
+        description: Category of reagent (facet).
+      received_on:
+        range: date
+        required: true
+        description: Date the lot was received into inventory.
+      expires_on:
+        range: date
+        required: true
+        description: >-
+          Manufacturer expiry date. Always later than `received_on`.
+      is_expired:
+        range: boolean
+        required: true
+        description: Whether the lot is past its expiry date (boolean facet).
+
+  QcFlag:
+    is_a: Entity
+    description: >-
+      A quality-control problem raised against a dataset. Contrast with
+      `Dataset.quality_metrics`, which is an inlined value object holding
+      measurements — a flag is its own entity because it has a lifecycle.
+    attributes:
+      name:
+        required: true
+        description: Human-readable label for this QC flag.
+      dataset:
+        range: Dataset
+        required: true
+        description: The dataset this flag was raised against.
+      flag_code:
+        range: QcFlagCodeEnum
+        required: true
+        description: Which check produced the flag (facet).
+      severity:
+        range: QcSeverityEnum
+        required: true
+        description: How serious the flag is (facet).
+      raised_at:
+        range: datetime
+        required: true
+        description: When the flag was raised.
+      resolved_at:
+        range: datetime
+        description: >-
+          When the flag was resolved, if it has been. Sparse, and always
+          later than `raised_at` when present.
+      is_resolved:
+        range: boolean
+        required: true
+        description: Whether the flag has been resolved (boolean facet).
+      detail:
+        description: >-
+          Free-text explanation of what the check found. Full-text
+          searchable.
+        annotations:
+          hippo_search: fts5
+
+  Publication:
+    is_a: Entity
+    description: >-
+      A published paper that used one or more of this bank's datasets. Cites
+      datasets through a multivalued reference. A small dimension collection.
+    attributes:
+      name:
+        required: true
+        description: Human-readable label for this publication.
+      title:
+        required: true
+        description: Full title of the paper.
+      datasets:
+        range: Dataset
+        multivalued: true
+        description: >-
+          Datasets this paper used (multivalued reference — stored in
+          Mosaic's `relationships` table, forward-resolved only).
+      doi:
+        required: true
+        description: >-
+          Digital Object Identifier. Exact-match lookup key, not meant for
+          full-text search.
+        annotations:
+          hippo_index: true
+      journal:
+        required: true
+        description: Name of the journal the paper appeared in.
+      publication_type:
+        range: PublicationTypeEnum
+        required: true
+        description: Kind of publication (facet).
+      published_on:
+        range: date
+        description: Date of publication.
+      is_open_access:
+        range: boolean
+        required: true
+        description: Whether the paper is openly accessible (boolean facet).
+      abstract_text:
+        description: >-
+          The paper's abstract. Full-text searchable.
+        annotations:
+          hippo_search: fts5
+
   QualityMetrics:
     description: >-
       Inlined quality-control measurements for a Dataset. Not an entity — has
@@ -299,3 +752,131 @@ enums:
       public:
       controlled:
       restricted:
+
+  ToxPanelTypeEnum:
+    description: Assay panel run by a toxicology screen.
+    permissible_values:
+      basic_screen:
+        description: Common drugs of abuse and alcohol.
+      expanded_screen:
+        description: Basic screen plus prescription and synthetic compounds.
+      targeted_confirmation:
+        description: Quantitative confirmation of a specific compound.
+      heavy_metals:
+
+  SpecimenMatrixEnum:
+    description: >-
+      Biological matrix a toxicology screen was run on. Distinct from
+      SampleTypeEnum, which describes banked material rather than what was
+      tested.
+    permissible_values:
+      blood:
+      urine:
+      vitreous_humour:
+        description: Fluid from the eye — resistant to post-mortem redistribution.
+      liver_tissue:
+      hair:
+
+  DiagnosisCertaintyEnum:
+    description: Confidence with which a neuropathological diagnosis was made.
+    permissible_values:
+      definite:
+      probable:
+      possible:
+      ruled_out:
+
+  AssessmentInstrumentEnum:
+    description: >-
+      Standardised clinical instrument administered. A questionnaire, not
+      laboratory hardware — see InstrumentPlatformEnum for the latter.
+    permissible_values:
+      mmse:
+        description: Mini-Mental State Examination.
+      moca:
+        description: Montreal Cognitive Assessment.
+      cdr:
+        description: Clinical Dementia Rating.
+      gds:
+        description: Geriatric Depression Scale.
+      npi:
+        description: Neuropsychiatric Inventory.
+
+  ConsentScopeEnum:
+    description: What a donor consented their material to be used for.
+    permissible_values:
+      broad_research:
+        description: Any research use, no further approval required.
+      disease_specific:
+        description: Research into the donor's own diagnosed condition only.
+      no_commercial:
+        description: Research use permitted, commercial exploitation excluded.
+      withdrawn:
+        description: Consent has been withdrawn; material may not be used.
+
+  ContainerTypeEnum:
+    description: Physical container an aliquot is held in.
+    permissible_values:
+      cryovial:
+      microtube:
+      plate_well:
+      paraffin_block:
+
+  FacilityTypeEnum:
+    description: Kind of facility a storage location sits in.
+    permissible_values:
+      onsite_freezer:
+      offsite_repository:
+      liquid_nitrogen:
+      ambient_archive:
+
+  ParameterPresetEnum:
+    description: Named parameter set a workflow run was launched with.
+    permissible_values:
+      default:
+      high_sensitivity:
+      fast:
+      legacy:
+        description: Parameters retained to reproduce historical runs.
+
+  InstrumentPlatformEnum:
+    description: Technology platform a laboratory instrument implements.
+    permissible_values:
+      illumina:
+      pacbio:
+      nanopore:
+      mass_spec:
+        description: Mass spectrometry.
+      microscope:
+
+  ReagentKindEnum:
+    description: Category of laboratory reagent.
+    permissible_values:
+      library_prep:
+      sequencing:
+      extraction:
+      staining:
+      calibration:
+
+  QcSeverityEnum:
+    description: How serious a quality-control flag is.
+    permissible_values:
+      info:
+      warning:
+      critical:
+
+  QcFlagCodeEnum:
+    description: Which quality-control check produced a flag.
+    permissible_values:
+      low_coverage:
+      high_duplication:
+      adapter_contamination:
+      sample_swap_suspected:
+      failed_calibration:
+
+  PublicationTypeEnum:
+    description: Kind of publication.
+    permissible_values:
+      journal_article:
+      preprint:
+      review:
+      conference_abstract:

@@ -114,3 +114,245 @@ classes:
       params: {lam: 0.15}
       minimum: 0
       maximum: 60
+
+  # ---- collections added by grow-demo-schema-collections ----
+  # Weighted, sparse and skewed for the same reason as the four above: uniform
+  # categoricals and fully-populated optionals make every row look alike, and a
+  # facet with an even split is not a facet anyone would use.
+
+  ToxicologyReport:
+    name:
+      faker: bothify
+      params: {text: "TOX-####"}
+    panel_type:
+      choices: {basic_screen: 55, expanded_screen: 28, targeted_confirmation: 12, heavy_metals: 5}
+    specimen_matrix:
+      choices: {blood: 50, urine: 22, vitreous_humour: 14, liver_tissue: 10, hair: 4}
+    is_positive:
+      choices: {false: 62, true: 38}
+    substances_detected:
+      prob: 0.38
+      cardinality: {min: 1, max: 4, dist: poisson, lam: 1}
+      choices: [ethanol, fentanyl, cocaine, diazepam, morphine, amphetamine, cannabinoids]
+    reported_at:
+      prob: 0.9
+      date_start: "2015-01-01"
+      date_end: "2024-12-31"
+    findings_summary:
+      prob: 0.55
+
+  Diagnosis:
+    name:
+      faker: bothify
+      params: {text: "DX-#####"}
+    certainty:
+      choices: {definite: 42, probable: 33, possible: 20, ruled_out: 5}
+    condition_name:
+      choices: [
+        "Chronic traumatic encephalopathy", "Alzheimer's disease",
+        "Lewy body disease", "Frontotemporal lobar degeneration",
+        "Vascular cognitive impairment", "Amyotrophic lateral sclerosis",
+        "Progressive supranuclear palsy",
+      ]
+    braak_stage:
+      prob: 0.6
+      choices: [0, 1, 2, 3, 4, 5, 6]
+      weights: [8, 12, 18, 22, 18, 14, 8]
+    is_primary:
+      choices: {false: 65, true: 35}
+    diagnosed_at:
+      prob: 0.88
+      date_start: "2015-01-01"
+      date_end: "2024-12-31"
+
+  Assessment:
+    name:
+      faker: bothify
+      params: {text: "ASMT-#####"}
+    instrument_name:
+      choices: {mmse: 34, moca: 28, cdr: 18, gds: 12, npi: 8}
+    raw_score:
+      distribution: normal
+      params: {mean: 22, std: 6}
+      minimum: 0
+      maximum: 30
+    percentile_rank:
+      prob: 0.45
+      distribution: uniform
+      minimum: 1
+      maximum: 99
+    is_baseline:
+      choices: {false: 58, true: 42}
+    administered_at:
+      prob: 0.92
+      date_start: "2010-01-01"
+      date_end: "2024-12-31"
+    administered_by:
+      prob: 0.7
+      faker: name
+
+  ConsentRecord:
+    name:
+      faker: bothify
+      params: {text: "CONSENT-#####"}
+    scope:
+      choices: {broad_research: 58, disease_specific: 24, no_commercial: 15, withdrawn: 3}
+    signed_at:
+      date_start: "2008-01-01"
+      date_end: "2023-12-31"
+    withdrawn_at:
+      prob: 0.06
+      date_start: "2009-01-01"
+      date_end: "2024-12-31"
+    is_active:
+      choices: {true: 94, false: 6}
+    restrictions:
+      prob: 0.12
+
+  Aliquot:
+    name:
+      faker: bothify
+      params: {text: "ALQ-######"}
+    container_type:
+      choices: {cryovial: 62, microtube: 22, plate_well: 11, paraffin_block: 5}
+    volume_ul:
+      distribution: normal
+      params: {mean: 480, std: 220}
+      minimum: 10
+      maximum: 2000
+    thaw_count:
+      choices: [0, 1, 2, 3, 4]
+      weights: [58, 24, 11, 5, 2]
+    is_depleted:
+      choices: {false: 84, true: 16}
+    notes:
+      prob: 0.22
+
+  StorageLocation:
+    name:
+      faker: bothify
+      params: {text: "LOC-##?"}
+    facility_type:
+      choices: {onsite_freezer: 58, offsite_repository: 17, liquid_nitrogen: 17, ambient_archive: 8}
+    freezer_id:
+      pattern: "FRZ-[0-9]{4}"
+    shelf:
+      prob: 0.85
+      pattern: "S[0-9]-R[0-9]"
+    temperature_celsius:
+      choices: [-196.0, -80.0, -20.0, 4.0, 21.0]
+      weights: [17, 50, 16, 9, 8]
+    capacity_slots:
+      prob: 0.8
+      choices: [81, 100, 196, 400, 900]
+      weights: [30, 25, 20, 15, 10]
+    is_at_capacity:
+      choices: {false: 79, true: 21}
+
+  RunConfiguration:
+    name:
+      faker: bothify
+      params: {text: "RUNCFG-#####"}
+    reagent_lots:
+      prob: 0.93
+      cardinality: {min: 1, max: 4, dist: poisson, lam: 2}
+    software_version:
+      pattern: "[1-4].[0-9]{1,2}.[0-9]"
+    parameter_preset:
+      choices: {default: 64, high_sensitivity: 19, fast: 12, legacy: 5}
+    compute_hours:
+      prob: 0.86
+      distribution: lognormal
+      params: {mean: 1.8, sigma: 0.9}
+      minimum: 0.1
+      maximum: 720
+    is_reproducible:
+      choices: {true: 77, false: 23}
+
+  Instrument:
+    name:
+      faker: bothify
+      params: {text: "INST-##"}
+    platform:
+      choices: {illumina: 45, mass_spec: 20, nanopore: 14, pacbio: 12, microscope: 9}
+    manufacturer:
+      choices: [Illumina, "Pacific Biosciences", "Oxford Nanopore", Thermo, Leica]
+    model_name:
+      faker: bothify
+      params: {text: "??-###"}
+    serial_number:
+      pattern: "SN[0-9]{8}"
+    commissioned_on:
+      prob: 0.9
+      date_start: "2012-01-01"
+      date_end: "2023-12-31"
+    is_decommissioned:
+      choices: {false: 78, true: 22}
+    notes:
+      prob: 0.3
+
+  ReagentLot:
+    name:
+      faker: bothify
+      params: {text: "LOT-#####"}
+    lot_number:
+      pattern: "L[0-9]{7}"
+    vendor:
+      choices: [Illumina, NEB, Qiagen, Roche, Agilent, Takara]
+    reagent_kind:
+      choices: {library_prep: 34, sequencing: 28, extraction: 19, staining: 11, calibration: 8}
+    received_on:
+      date_start: "2018-01-01"
+      date_end: "2024-12-31"
+    expires_on:
+      date_start: "2018-06-01"
+      date_end: "2027-12-31"
+    is_expired:
+      choices: {false: 71, true: 29}
+
+  QcFlag:
+    name:
+      faker: bothify
+      params: {text: "QC-######"}
+    flag_code:
+      choices: {low_coverage: 32, high_duplication: 26, adapter_contamination: 20, failed_calibration: 14, sample_swap_suspected: 8}
+    severity:
+      choices: {warning: 54, info: 33, critical: 13}
+    raised_at:
+      date_start: "2016-01-01"
+      date_end: "2024-12-31"
+    resolved_at:
+      prob: 0.63
+      date_start: "2016-01-01"
+      date_end: "2025-06-30"
+    is_resolved:
+      choices: {true: 63, false: 37}
+    detail:
+      prob: 0.7
+
+  Publication:
+    name:
+      faker: bothify
+      params: {text: "PUB-###"}
+    title:
+      faker: sentence
+    datasets:
+      prob: 0.95
+      cardinality: {min: 1, max: 6, dist: poisson, lam: 2}
+    doi:
+      pattern: "10.[0-9]{4}/demo.[0-9]{6}"
+    journal:
+      choices: [
+        "Acta Neuropathologica", "Brain", "Journal of Neurotrauma",
+        "Nature Neuroscience", "Annals of Neurology", "bioRxiv",
+      ]
+    publication_type:
+      choices: {journal_article: 62, preprint: 20, review: 11, conference_abstract: 7}
+    published_on:
+      prob: 0.93
+      date_start: "2016-01-01"
+      date_end: "2025-06-30"
+    is_open_access:
+      choices: {true: 57, false: 43}
+    abstract_text:
+      prob: 0.8
