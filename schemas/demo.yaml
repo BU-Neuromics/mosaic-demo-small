@@ -399,9 +399,8 @@ classes:
         description: Whether the aliquot has been used up (boolean facet).
       notes:
         description: >-
-          Free-text handling notes for this aliquot. Deliberately shares a
-          name with `Donor.notes` — the two are different fields about
-          different things.
+          Free-text handling notes for this aliquot — thaw incidents,
+          transfers, anything a technician recorded by hand.
 
   StorageLocation:
     is_a: Entity
@@ -520,8 +519,8 @@ classes:
         description: Whether the instrument has been retired (boolean facet).
       notes:
         description: >-
-          Free-text service notes. Shares a name with `Donor.notes` and
-          `Aliquot.notes` deliberately.
+          Free-text service notes for this instrument — calibration history,
+          faults, engineer visits.
 
   ReagentLot:
     is_a: Entity

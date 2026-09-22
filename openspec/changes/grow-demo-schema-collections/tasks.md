@@ -125,6 +125,25 @@
 - [x] 6.2 State plainly what the measurement showed, including if the
       answer is "no measurable degradation at 15" — that is a real and
       useful result, not a failed experiment.
+- [x] 6.4 **Not in the plan, and it was the right thing to ask for**: drive the
+      query builder page in a browser against the 15-collection schema, and
+      re-run every example in the document rather than carrying forward
+      remembered ones. Found three things nothing else would have:
+      the Fields panel renders whatever the anchor is rather than what the
+      answer was about; the left nav desyncs from the anchor picker; and two
+      field descriptions narrated this schema's own test design at the
+      researcher (fixed — the name collisions stay, the commentary goes).
+- [x] 6.5 Re-run all 25 example questions and record measured anchors,
+      criteria and row counts. 24 of 25 stable across two samples; `d04`
+      is the exception and the reason is `RunConfiguration.compute_hours`
+      making "how long did each run take?" genuinely ambiguous against
+      `Workflow.duration_hours` — a right-answer change, not a regression.
+- [x] 6.6 Record that the four original classes are frozen but their
+      **generated data is not**: fifteen pools consume the seeded RNG
+      differently, so `history_of_rhi` moved 50 → 58 and every donor value
+      shifted, while ids stayed identical. Does not affect the discovery
+      comparison, which grades slot names and never row counts.
+
 - [x] 6.3 If degradation is measurable, note it as the evidence that
       motivates the prompt rewrite, which remains a separate change.
       **It is, and it is not where we expected.** Field-finding on the
