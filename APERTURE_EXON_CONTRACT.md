@@ -181,9 +181,26 @@ new tool to that same surface rather than starting a separate boundary.
 ## Open questions not yet resolved
 
 - Whether `QuerySpec`'s `columns`/`explode` mechanism can be scoped to match a
-  `RelatedCondition`'s own sub-criteria on the same edge — still unresolved even in ADR-0035
-  itself ("field-level schema lives with the implementation"), and directly relevant to any
-  "distinguish not-checked from none-found" style question in a conversational flow.
+  `RelatedCondition`'s own sub-criteria on the same edge — **a recommended resolution now exists
+  to pressure-test**, in [Aperture ADR-0041](https://github.com/BU-Neuromics/aperture/pull/66)
+  (Proposed 2026-09-22), which builds the `columns` field ADR-0035 reserved.
+
+  **Recommended: all members by default, with an explicit per-explode "only the ones matching my
+  criteria" toggle, and the active choice stated on screen.** The argument is that criteria select
+  *anchors*, not members: a query for workflows having at least one tissue sample returns
+  *workflows*, and the result total counts workflows. Silently narrowing the exploded rows to the
+  matching samples would make the table disagree with the number printed above it — and the
+  conversational flow is where that is most costly, since the user reads the number in one turn
+  and the rows in another.
+
+  It is a **defaults question, not a capability one**: the sub-criteria are already in hand
+  client-side, and server-side they are the same predicate, so both readings are cheap. Which is
+  also why "distinguish not-checked from none-found" survives either way — the toggle makes the
+  distinction visible rather than inferring it from a row count.
+
+  Two dependencies, stated so the answer is not read as available today: `columns` is still
+  hard-rejected by Mosaic (`COLUMNS_NOT_SUPPORTED`), so Aperture ships the projection client-side
+  first; and the question is settled at ADR-0041's ratification, not by this pointer.
 - Exact UX for "suspended" turns (decision 1 above) — Reel's model specifies the *behavior*
   (flag, don't discard), not the UI treatment; Aperture would need to design that affordance.
 - Whether Reel, once built, actually adopts this contract as designed, or arrives at something
