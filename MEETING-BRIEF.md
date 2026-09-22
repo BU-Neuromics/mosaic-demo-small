@@ -16,8 +16,9 @@ Updated 2026-09-21.
 6. [Queries to try](#6-queries-to-try)
 7. [How the Docker stack was made to work](#7-how-the-docker-stack-was-made-to-work) ← *the part worth reading twice*
 8. [Where the planner now lives](#8-where-the-planner-now-lives)
-9. [Where we stand](#9-where-we-stand) · [Measuring it](#9a-measuring-it)
-10. [Questions for the room](#10-questions-for-the-room)
+9. [Where we stand](#9-where-we-stand)
+10. [Measuring it](#10-measuring-it)
+11. [Questions for the room](#11-questions-for-the-room)
 
 ---
 
@@ -213,6 +214,16 @@ The point is a refusal to invent, not a gap in the data. A planner that always f
 shows it isn't doing that. It's the most reassuring thing in the demo, and it's now a
 standing eval case (`d06`) rather than a thing we check by hand.
 
+### Choosing what comes back
+
+After any query returns rows, the **Fields** button beside the exports narrows the table
+to the columns you care about — and both exports follow it. Worth showing right after a
+discovery question: it closes the loop from *"which field holds this?"* to *"show me just
+that."*
+
+The honest footnote, if anyone asks: every field still crosses the wire. This is
+client-side projection, because the query artifact cannot yet carry a field list.
+
 ### The two-step, if you want to show the full loop
 
 > **what do we have on donors about head injuries?** → then → **yes, and only the case cohort**
@@ -347,6 +358,8 @@ than a rewrite, and the container slot is identical either way.
 - The full stack in Docker, one port, no host processes
 - The planner packaged as its own image, carrying **no schema, no data, no fixtures** —
   the schema arrives at runtime, which is what lets one image serve any deployment
+- **Discovery is graded**, on the slots a turn names — §10
+- **The user picks which fields to read**, and exports honour the choice
 
 ### Not yet
 
@@ -354,12 +367,13 @@ than a rewrite, and the container slot is identical either way.
 | --- | --- |
 | **`make chat` from pinned images** | Needs a Mosaic newer than v0.13.0 — for `--mcp` and the Host fix. `make chat-dev` works today. |
 | **A certified deployment** | `ide` builds from source and is exempt from the deploy gate. Real users on `solo` need a Mosaic release *and* a Reel release to certify against. |
-| **Harness coverage** | **Now covered.** Discovery is graded on the slots a turn names — see below. The *older* reliability suite still grades the retired query-plan emitter and is a separate, unfinished job. |
+| **Field selection in the *spec*** | The user can choose which fields to read, but the **planner** cannot express that choice — `columns` is rejected at parse. This is why eval case `d04` stays red. [mosaic#215](https://github.com/BU-Neuromics/mosaic/issues/215). |
+| **The older reliability suite** | It still grades the *retired* query-plan emitter. Separate, unfinished, and carrying an undecided design question of its own (how to route facet- and range-shaped questions). |
 | **Prompt behaviour** | Tuned, not proven. The questions in §6 were verified against live data; a different phrasing may still surprise us. |
 
 ---
 
-## 9a. Measuring it
+## 10. Measuring it
 
 The goal statement fixes what to assert, so this wasn't a judgement call:
 
@@ -371,8 +385,15 @@ never row counts, never a table of field metadata. An answer that reads beautifu
 names the wrong field has failed.
 
 ```bash
-MOSAIC_MCP_URL=http://localhost:8099/mcp REEL_EVAL_CASES=../mosaic-demo-small/evals/discovery.yaml     python -m reel.evals.run
+cd reel
+MOSAIC_MCP_URL=http://localhost:8099/mcp \
+REEL_EVAL_CASES=../mosaic-demo-small/evals/discovery.yaml \
+    python -m reel.evals.run
 ```
+
+Exit status is the number of failing cases, so it works as a gate without parsing
+output. It is deliberately **not** part of `pytest tests/` — every case spends a model
+call, and CI has to stay free and credential-less.
 
 Three design choices worth stating:
 
@@ -398,13 +419,38 @@ wrong.
 
 ---
 
-## 10. Questions for the room
+## 11. Questions for the room
 
-1. **Certification path.** Reaching real users means cutting a Mosaic release and a Reel
-   release. What's the appetite?
-2. **Harness coverage.** The conversational path is ungraded. Worth building
-   conversational cases, or is live verification enough for now?
-3. **Cost exposure.** Every turn spends a model invocation, and the boundary has no
+1. **Certification path.** Reaching real users means cutting a **Mosaic** release and a
+   **Reel** release. `make chat` from pinned images doesn't work until the first, and
+   `solo` can't carry the planner until both. What's the appetite?
+
+2. **Field selection in the spec** — [mosaic#215](https://github.com/BU-Neuromics/mosaic/issues/215).
+   The goal's last clause is *"a query spec that pulls back specific fields"*, and the
+   spec can't say it. The issue proposes an increment: accept a flat list of anchor-owned
+   slots and project server-side, leaving ADR-0035's harder to-many `aggregate`/`explode`
+   choice for later. **Is that increment acceptable, and who takes it?**
+
+3. **Retiring the old query-plan path.** It's dead code the reliability suite still
+   grades, and retiring it is the precondition the Reel migration is waiting on. It also
+   contains a genuinely undecided design question — how to route facet- and range-shaped
+   questions, where the obvious fix would leak into the conversational contract.
+
+4. **Cost exposure.** Every turn spends a model invocation, and the boundary has no
    authentication — anyone who can reach it can cause spend, with no attribution. This was
    **accepted deliberately** when ADR-0010 was ratified, with rate limiting deferred. It
    should be a decision the room has made, not one it inherits.
+
+---
+
+## What I'd want agreed before the next stretch
+
+Not decisions for the room so much as things that will rot if nobody owns them:
+
+- **The grader is young.** Two of its bugs surfaced on its first live run. Treat 5/7 as a
+  starting line, not a score — and resist tuning the grader to make cases pass, which is
+  how a suite stops measuring anything.
+- **`d04` and `d07` should stay red** until the things they describe are fixed. They are
+  the cheapest reminder that the goal is not fully delivered.
+- **Nothing here is on `main`** — five branches, listed in §9. They want reviewing as a
+  set, because several changes only make sense together.
