@@ -125,6 +125,22 @@ Three rounds of fixes, each from watching someone use it:
 | A locked builder showing the *previous* anchor, beside a proposal it claimed to own | **Adopt the proposal into the builder's draft** the moment it arrives. |
 | *"Use in builder"* | Renamed **"Run this query"** — because that is what it does. Writing the spec to the URL *is* execution here; the old label undersold it. |
 
+### And closing the last mile
+
+The goal ends in *"the specific data elements they wish to include"* — and until now the
+results table returned **every** column of every row. Discovery could identify exactly
+the right field and the user still got everything back.
+
+The results table now has a **Fields** control: pick which columns to read, and both
+exports honour the choice. It reads *"Fields (3 of 9)"* once a selection is active, so a
+narrowed table never looks like missing data.
+
+This is the remedy the upstream rejection itself prescribes — *"request full envelopes
+and project client-side"* — so it is a workaround, not a fix. Every field still crosses
+the wire, and the **planner** still cannot express the user's choice, because
+`columns` is rejected at parse. Filed as
+[mosaic#215](https://github.com/BU-Neuromics/mosaic/issues/215).
+
 One thing deliberately **not** done: auto-running the proposal. The first attempt wrote
 the spec straight to the URL, which this builder treats as already-executed — so a model
 proposal would have run with no human gesture at all. ADR-0039 exists to prevent exactly
@@ -371,7 +387,7 @@ Three design choices worth stating:
 
 | | |
 | --- | --- |
-| **d04** — *"how long did each processing run take?"* | The `columns` gap made measurable. The planner reaches for `completed_at` because the user is asking which **field** to look at, and a QuerySpec can only express which **rows** to return. `duration_hours` is already in the envelope; there's nothing to filter on. |
+| **d04** — *"how long did each processing run take?"* | The `columns` gap made measurable. The planner reaches for `completed_at` because the user is asking which **field** to look at, and a QuerySpec can only express which **rows** to return. `duration_hours` is already in the envelope; there's nothing to filter on. Filed as [mosaic#215](https://github.com/BU-Neuromics/mosaic/issues/215); the user-facing half is now closed (below). |
 | **d07** — *"the main study group"* | A real weakness. The phrase is genuinely ambiguous so asking back is fine — asking back *without naming `cohort`* is not, because it leaves the user nothing to put in a query. |
 
 The first run also found two bugs in the grader itself, both now tested: `donor`/`name`/
