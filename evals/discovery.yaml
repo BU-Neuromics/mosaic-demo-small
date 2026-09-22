@@ -12,6 +12,12 @@
 # Phrase every utterance in a researcher's vocabulary, NOT in field names. A
 # question containing the field name measures string matching, which is the one
 # thing that worked before any of this.
+#
+# THESE ELEVEN CASES ARE THE FROZEN COMPARISON ARM for the 4 -> 15 collection
+# scaling experiment (CONVERSATIONAL-QUERY.md section 10). Cases covering the
+# collections that change added live in `discovery-new-collections.yaml` and are
+# scored separately. Adding a twelfth case here would make the two arms
+# incomparable, which is the one thing this file exists to prevent.
 
 - id: d01
   utterance: what do we have on donors about head injuries?
@@ -61,16 +67,26 @@
 
 - id: d06
   utterance: what do we have on donors about toxicology reports?
-  expect_none: true
+  expect_slots: [panel_type, specimen_matrix]
   note: >-
-    THE NEGATIVE CASE, and the one that earns its place. This schema models
-    nothing about toxicology, so the turn must name no slot and say so. A
-    planner that always finds *something* reads as confident and is
-    occasionally wrong, and no number of positive cases catches that.
+    RIGHT ANSWER CHANGED -- not a regression, and not a pass earned by tuning.
 
-    Not a gap in the data being demonstrated -- a refusal to invent. The day
-    toxicology IS modelled, this becomes an ordinary positive case with
-    expect_slots, and the file follows the schema.
+    This was the negative case: the schema modelled nothing about toxicology, so
+    the turn had to name no slot and say so. `grow-demo-schema-collections` added
+    `ToxicologyReport`, which is the condition this case's own note set out for
+    converting it ("the day toxicology IS modelled, this becomes an ordinary
+    positive case with expect_slots, and the file follows the schema").
+
+    The first run at fifteen collections named `panel_type`, `specimen_matrix`,
+    `is_positive`, `reported_at` and `findings_summary` -- correct, and reached
+    without any prompt change. It was scored FAIL only because this file still
+    asserted expect_none. That is bookkeeping, and it is why the scaling
+    comparison records it separately from the cases that moved on their own.
+
+    The negative case it stopped being lives on as `n11` in
+    `discovery-new-collections.yaml`, pointed at imaging, which this schema
+    still does not model. Losing the only negative case to a schema change would
+    have quietly removed the one check that a planner refuses to invent.
 
 - id: d07
   utterance: can we tell which donors were part of the main study group?
@@ -122,8 +138,11 @@
   utterance: which fields only accept a fixed set of values?
   expect_slots: [access_level, dataset_type, cohort, sex, brain_region, sample_type, storage_condition, status, workflow_type]
   note: >-
-    Every enum in the schema, across all four entity types. Asserts the answer
-    spans entities rather than stopping at the first.
+    Asserts the answer spans entities rather than stopping at the first. The
+    listed slots were every enum in the schema when there were four entity
+    types; at fifteen there are twenty-two, so this is now a representative
+    spread. The assertion is unchanged and still a subset check -- naming the
+    newer enums as well is a better answer.
 
 - id: d11
   utterance: what kinds of things does this dataset hold, and how do they relate?

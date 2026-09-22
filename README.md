@@ -1,8 +1,10 @@
 # mosaic-demo-small
 
-A small, self-contained Mosaic demo: four entity classes (`Donor`, `Sample`,
-`Workflow`, `Dataset`) modeling a simplified biobank/omics pipeline, with
-~3,600 realistic synthetic records. Built to seriously exercise Aperture's
+A small, self-contained Mosaic demo: fifteen entity classes modeling a
+simplified biobank/omics pipeline — a core chain of `Donor` → `Sample` →
+`Workflow` → `Dataset`, plus clinical, governance, specimen-handling,
+instrumentation and publication collections around it — with ~8,800 realistic
+synthetic records. Built to seriously exercise Aperture's
 faceting, full-text search, and relationship traversal at a scale that's easy
 to scan and reason about — deliberately independent of the much larger
 `hippo-benchmark`/brainbank demo (see sibling repo
@@ -79,14 +81,17 @@ regardless of any user-declared `tree_root` (ADR-0003) — a user-declared
 `tree_root` class is *not* a value type, so if it lived in `schemas/` it would
 get its own real (unwanted) fifth table. Verified empirically: with
 `DemoBundle` inside `schemas/`, `mosaic migrate` created a `DemoBundle` table;
-moved out, exactly four entity tables are created.
+moved out, exactly the schema's own entity tables are created (fifteen, as of
+`grow-demo-schema-collections`).
 
 ## Generating data
 
 `generate.py` uses `linkml-data-gen`'s **Python API** (`DataGenerator` +
 `GenerationConfig`), not its CLI, because the CLI clamps `--count-for` to
-`[1, 1000]` per class and two of our targets (`workflows`, `datasets`) are
-1,200. Driven by `hints.yaml` (weighted enums, normal/lognormal numeric
+`[1, 1000]` per class and four of our targets (`workflows`, `datasets`,
+`aliquots`, `run_configurations`) are 1,200. `max_count` is a per-collection
+clamp, not a global one, so adding collections does not eat into the others'
+budgets. Driven by `hints.yaml` (weighted enums, normal/lognormal numeric
 distributions, sparsity probabilities, Poisson cardinalities — see
 [linkml-data-gen's hints docs](../linkml-data-gen/docs/hints.md)).
 
@@ -142,7 +147,7 @@ already supports pointing at an arbitrary project directory. The recipe's own
 default `project/` (the existing `hippo-benchmark` demo) is never touched;
 confirmed by checksum/mtime on its `data/mosaic.db` before and after.
 
-Manually verified in Aperture: enum/boolean faceting on all four classes,
+Manually verified in Aperture: enum/boolean faceting on all classes,
 full-text search on both seeded keywords, the full `Dataset → producedBy →
 Workflow → inputSamples → Sample → donor → Donor` traversal (via each
 entity's detail page and its `Relationships`/`History` sections), and the

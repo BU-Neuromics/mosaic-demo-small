@@ -204,7 +204,7 @@ from it:
 
 | Ask | Expect | |
 | --- | --- | --- |
-| **which fields only accept a fixed set of values?** | Every enum, across all four entity types | ✅ `d10` |
+| **which fields only accept a fixed set of values?** | Every enum, across every entity type | ✅ `d10` |
 | **is there anything that tells us how a sample was kept before analysis?** | `storage_condition` | ✅ `d03` |
 | **what do we record about how samples are stored?** | `storage_condition` — the same question, different words | ✅ `d08` |
 | **which fields tell us whether a dataset can be shared outside the project?** | `access_level` **and** `is_public` | ✅ `d02` |
@@ -665,6 +665,80 @@ topic the schema does not model. After this change the schema *does* model toxic
 d06's correct answer becomes a set of real slots. That is bookkeeping, not a regression,
 and it is recorded as such rather than being quietly folded into either score.
 
+
+#### Result — fifteen collections
+
+Same prompt, same model, same eleven cases. `d06`'s assertion was corrected
+first, for the reason below.
+
+| | 4 collections | 15 collections |
+| --- | --- | --- |
+| Entity types | 4 | 15 |
+| Grounding block | 8,014 chars | 28,424 chars |
+| **Grounding tokens** | **2,332** | **8,378** |
+| Tokens per entity | 583 | **559** |
+| Share of Haiku's 200K window | 1.2% | 4.2% |
+| **d01–d11 @ n=3** | **5 / 11** | **6 / 11** |
+
+**Grounding cost grew sub-linearly.** Per-entity cost went *down*, because the
+dimension classes are small — the naive `583 × 15` projection would have
+overstated it by about 15%. At this rate the window does not bind until roughly
+250 collections, which is not the limit anyone will hit first.
+
+**The frozen arm did not degrade.** Read the 5 → 6 as "unchanged", not as an
+improvement: the entire difference is `d06`'s corrected assertion, and per-case
+rates move by ±1 run between identical invocations. `d04` is the clearest
+demonstration — across three runs of the same prompt against the same schema it
+scored 1/3, 2/3 and 2/2. At n=3, anything under a two-case swing is noise.
+
+#### The degradation is real, and it showed up somewhere unexpected
+
+Not on the known-good questions — on the planner's willingness to invent.
+
+`n11` is the negative case: *"what imaging do we have on donors, MRI or CT
+scans?"*, against a schema that models no imaging at all. At four collections
+its predecessor refused cleanly. At fifteen it twice reached for things that
+merely sound close — `condition_name`, `instrument_name`, `administered_by`,
+`dataset_type` — none of which have anything to do with imaging.
+
+That is the cost of a larger candidate set, and it is the opposite of what we
+expected to measure. More collections did not make the planner worse at finding
+the right field. It made it worse at saying there isn't one.
+
+#### Discovering the new collections is harder — but not for the reason the number suggests
+
+`discovery-new-collections.yaml` scores **3 / 11** across two runs. That is not
+comparable to the frozen arm's 6/11, because those eleven cases were written to
+be hard on purpose (design.md Decision 3): each targets a slot one hop further
+out than the obvious class, or one with a deliberate homonym.
+
+The failures are more useful than the score:
+
+- **`n07` — "which machine was a run done on?"** 0/3. `Assessment.instrument_name`
+  is a clinical questionnaire; `Instrument` is laboratory hardware. The planner
+  matched the word. This homonym was introduced deliberately and it worked
+  exactly as designed.
+- **`n09` — "how did donors do on their cognitive tests?"** 0/3, and
+  `instrument_name` is the right answer here. The same pair of names defeats the
+  planner in both directions.
+- **`n02`, `n03`, `n10` pass 3/3** — including `n03`, whose trap is that
+  `storage_condition` (the right answer to d03 and d08) is *not* a temperature.
+  So the planner can follow a relationship one hop out when the words do not
+  collide.
+
+The pattern across every failure is lexical collision, not schema size.
+
+#### What this does and does not license
+
+- It does **not** justify a grounding-cost optimisation. At 4% of the window
+  there is nothing to save, and the ~500 tokens per entity of `id` /
+  `is_available` boilerplate repeated fifteen times is ugly rather than
+  expensive.
+- It **does** support the prompt rewrite that section 10 already concluded was
+  needed, and it sharpens the brief: the rewrite has to make refusal and
+  homonym-discrimination work, not field-finding, which is already fine.
+- The eval suite now has a negative case again (`n11`), and it is failing — which
+  is the correct state for a case that has just identified a real defect.
 
 ## 11. Upstream — filed, fixed, and still open
 

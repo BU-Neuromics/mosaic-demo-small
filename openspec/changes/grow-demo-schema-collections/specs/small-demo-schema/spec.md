@@ -33,9 +33,9 @@ from its four-class predecessor.
 - **THEN** none are found
 
 ### Requirement: Realistic, non-uniform synthetic data at thousands-of-records scale
-Generated data SHALL total approximately 9,000 records — the original
-~3,600 (300 donors / 900 samples / 1,200 workflows / 1,200 datasets) plus
-approximately 5,400 across the eleven new collections — with weighted
+Generated data SHALL total approximately 8,800 records — the original
+3,600 (300 donors / 900 samples / 1,200 workflows / 1,200 datasets) plus
+approximately 5,200 across the eleven new collections — with weighted
 categorical distributions, real numeric distributions, sparse optional
 fields, and skewed repeated values; not uniform-random and not
 near-identical rows.

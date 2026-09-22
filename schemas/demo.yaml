@@ -2,11 +2,14 @@ id: https://w3id.org/mosaic-demo-small/demo
 name: mosaic-demo-small
 version: 0.1.0
 description: >-
-  A small, self-contained Mosaic demo: four entity classes (Donor, Sample,
-  Workflow, Dataset) modeling a simplified biobank/omics pipeline. Deliberately
-  independent of the brainbank-hippo-schema demo — built to exercise Aperture's
-  faceting, full-text search, and relationship traversal at a scale that's easy
-  to scan and reason about, not a reduction of the larger schema.
+  A small, self-contained Mosaic demo: fifteen entity classes modeling a
+  simplified biobank/omics pipeline — a core chain of Donor, Sample, Workflow
+  and Dataset, with clinical, governance, specimen-handling, instrumentation
+  and publication collections around it. Deliberately independent of the
+  brainbank-hippo-schema demo — built to exercise Aperture's faceting,
+  full-text search and relationship traversal, and the planner's
+  field-discovery, at a scale that's easy to scan and reason about, not a
+  reduction of the larger schema.
 prefixes:
   linkml: https://w3id.org/linkml/
   demo: https://w3id.org/mosaic-demo-small/

@@ -43,9 +43,9 @@ can.
   This is deliberate: it makes the discovery eval a controlled
   experiment, where the only variable is the number of candidates in the
   grounding block.
-- **Add the supporting enums** (~10) and mirror each new class in
+- **Add the supporting enums** (13) and mirror each new class in
   `generation_schema.yaml`'s `DemoBundle` root.
-- **Generate modest row counts for the new classes** — roughly 5,400 new
+- **Generate modest row counts for the new classes** — roughly 5,200 new
   records against 3,600 existing, with several deliberately small
   dimension tables (9 instruments, 24 storage locations, 40
   publications). Collections are small, never empty; an empty collection
