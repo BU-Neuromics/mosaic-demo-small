@@ -187,73 +187,149 @@ schema, or point at a different project, and it keeps answering about the old on
 
 ## 6. Queries to try
 
-**Every question below was run against the live stack on 2026-09-22** and the result
-recorded — the anchor and criteria the planner actually proposed, and the row count
-the proposal actually returns. Nothing here is plausible-sounding invention. Each was
-asked twice; the one question that answered differently between runs says so.
+**Every question below was run against the live stack and the result recorded** — the
+anchor and criteria the planner actually proposed, and the row count that proposal
+actually returns against the current 8,768-record dataset. Nothing here is
+plausible-sounding invention.
+
+Counts came from two places, both measured on 2026-09-22: field filters through GraphQL
+exactly as the page runs them, and traversals computed from the bundle the database was
+loaded from — a relationship criterion executes as a client-side semijoin, and
+reproducing that in one GraphQL document would test my arithmetic rather than the data.
 
 | Mark | Means |
 | --- | --- |
-| ✅ | Graded eval case, passes every run |
-| ⚠️ | Graded case, passes some runs |
-| ❌ | Graded case, fails reliably — §10 says why |
+| ✅ | Graded eval case, passed every run of all three measured runs |
+| ⚠️ | Graded case, flaky — passed some runs and not others |
+| ❌ | Graded case, failed every run of all three |
 | ▣ | Not a graded case; run here and the result recorded |
 
-### About the data — these propose a query you can run
+The marks come from three separate n=3 runs of the same eleven cases (§10). Only `d11`
+fails reliably; the other reds are flaky, and one of them (`d09`) has scored both 0/3 and
+3/3 against an identical setup.
 
-The planner proposes; **nothing executes until you click Run.** The counts are what
-the proposal returns against the current 8,768-record dataset.
+**The planner proposes; nothing executes until you click Run.**
 
-#### The original four collections
+---
+
+### One field
+
+The bread and butter: a plain-language phrase resolving to a field nobody named.
 
 | Ask | Proposes | Rows | |
 | --- | --- | --- | --- |
-| **what do we have on donors about head injuries?** | names `history_of_rhi`, offers the query | 58 | ✅ `d01` |
-| **donors over 60 who had repeated head impacts** | `Donor` · `age_at_death > 60` **and** `history_of_rhi = true` | **43** | ▣ |
+| **what do we have on donors about head injuries?** | names `history_of_rhi` | 58 | ✅ `d01` |
 | **show me failed workflows** | `Workflow` · `status = failed` | **116** | ▣ |
-| **datasets that are publicly released** | `Dataset` · `is_public = true` | **230** | ▣ |
-| **what part of the brain did these specimens come from?** | `brain_region` | — | ✅ `d05` |
-| **how long did each processing run take?** | *asks which duration you mean* — see below | — | ⚠️ `d04` |
+| **datasets that are publicly released** | `Dataset` · `is_public = true` | **228** | ▣ |
+| **which screens came back positive?** | `ToxicologyReport` · `is_positive = true` | **76** | ▣ |
+| **which reagent lots have expired?** | `ReagentLot` · `is_expired = true` | **47** | ▣ |
+| **which instruments have been retired?** | `Instrument` · `is_decommissioned = true` | **2** | ▣ |
+| **show me open-access papers** | `Publication` · `is_open_access = true` | **19** | ▣ |
+| **aliquots that have been used up** | `Aliquot` · `is_depleted = true` | **211** | ▣ |
+| **which diagnoses were made with certainty?** | `Diagnosis` · `certainty = definite` | **199** | ▣ |
+| **which storage locations are full?** | `StorageLocation` · `is_at_capacity = true` | **8** | ▣ |
+| **run configurations that aren't reproducible** | `RunConfiguration` · `is_reproducible = false` | **274** | ▣ |
+| **what part of the brain did these specimens come from?** | names `brain_region` | 271 tissue samples | ✅ `d05` |
 
-#### The eleven collections added by the schema growth
+### Several criteria at once
+
+Nothing in these questions says "and", or names an operator.
 
 | Ask | Proposes | Rows | |
 | --- | --- | --- | --- |
-| **which screens came back positive?** | `ToxicologyReport` · `is_positive = true` | **74** | ▣ |
-| **show me the critical quality problems** | `QcFlag` · `severity = critical` **and** `is_resolved = false` | **24** | ▣ |
-| **which reagent lots have expired?** | `ReagentLot` · `is_expired = true` | **52** | ▣ |
-| **which instruments have been retired?** | `Instrument` · `is_decommissioned = true` | **2** | ▣ |
-| **show me open-access papers** | `Publication` · `is_open_access = true` | **21** | ▣ |
-| **aliquots that have been used up** | `Aliquot` · `is_depleted = true` | **211** | ▣ |
-| **which diagnoses were made with certainty?** | `Diagnosis` · `certainty = definite` | **196** | ▣ |
+| **female donors in the case cohort with a history of head impacts** | `sex = female` · `cohort = case` · `history_of_rhi = true` | **13** | ▣ |
+| **frozen tissue samples from the hippocampus** | `sample_type = tissue` · `storage_condition = frozen` · `brain_region = hippocampus` | **11** | ▣ |
+| **completed RNA-seq runs** | `workflow_type = rna_seq` · `status = completed` | **119** | ▣ |
+| **show me the critical quality problems** | `severity = critical` · `is_resolved = false` | **23** | ▣ |
+| **show me the baseline MMSE assessments** | `instrument_name = mmse` · `is_baseline = true` | **152** | ▣ |
+| **definite CTE diagnoses with a Braak stage of 4 or more** | `certainty = definite` · `condition_name contains "CTE"` · `braak_stage ≥ 4` | **6** | ▣ |
+| **donors over 60 who had repeated head impacts** | `age_at_death > 60` · `history_of_rhi = true` | **43** | ▣ |
 
-**"show me the critical quality problems" is the one to point at in a demo.** Nothing in
-the question says `severity`, `critical` or `resolved`. The planner picked the enum value
-*and* inferred that a "problem" is one still open — a second criterion nobody asked for
-and everybody meant.
+**"show me the critical quality problems" is the one to demo.** Nothing in the question
+says `severity`, `critical` or `resolved`. The planner picked the enum value *and*
+inferred that a "problem" is one still open — a second criterion nobody asked for and
+everybody meant.
 
-#### A cross-collection traversal
+### Numbers and dates
 
-| Ask | Proposes | |
-| --- | --- | --- |
-| **donors whose consent was withdrawn** | `Donor` with a **relationship** criterion — `some` related `ConsentRecord` where scope is withdrawn | ▣ |
+Comparison operators and date boundaries, from ordinary phrasing.
 
-This is the shape the whole thing exists for: the user names one collection, the answer
-constrains a *different* one. Nine such consent records exist. It was not possible to
-demonstrate before the schema grew, because there was nothing to traverse *to* that a
-researcher would ask about in these words.
+| Ask | Proposes | Rows | |
+| --- | --- | --- | --- |
+| **donors who died before 50** | `age_at_death < 50` | **17** | ▣ |
+| **aliquots with less than 100 microlitres left** | `volume_ul < 100` | **34** | ▣ |
+| **specimens thawed more than twice** | `thaw_count > 2` — on `Aliquot`, not `Sample` | **85** | ▣ |
+| **runs that took more than a day** | `duration_hours > 24` | **23** | ▣ |
+| **datasets bigger than 10 gigabytes** | `file_size_bytes > 10000000000` | **2** | ▣ |
+| **samples collected since 2020** | `collected_at ≥ 2020-01-01` | **381** | ▣ |
+| **toxicology screens reported before 2018** | `reported_at < 2018-01-01` | **46** | ▣ |
+| **papers published since 2023** | `published_on ≥ 2023-01-01` | **8** | ▣ |
+
+Two things worth noticing. *"More than a day"* became `> 24`, and *"10 gigabytes"* became
+`10000000000` — unit conversion the question never spelled out. And *"specimens thawed
+more than twice"* lands on `Aliquot`, because thaw counts are tracked per portion, not per
+sample; "specimen" is the researcher's word for `Sample` everywhere else in this document.
+
+### Traversals — constraining a *different* collection
+
+The shape the whole thing exists for: you name one collection, the answer constrains
+another. Each of these produces a **relationship criterion**, not a field filter.
+
+| Ask | Proposes | Rows | |
+| --- | --- | --- | --- |
+| **samples from female donors** | `Sample` where related `donor` has `sex = female` | **434** | ▣ |
+| **toxicology screens on donors in the case cohort** | `ToxicologyReport` → `donor.cohort = case` | **79** | ▣ |
+| **aliquots stored in liquid nitrogen** | `Aliquot` → `location.facility_type = liquid_nitrogen` | **205** | ▣ |
+| **datasets from workflows that failed** | `Dataset` → `produced_by.status = failed` | **113** | ▣ |
+| **diagnoses for donors with repeated head impacts** | `Diagnosis` → `donor.history_of_rhi = true` | **101** | ▣ |
+| **run configurations that used a decommissioned instrument** | `RunConfiguration` → `instrument.is_decommissioned = true` | **290** | ▣ |
+| **papers that used publicly released datasets** | `Publication` → `datasets.is_public = true` | **9** | ▣ |
+| **donors whose consent was withdrawn** | `Donor` → `ConsentRecord.scope = withdrawn` | **8** | ▣ |
+| **unresolved critical flags on public datasets** | `severity = critical` · `is_resolved = false` · → `dataset.is_public = true` | **5** | ▣ |
+
+**All nine were correct on the first attempt.** The last one mixes two field criteria and
+a traversal in a single spec. None of this was demonstrable before the schema grew — with
+four collections there was nothing a researcher would traverse *to* in these words.
+
+### Full-text
+
+| Ask | Proposes | Rows | |
+| --- | --- | --- | --- |
+| **find donors whose notes mention cohort-alpha** | `Donor` · `notes contains "cohort-alpha"` | **1** | ▣ |
+
+`cohort-alpha:42` is a keyword `generate.py` seeds deliberately so a search scenario has a
+known-present term (`_seed_keywords`). The equivalents on the newer collections are
+`panel-echo:7` in a toxicology `findings_summary`, `lane-drift` in a QC flag `detail`, and
+`consortium-nine` in a publication `abstract_text`.
+
+**One full-text question fails, and it is instructive.** *"which quality flags mention
+lane-drift?"* does **not** search — the planner answers that none of the five
+`flag_code` values are "lane-drift" and stops. It reasoned about the enum and never
+considered the free-text `detail` field, which is FTS5-indexed and does contain the term.
+A correct-sounding refusal to a question that had an answer, which is the most expensive
+kind.
+
+### Refining over two turns
+
+The second turn adds to the first rather than starting over.
+
+| First | Then | Ends at | Rows | |
+| --- | --- | --- | --- | --- |
+| what do we have on donors about head injuries? | **yes, and only the case cohort** | `history_of_rhi = true` · `cohort = case` | **30** | ▣ |
+| show me failed workflows | **just the RNA-seq ones** | `status = failed` · `workflow_type = rna_seq` | **21** | ▣ |
+| which screens came back positive? | **only the ones on blood** | `is_positive = true` · `specimen_matrix = blood` | **39** | ▣ |
 
 ### About the metadata — these answer in the conversation, no query
 
 | Ask | Answers with | |
 | --- | --- | --- |
-| **what fields are available on datasets?** | every Dataset field with its enum values | ❌ `d09` — drops `produced_by` |
-| **which fields only accept a fixed set of values?** | enums across the collections, with their values | ✅ `d10` |
+| **what fields are available on datasets?** | every Dataset field with its enum values | ⚠️ `d09` — 0/3 and 3/3 across runs; drops `produced_by` when it fails |
+| **which fields only accept a fixed set of values?** | enums across the collections, with their values | ⚠️ `d10` — spans the newer collections but drops `cohort`/`sex`/`status` |
 | **is there anything that tells us how a sample was kept before analysis?** | `storage_condition` | ✅ `d03` |
 | **what do we record about how samples are stored?** | same answer, different words | ✅ `d08` |
 | **which fields tell us whether a dataset can be shared outside the project?** | `access_level` **and** `is_public` | ✅ `d02` |
-| **can we tell which donors were part of the main study group?** | asks back, without naming `cohort` | ❌ `d07` |
-| **what kinds of things does this dataset hold, and how do they relate?** | a prose tour of the entities | ❌ `d11` — names the entities, not the edges |
+| **can we tell which donors were part of the main study group?** | asks back, without naming `cohort` | ⚠️ `d07` |
+| **what kinds of things does this dataset hold, and how do they relate?** | a prose tour of the entities | ❌ `d11` — 0/3 in every run; names the entities, not the edges |
 | **what do we have on donors about toxicology reports?** | the ToxicologyReport fields, and says demographics live on Donor | ⚠️ `d06` |
 | **what can you tell me about toxicology reports?** | panel type, specimen matrix, detection, substances, date, summary | ▣ |
 | **what do we record about cognitive assessments?** | the instrument (MMSE/MoCA/CDR/GDS/NPI), raw score, percentile, baseline flag | ▣ |
@@ -272,24 +348,43 @@ a while one passed and the other bounced back with a menu. Two phrasings behavin
 differently is the characteristic risk of prompt-shaped behaviour, and the only defence is
 one case per phrasing.
 
+### When it asks back — and does it well
+
+Three questions in the corpus produced a clarification rather than a query, and all three
+were the right call. What makes them good is that each **names the fields while asking**,
+so the user can answer in one word:
+
+> **"assessments scoring under 20"** → *"Do you want assessments where the `raw_score` is
+> under 20, or the `percentile_rank` is under 20? (Raw scores vary by instrument and
+> aren't comparable across them.)"*
+
+> **"how long did each processing run take?"** → *"wall-clock duration for each completed
+> run, or CPU time consumed?"*
+
+That second one is a question the schema growth *made* ambiguous, on purpose:
+`Workflow.duration_hours` is wall-clock and `RunConfiguration.compute_hours` — added with
+the new collections — is CPU time. It is graded `d04` and is the only question of
+twenty-five in the first corpus that answered differently between two runs.
+
+Compare with `d07`, which asks back **without** naming `cohort` and so leaves the user
+nothing to put in a query. A clarification still has to hand over the data element.
+
 ### It doesn't invent fields — mostly
 
-> **what imaging do we have on donors, MRI or CT scans?**
+| Ask | Answers | |
+| --- | --- | --- |
+| **what imaging do we have on donors, MRI or CT scans?** | *"the schema doesn't record imaging data directly"* | ❌ `n11` — unreliable, see below |
+| **do we have any genetic sequencing variants called on donors?** | names `workflow_type: variant_calling` and `dataset_type: vcf` as real, then says no individual variants are held | ▣ |
+| **what medications were donors taking?** | no medication record either during life or in toxicology; offers the substances a screen detects | ▣ |
+| **how much did each donor weigh?** | no weight field; lists what Donor *does* hold | ▣ |
 
-Both runs opened correctly: *"the schema doesn't record imaging data directly — there's no
-field tracking MRI or CT scans on donors."* One then offered `notes` as free text that
-might mention it; the other listed what *is* tracked on donors instead.
+The variant question is the best refusal in the set, because the honest answer is
+"partly" — and it says which part, then offers the traversal that gets closest.
 
-> **do we have any genetic sequencing variants called on donors?**
-
-The best refusal in the set, because the honest answer is "partly": it names
-`workflow_type: variant_calling` and `dataset_type: vcf` as real, then says the schema
-holds no record of individual variants — and offers the traversal that would get closest.
-
-**But this behaviour is not reliable, and that is the headline finding of the schema
-growth.** Other runs of the imaging question reached for `condition_name`,
-`instrument_name` and `dataset_type` — fields with nothing to do with imaging. It is now a
-standing eval case (`n11`) and it is failing. §10 has the detail.
+**But this is not reliable, and it is the headline finding of the schema growth.** Other
+runs of the imaging question reached for `condition_name`, `instrument_name` and
+`dataset_type` — fields with nothing to do with imaging. `n11` is a standing eval case and
+it is failing. §10 has the detail.
 
 ### Choosing what comes back
 
@@ -300,24 +395,14 @@ to the columns you care about, and both exports follow it. That closes the loop 
 Every field still crosses the wire — this is client-side projection, because the query
 artifact cannot yet carry a field list ([mosaic#215](https://github.com/BU-Neuromics/mosaic/issues/215)).
 
-### Two-turn refinement
+### Two rough edges to know before demoing
 
-> **what do we have on donors about head injuries?** → then → **yes, and only the case cohort**
-
-The second turn refines the first rather than starting over.
-
-### One question the schema growth made harder, on purpose
-
-> **how long did each processing run take?**
-
-It used to reach straight for a date field. It now **asks back**: *"wall-clock duration for
-each completed run, or CPU time consumed?"*
-
-That is not a regression — it is the correct answer to a question that became genuinely
-ambiguous. `Workflow.duration_hours` is wall-clock; `RunConfiguration.compute_hours`, added
-with the new collections, is CPU time. Two real fields, and the question does not say
-which. `d04` is the only one of twenty-five corpus questions that answered differently
-between two runs, and this is why.
+- **"reagent lots expiring this year" resolves to 2025.** The planner is not told the
+  current date, so it guessed — and the guess is a year stale. It builds a perfectly
+  well-formed `expires_on` range; the range is just the wrong year. Say "expiring in 2026"
+  and it is correct.
+- **Full-text on the newer collections is not reached** (the `lane-drift` case above).
+  Search works; the planner does not think to use it.
 
 ## 7. How the Docker stack was made to work
 
@@ -553,7 +638,7 @@ happened. Anything grading or running `exon/` is grading a copy nobody executes.
 
 | | |
 | --- | --- |
-| **Reference fields go unnamed** | The most valuable thing left. `produced_by`, `donor`, `input_samples` are how a user learns a traversal is possible, and answers list the scalars and stop. One cause behind two failing metadata cases (`d09`, `d11`). |
+| **Reference fields go unnamed** | The most valuable thing left. `produced_by`, `donor`, `input_samples` are how a user learns a traversal is possible, and answers list the scalars and stop. `d11` fails on it in every run; `d09` fails on it in some. The capability exists — the metadata answers in §6 volunteer edges unprompted — it just is not reliable. |
 | **The negative case regressed** | Pushing "name the fields" to fix one case made `d06` name plausible-but-wrong fields for an unmodelled topic. An explicit carve-out didn't hold. |
 | **A clarification that withholds the field** | `d07` asks back about an ambiguous phrase — fine — without naming `cohort`, which leaves the user nothing to query. |
 | **Field selection in the *spec*** | The user can choose columns; the planner cannot express that choice. `columns` is rejected at parse. [mosaic#215](https://github.com/BU-Neuromics/mosaic/issues/215). |
@@ -650,11 +735,18 @@ eleven cases at fifteen and adds a second suite.)*
 
 ### The failures, grouped by cause
 
-**Reference fields go unnamed — `d09`, `d11`.** Both fail the same way. `produced_by`,
-`donor`, `input_samples` are how a user learns a **traversal** is possible, and an answer
-that lists the scalar fields and stops has told them less than it appears to. This is the
-**third** time reference slots have been the weak spot: the grounding renderer originally
-skipped their descriptions entirely (fixed), and now the *answers* skip them.
+**Reference fields go unnamed — `d11` always, `d09` sometimes.** Both fail the same way.
+`produced_by`, `donor`, `input_samples` are how a user learns a **traversal** is possible,
+and an answer that lists the scalar fields and stops has told them less than it appears
+to. This is the **third** time reference slots have been the weak spot: the grounding
+renderer originally skipped their descriptions entirely (fixed), and now the *answers*
+skip them.
+
+At fifteen collections the picture is less uniform than it was. `d09` has scored 3/3, and
+several ungraded metadata questions in §6 — *"papers that cite our data"*, *"where samples
+are physically stored"* — volunteer the edge without being asked. So this is no longer
+"the planner cannot name references"; it is "the planner names them about half the time",
+which is a different and more tractable problem.
 
 **This is the most valuable single thing left to fix** — one cause behind two failing
 metadata cases.
@@ -756,6 +848,8 @@ Recorded before any schema edit, `bedrock/global.anthropic.claude-haiku-4-5-2025
 | **d01–d11 @ n=3** | **5 / 11** |
 
 Failing: d04 (2/3), d06 (0/3), d07 (0/3), d09 (2/3), d10 (0/3), d11 (0/3).
+At fifteen collections the quoted run passes d01, d02, d03, d05, d08 and d09,
+and fails d04 (1/3), d06 (1/3), d07 (1/3), d10 (2/3) and d11 (0/3).
 
 **One case will change meaning, not degrade.** `d06` — *"what do we have on donors about
 toxicology reports?"* — is the negative case, asserting the planner names nothing for a
@@ -772,30 +866,41 @@ first, for the reason below.
 | | 4 collections | 15 collections |
 | --- | --- | --- |
 | Entity types | 4 | 15 |
-| Grounding block | 8,014 chars | 28,424 chars |
-| **Grounding tokens** | **2,332** | **8,378** |
-| Tokens per entity | 583 | **559** |
+| Grounding block | 8,014 chars | 28,391 chars |
+| **Grounding tokens** | **2,332** | **8,361** |
+| Tokens per entity | 583 | **557** |
 | Share of Haiku's 200K window | 1.2% | 4.2% |
 | **d01–d11 @ n=3** | **5 / 11** | **6 / 11** |
 
-**Both arms are labelled n=3; only the baseline actually got it.** Bedrock
-throttled during the fifteen-collection runs, and the runner scores a
-transport failure separately rather than counting it as a discovery failure —
-so `d04`, `d05` and `d10` were decided on two runs each, not three. The
-baseline had no errored runs. This does not rescue a conclusion: it is the
-same direction as the noise argument below, and a document whose subject is
-measurement honesty should not round a throttled run up to n=3.
+Both figures are a clean n=3 with no errored runs. An earlier
+fifteen-collection run was throttled by Bedrock and decided `d04`, `d05` and
+`d10` on two runs each; it is not the one quoted, and it scored 6/11 as well.
 
 **Grounding cost grew sub-linearly.** Per-entity cost went *down*, because the
 dimension classes are small — the naive `583 × 15` projection would have
-overstated it by about 15%. At this rate the window does not bind until roughly
-250 collections, which is not the limit anyone will hit first.
+overstated it by about 16%. At 557 tokens per entity, and leaving room for the
+3,078-token prompt and an 8,192-token reply, the 200K window does not bind until
+somewhere past **300 collections** — which is not the limit anyone hits first.
 
-**The frozen arm did not degrade.** Read the 5 → 6 as "unchanged", not as an
-improvement: the entire difference is `d06`'s corrected assertion, and per-case
-rates move by ±1 run between identical invocations. `d04` is the clearest
-demonstration — across three runs of the same prompt against the same schema it
-scored 1/3, 2/3 and 2/2. At n=3, anything under a two-case swing is noise.
+**The frozen arm did not degrade — and the individual cases are noisier than the
+total.** Read 5 → 6 as "unchanged". Three separate fifteen-collection runs of the
+same eleven cases, same prompt, same model, scored **6, 6 and 6** — and not the
+same six:
+
+| Case | run A | run B | run C |
+| --- | --- | --- | --- |
+| `d04` how long did each run take? | 2/3 | 2/2 | 1/3 |
+| `d09` what fields are available on datasets? | 2/3 | 0/3 | **3/3** |
+| `d10` which fields take fixed values? | 0/2 | 0/2 | 2/3 |
+| `d06` toxicology | 0/3 † | 2/3 | 1/3 |
+
+† scored against the pre-correction `expect_none`.
+
+`d09` — the question this entire line of work started from — went 0/3 and 3/3
+against an identical setup. The total is stable; which cases make it up is not.
+**At n=3, anything under a two-case swing in the total is noise, and any single
+case's mark is a snapshot rather than a property.** The §6 marks are labelled
+accordingly: only `d11` fails reliably.
 
 #### The degradation is real, and it showed up somewhere unexpected
 
@@ -904,7 +1009,7 @@ One facet did degenerate, for a different reason: `ReagentLot.is_expired` read
 72/3 against a hint declaring 71/29, because `_fix_intervals` derives it from
 `expires_on` and the receipt window stopped in 2024 — so nearly every lot had
 expired by now. The hint was a statement that looked like a fact and was not.
-Removed, with the receipt window moved to 2022–2026; it now reads 52/23.
+Removed, with the receipt window moved to 2022–2026; it now reads 47/28.
 
 ## 11. Upstream — filed, fixed, and still open
 
@@ -1076,8 +1181,10 @@ Things that will rot if nobody owns them:
   run and both were real, but the line between *fixing a grader* and *fitting it to the
   answers* is thin. The rule used so far: a grader change has to be defensible from the
   goal statement alone, independent of which cases it flips.
-- **`d06`, `d07`, `d09` and `d11` should stay red** until the things they describe are
-  fixed. They are the cheapest standing record that the goal is not fully delivered.
+- **`d07`, `d09` and `d11` should stay red** until the things they describe are fixed.
+  They are the cheapest standing record that the goal is not fully delivered. (`d06` is
+  no longer one of them — the schema grew a toxicology collection, so its assertion
+  changed from "name nothing" to naming real fields; `n11` carries the negative case now.)
 - **The planner grounds once, at startup.** Every schema change needs
   `make restart-planner`. Forgetting produces confidently stale answers rather than an
   error — which is how a demo shows the wrong entity types for ten minutes before anyone

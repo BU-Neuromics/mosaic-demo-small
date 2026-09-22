@@ -89,8 +89,14 @@ classes:
     description:
       prob: 0.5
     file_size_bytes:
+      # mean 16.5 put the LARGEST generated file at 1.7 GB while
+      # `Dataset.file_size_bytes`'s own description promises "tens of
+      # gigabytes" -- so "datasets bigger than 10 GB" returned zero rows and
+      # looked like a planner failure. The description is also grounding the
+      # model reads, which makes a wrong one worse than merely untidy.
+      # ln(2e10) ~= 23.7, so mean 19 with this sigma reaches the stated range.
       distribution: lognormal
-      params: {mean: 16.5, sigma: 1.6}
+      params: {mean: 19, sigma: 1.6}
       minimum: 1000000
       maximum: 50000000000
       integer: true
@@ -148,11 +154,15 @@ classes:
     certainty:
       choices: {definite: 42, probable: 33, possible: 20, ruled_out: 5}
     condition_name:
+      # Carrying the abbreviation people actually type. Asking for "definite
+      # CTE diagnoses" produced a perfectly correct `condition_name contains
+      # "CTE"` and zero rows, because only the expansion was ever stored --
+      # a right query that reads as a broken one.
       choices: [
-        "Chronic traumatic encephalopathy", "Alzheimer's disease",
-        "Lewy body disease", "Frontotemporal lobar degeneration",
-        "Vascular cognitive impairment", "Amyotrophic lateral sclerosis",
-        "Progressive supranuclear palsy",
+        "Chronic traumatic encephalopathy (CTE)", "Alzheimer's disease (AD)",
+        "Lewy body disease (LBD)", "Frontotemporal lobar degeneration (FTLD)",
+        "Vascular cognitive impairment (VCI)", "Amyotrophic lateral sclerosis (ALS)",
+        "Progressive supranuclear palsy (PSP)",
       ]
     braak_stage:
       prob: 0.6
