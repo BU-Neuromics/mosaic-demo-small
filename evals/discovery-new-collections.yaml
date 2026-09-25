@@ -1,0 +1,113 @@
+# Discovery cases for the eleven collections `grow-demo-schema-collections`
+# added. Same grader, same runner, same format as `discovery.yaml`:
+#
+#     REEL_EVAL_CASES=.../evals/discovery-new-collections.yaml \
+#         python -m reel.evals.run -n 3
+#
+# SCORED SEPARATELY, ON PURPOSE. `discovery.yaml` is the frozen arm of the
+# 4 -> 15 collection scaling comparison; folding these in would mean comparing
+# an eleven-case score against a twenty-two-case one and calling the difference
+# "scaling". These measure whether the NEW collections are discoverable at all,
+# which is a different question from whether the OLD ones got harder to find.
+#
+# Each case targets a slot no other class owns (see the change's design.md,
+# Decision 3). The new classes deliberately share near-miss names -- four of
+# them carry a date, three carry `notes` -- and a case pointed at a shared name
+# would have no single right answer to grade.
+
+- id: n01
+  utterance: did any of the screens actually turn up something?
+  expect_slots: [is_positive, substances_detected]
+  note: >-
+    The toxicology question from the other side. Neither slot shares a word with
+    the question; both resolve only through their descriptions ("above the
+    reporting threshold"). `d06` asks what we hold about toxicology at all --
+    this asks about the result.
+
+- id: n02
+  utterance: how many times has a specimen been frozen and thawed?
+  expect_slots: [thaw_count]
+  note: >-
+    `thaw_count` lives on Aliquot, not Sample, so a correct answer requires
+    noticing that specimens are sub-divided. "specimen" is the researcher's word
+    for Sample throughout this suite (see d05), which makes this a genuine test
+    of whether the planner follows the relationship rather than stopping at the
+    obvious class.
+
+- id: n03
+  utterance: do we know what temperature things are kept at?
+  expect_slots: [temperature_celsius]
+  note: >-
+    The trap is `Sample.storage_condition`, which d03 and d08 both establish as
+    the right answer for storage questions and which is NOT a temperature. The
+    actual set-point lives on StorageLocation, one hop further out.
+
+- id: n04
+  utterance: can we tell if a donor pulled out of the study?
+  expect_slots: [withdrawn_at, is_active]
+  note: >-
+    Governance rather than description. `is_available` is the lexical trap here
+    for the same reason it is in d07 -- a system field about record availability,
+    nothing to do with consent.
+
+- id: n05
+  utterance: what do we record about papers that used our data?
+  expect_slots: [publication_type, published_on]
+  note: >-
+    Deliberately does not ask for `doi` or `journal`: both are single common
+    words, which the grader credits only when the turn marks them as field
+    references, and a case should test discovery rather than formatting.
+
+- id: n06
+  utterance: is there anything telling us how bad a quality problem was?
+  expect_slots: [flag_code, severity]
+  note: >-
+    The near-miss is `Dataset.quality_metrics`, an inlined value object of
+    measurements. A QC *flag* is a different thing with a lifecycle, and the
+    distinction is exactly what a user needs to know before building a query.
+
+- id: n07
+  utterance: which machine was a run done on?
+  expect_slots: [instrument, platform]
+  note: >-
+    Two hops and a homonym. The edge is `RunConfiguration.instrument`, reached
+    from Workflow; and "instrument" also names a clinical questionnaire on
+    Assessment (`instrument_name`). A planner that offers the questionnaire has
+    matched the word rather than the meaning.
+
+- id: n08
+  utterance: what staging do we use for tau pathology?
+  expect_slots: [braak_stage]
+  note: >-
+    Findable only through the description ("Braak neurofibrillary tangle
+    stage"), since the question never says Braak. The same shape as d01, which
+    is this suite's reference case.
+
+- id: n09
+  utterance: how did donors do on their cognitive tests?
+  expect_slots: [raw_score, instrument_name]
+  note: >-
+    A complete answer names both the score and which test produced it, because
+    the scales are not comparable across instruments -- a score without its
+    instrument is not usable in a query.
+
+- id: n10
+  utterance: do we track which batch of chemicals a run used?
+  expect_slots: [lot_number, reagent_kind]
+  note: >-
+    "batch of chemicals" for ReagentLot. `Sample.tags` is the trap: its
+    description mentions batch tags, and it is the wrong answer.
+
+- id: n11
+  utterance: what imaging do we have on donors, MRI or CT scans?
+  expect_none: true
+  note: >-
+    THE NEGATIVE CASE, inherited from d06, which stopped being one when this
+    change modelled toxicology. The schema holds no imaging of any kind, so the
+    turn must name no slot and say so.
+
+    It is carried here rather than added to `discovery.yaml` because that file
+    is the frozen comparison arm. The check it performs is not new -- a planner
+    that always finds *something* reads as confident and is occasionally wrong,
+    and no number of positive cases catches that -- but the topic had to move
+    the moment the old one became real.

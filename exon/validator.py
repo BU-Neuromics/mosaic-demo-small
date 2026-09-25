@@ -43,11 +43,11 @@ def resolve_field(entity_fields: dict, name: str) -> str | None:
     return _slot_index(entity_fields).get(name)
 
 
-def validate_plan(plan: QueryPlan, hippo_schema: dict, capability_manifest: dict) -> None:
+def validate_plan(plan: QueryPlan, mosaic_schema: dict, capability_manifest: dict) -> None:
     """Raises ValidationError with a specific reason on the first violation found."""
     for i, step in enumerate(plan.steps):
         if isinstance(step, FilterStep):
-            _validate_filter_step(i, step, hippo_schema)
+            _validate_filter_step(i, step, mosaic_schema)
         elif isinstance(step, RelatedLookupStep):
             _validate_related_lookup_step(i, step, plan)
         else:
@@ -70,12 +70,12 @@ def _resolve_or_raise(i: int, entity: str, entity_fields: dict, name: str, what:
     )
 
 
-def _validate_filter_step(i: int, step: FilterStep, hippo_schema: dict) -> None:
-    if step.entity not in hippo_schema:
+def _validate_filter_step(i: int, step: FilterStep, mosaic_schema: dict) -> None:
+    if step.entity not in mosaic_schema:
         raise ValidationError(
             f"step {i}: unknown entity {step.entity!r} -- not present in live hippoSchema"
         )
-    entity_fields = hippo_schema[step.entity]["fields"]
+    entity_fields = mosaic_schema[step.entity]["fields"]
 
     for f in step.filters:
         if f.op not in SUPPORTED_FILTER_OPS:
@@ -131,7 +131,7 @@ def _validate_filter_step(i: int, step: FilterStep, hippo_schema: dict) -> None:
                 f"for relationship-table-backed multivalued references"
             )
         target_entity = info["targetEntityType"]
-        target_fields = hippo_schema.get(target_entity, {}).get("fields", {})
+        target_fields = mosaic_schema.get(target_entity, {}).get("fields", {})
         rel_select_fields = step.forward_relation.get("select_fields", [])
         if not rel_select_fields:
             raise ValidationError(

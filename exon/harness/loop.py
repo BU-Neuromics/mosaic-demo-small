@@ -119,7 +119,7 @@ def _persist(run_dir: Path, artifact, report, bundle=None, patch=None) -> None:
 def run_refinement_loop(
     cases,
     seed: ContextArtifact,
-    hippo_schema: dict,
+    mosaic_schema: dict,
     capability_manifest: dict,
     cfg: LoopConfig,
     *,
@@ -149,7 +149,7 @@ def run_refinement_loop(
             report = run_suite(
                 cases,
                 artifact,
-                hippo_schema,
+                mosaic_schema,
                 capability_manifest,
                 model=cfg.model,
                 samples_per_case=cfg.samples_per_case,

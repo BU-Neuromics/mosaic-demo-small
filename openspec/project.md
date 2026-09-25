@@ -13,7 +13,7 @@ reduction or refactor of it, a fresh, smaller schema from scratch.
 - LinkML (schema authoring)
 - `linkml-data-gen` (synthetic data generation; sibling repo at
   `../linkml-data-gen`, must be on `origin/main` for the hints system)
-- Mosaic (`datahelix-mosaic` / `mosaic` CLI — sibling repo `../hippo`) for
+- Mosaic (`datahelix-mosaic` / `mosaic` CLI — sibling repo `../mosaic`) for
   `migrate`/`ingest`/`serve`
 - DataHelix `solo` deployment recipe (sibling repo `../datahelix`,
   `deploy/recipes/solo/`) for running Aperture against this project via
@@ -49,6 +49,17 @@ Published as a **private** repo under `BU-Neuromics/mosaic-demo-small` (2026-08-
 longer applies to this one. Generated artifacts (`*.db`, `data/bundle.yaml`) stay gitignored —
 regenerate with `make generate migrate ingest`.
 
+### OpenSpec phase numbering
+Phase numbers inside a change's `tasks.md` are **repo-role labels, not a roadmap**: Phase 1 =
+Mosaic (`BU-Neuromics/mosaic`), Phase 2 = Exon (this repo), Phase 3+ = Aperture
+(`BU-Neuromics/aperture`) or this repo's local demo infrastructure, per that change's own headers.
+They are scoped to a single change and are **not comparable across changes** — three active changes
+each carry a "Phase 2 — Exon (this repo)" with different tasks, different completion states and
+different blockers (`add-aperture-chat-panel`, `add-mosaic-mcp-boundary`,
+`add-exon-conversational-contract`). There is no repo-wide "Exon Phase 2," and no Exon delivery
+roadmap document exists. Always cite one as `<change-id>` Phase N; a bare "Exon Phase 2" is
+ambiguous and has already been read the wrong way by a sibling repo's planning doc.
+
 ## Domain Context
 Models a simplified biobank/omics pipeline: a `Donor` yields one or more
 `Sample`s; a `Workflow` run consumes one or more `Sample`s and produces a
@@ -66,12 +77,12 @@ worth demonstrating, not a bug to work around).
   real numeric distributions (normal/lognormal), sparse optional fields,
   skewed repeated values — not purely uniform-random and not thousands of
   near-identical rows.
-- Never touch upstream/remote git state on **other** repos (`../hippo`, `../datahelix`,
+- Never touch upstream/remote git state on **other** repos (`../mosaic`, `../datahelix`,
   `../linkml-data-gen`, …) — read-only there, always. This repo has its own remote (see Git
   Workflow) and may be pushed to.
 
 ## External Dependencies
 - `linkml-data-gen` (BU-Neuromics) — must be switched to `origin/main`
   locally for the hints system.
-- `datahelix-mosaic` (`mosaic` CLI) — via the `../hippo` sibling checkout.
+- `datahelix-mosaic` (`mosaic` CLI) — via the `../mosaic` sibling checkout.
 - DataHelix `solo` recipe — via the `../datahelix` sibling checkout.

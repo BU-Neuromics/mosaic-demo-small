@@ -1,1 +1,4 @@
 litellm
+fastapi
+uvicorn
+mcp

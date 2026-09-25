@@ -196,7 +196,7 @@ class ContextArtifact:
 
     # ---- rendering -----------------------------------------------------------------
 
-    def render(self, hippo_schema: dict, capability_manifest: dict) -> tuple[str, str]:
+    def render(self, mosaic_schema: dict, capability_manifest: dict) -> tuple[str, str]:
         """-> (system_prompt, grounding). Deterministic: same artifact + same schema always
         yields a byte-identical pair, which is what makes iteration-to-iteration comparison
         meaningful."""
@@ -208,8 +208,8 @@ class ContextArtifact:
 
         body = self.grounding_body
         for placeholder, value in (
-            ("{{schema_slots}}", render_schema_slots(hippo_schema)),
-            ("{{relationship_types}}", render_relationship_types(hippo_schema)),
+            ("{{schema_slots}}", render_schema_slots(mosaic_schema)),
+            ("{{relationship_types}}", render_relationship_types(mosaic_schema)),
             ("{{limitations}}", render_limitations(capability_manifest)),
         ):
             body = body.replace(placeholder, value)

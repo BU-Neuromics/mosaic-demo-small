@@ -16,10 +16,10 @@ from exon.harness.grading import grade_sample
 from exon.harness.outcome import FailureClass
 from exon.ops import FieldFilter, FilterStep, QueryPlan, RelatedLookupStep
 from exon.planner import PlanAttempt
-from exon.schema import fetch_hippo_schema, load_capability_manifest
+from exon.schema import fetch_mosaic_schema, load_capability_manifest
 
 ENDPOINT = "http://localhost:8080/graphql"
-HS = fetch_hippo_schema(ENDPOINT)
+HS = fetch_mosaic_schema(ENDPOINT)
 MANIFEST = load_capability_manifest("evals/schema/capabilities.json")
 CASES = {c.id: c for c in load_suite()}
 

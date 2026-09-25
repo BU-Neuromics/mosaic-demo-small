@@ -178,9 +178,31 @@ contract.
 ```
 {
   "turn":               <Turn>,         # this call's result (a new turn, or the redone one)
-  "suspended_turn_ids": ["<id>", ...]   # turns invalidated by an edit; [] when not editing
+  "suspended_turn_ids": ["<id>", ...],  # turns invalidated by an edit; [] when not editing
+  "turns":              [<Turn>, ...]   # the FULL conversation after this call (see below)
 }
 ```
+
+**Correction (2026-09-08): `turns` was added after the original two-field shape proved
+insufficient.** Found by building the demo chat client against the shipped path, not by re-reading
+this document. `edit_turn` recomputes every turn following the edited one — a real model call each
+— and with only `turn` + `suspended_turn_ids` on the wire, those recomputed turns had nowhere to
+go: a caller could not learn their new message or `QuerySpec`. A client deriving "the current
+draft" from its own copy therefore reads a **pre-edit** spec and executes the wrong query.
+Measured end to end: after editing turn 1 from hippocampus to cerebellum, executing the resulting
+draft returned 20 rows (the stale query) where the correct answer is 58.
+
+`turns` is returned on **every** call, not only edits, so a caller never reconstructs state
+itself — replace your list with it. `turn` and `suspended_turn_ids` are retained (still the answer
+to "which turn was this call about" and "what should the user re-prompt"), and are redundant with,
+never contradictory to, `turns`. On an `"error"` turn `turns` is **omitted, not empty**: an error
+means nothing was applied, so the conversation is unchanged, and `[]` would instead tell a caller
+to wipe the chat.
+
+Mosaic's `converse_query_spec` re-validates **every** proposal in `turns`, not just `turn` — a
+recompute produces specs the deployment has never seen, so checking only `turn` would leave the
+"Aperture never receives an invalid QuerySpec" guarantee with a hole exactly the width of an edit.
+Shipped in Exon's endpoint and upstream in `BU-Neuromics/mosaic` PR #200.
 
 This is the concrete shape Decision 3 (pure-function signature) and Decision 4 (discriminated
 `proposal`/`clarification`) describe only in prose — #186's implementer needs field names, not just
@@ -189,7 +211,19 @@ intent.
 **Validation stays authoritative in Mosaic, and this does not create a call cycle.** Exon's own
 turn endpoint may call Mosaic's `validate_query_spec`/`mosaic://capabilities` as an MCP client
 during its own generation retry loop — exactly the relationship the single-shot planner
-(`add-mosaic-mcp-boundary`) already has with Mosaic, unchanged. Separately, `converse_query_spec`
+(`add-mosaic-mcp-boundary`) already has with Mosaic, unchanged.
+
+**Correction (found 2026-09-07, while picking Phase 2 back up): that relationship doesn't exist
+yet.** No MCP client exists anywhere in this repo today — `exon/requirements.txt` has no MCP SDK,
+and the single-shot planner (`spec_planner.py`) only emits a `QuerySpec`; Mosaic validates it
+out-of-process, after the fact, not because Exon called `validate_query_spec` as a client.
+Creating that client is `add-mosaic-mcp-boundary` task 2.3's job. That migration was paused on an
+upstream aggregation/search gap (`mosaic#195`/`#196`) — since closed, both merged upstream and
+verified live against this repo's own demo server the same day this correction was written (see
+`tasks.md` 2.3 for the numbers). So `add-mosaic-mcp-boundary` 2.3 is actionable now, just not yet
+done. This design intent stands, but `tasks.md` 2.3 (the self-validation retry loop this decision
+motivates) is recorded there as blocked on that migration happening, not on any further upstream
+work. Separately, `converse_query_spec`
 validates whatever `QuerySpec` Exon's HTTP response carries **in-process** — calling the validator
 function directly, not over MCP, since it's the same Mosaic process that already hosts it — before
 ever labeling a turn `proposal`. This is defense-in-depth, not busywork: it's what keeps "Mosaic
@@ -208,6 +242,39 @@ timeout (suggest ~60s), sized for the hosted-model latency this MVP actually tar
 Haiku, per this session's earlier migration off local Ollama) — not `planner.py`'s existing
 `REQUEST_TIMEOUT`, which is tuned far higher for slow local/Ollama generation and would make a chat
 turn feel broken if reused here as-is.
+
+### 9. What "existing QuerySpec" means when the wire's `query_spec` and the turn history could diverge
+
+Decision 8's request carries `query_spec` as its own top-level field, separate from `turns` — and
+Decision 3's rationale for that (Aperture already tracks the current draft independently, via its
+URL) implies they are not always guaranteed to agree: Aperture's own point-and-click `QuerySpec`
+builder (pre-existing, unrelated to chat) could in principle edit the same URL state a chat
+conversation is also building, with no corresponding turn recording it.
+
+**Whether that can actually happen is Aperture's own UI call, not this repo's** (Non-Goals already
+name "designing the suspended-turn UI affordance" as Aperture's; this is the same kind of decision,
+one level earlier). The direction, as of this design pass: **for now, Aperture locks its
+point-and-click panel once a chat conversation begins** — pick one input method per conversation,
+not both at once. Unlocking that later (letting both edit the same draft concurrently) is an
+explicitly named possibility, not a closed door.
+
+Given that, Exon's endpoint does not need to *resolve* a genuine divergence today — the lock means
+one shouldn't exist. But "assume it can't happen and ignore the field" would silently rot: nothing
+would notice if Aperture's lock is ever loosened without Exon being told, and the wire's own
+`query_spec` field would sit unused and untested indefinitely. Instead: the endpoint computes the
+current draft from `turns` (unchanged from `conversational_orchestrator.append_turn`'s existing
+behavior) **and asserts it equals the wire's stated `query_spec`**, rejecting the request (400-level,
+naming both values) if they disagree. This is a checked invariant standing in for the lock, not a
+duplicate implementation of it — Exon has no notion of "UI panels" and never will; it only knows
+whether the two numbers it was given agree.
+
+**The unlock hook**: `conversational_orchestrator.append_turn` takes an optional
+`existing_query_spec` override (falling back to today's turns-derivation when omitted, so every
+already-shipped test and behavior is unchanged). The day Aperture's lock is lifted, the only change
+needed is in the HTTP layer: stop asserting equality, and pass the wire's `query_spec` through as
+the override instead. No change to `conversational_orchestrator.py` itself, no wire-contract change
+(the field was always there), no change to `edit_turn` (its redo step rewinds to a past point,
+`turns[:idx]`, which the wire's *current*-state field was never the right input for regardless).
 
 ## Risks / Trade-offs
 

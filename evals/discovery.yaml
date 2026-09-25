@@ -1,0 +1,153 @@
+# Discovery cases for this schema.
+#
+# Graded by `python -m reel.evals.run` (Reel), which reads this file through
+# REEL_EVAL_CASES. It lives here rather than in Reel because a case set is
+# domain-bearing: it describes THIS schema, and a planner that shipped its own
+# could only ever plan for one project.
+#
+# The assertion is which SLOTS a turn named -- by filtering on them or by
+# saying their names. Never prose, never row counts. A subset check, so naming
+# additional relevant fields is a better answer rather than a failure.
+#
+# Phrase every utterance in a researcher's vocabulary, NOT in field names. A
+# question containing the field name measures string matching, which is the one
+# thing that worked before any of this.
+#
+# THESE ELEVEN CASES ARE THE FROZEN COMPARISON ARM for the 4 -> 15 collection
+# scaling experiment (CONVERSATIONAL-QUERY.md section 10). Cases covering the
+# collections that change added live in `discovery-new-collections.yaml` and are
+# scored separately. Adding a twelfth case here would make the two arms
+# incomparable, which is the one thing this file exists to prevent.
+
+- id: d01
+  utterance: what do we have on donors about head injuries?
+  expect_slots: [history_of_rhi]
+  note: >-
+    The reference case. `history_of_rhi` shares no word with the question and is
+    findable only through its description ("repetitive head impacts (RHI)").
+    Naming cause_of_death and notes alongside it is a better answer, not a worse
+    one, which is why this is a subset check.
+
+- id: d02
+  utterance: which fields tell us whether a dataset can be shared outside the project?
+  expect_slots: [access_level, is_public]
+  note: >-
+    Two fields answer it and a complete answer names both. Neither contains
+    "shared" or "outside". Naming only one is a partial answer and fails.
+
+- id: d03
+  utterance: is there anything that tells us how a sample was kept before analysis?
+  expect_slots: [storage_condition]
+  note: >-
+    Resolves through "How the sample is stored". Phrased as a yes/no to check
+    the answer names the FIELD rather than replying "yes" -- an answer that does
+    not name the slot cannot be built on in the next turn.
+
+- id: d04
+  utterance: how long did each processing run take?
+  expect_slots: [duration_hours]
+  note: >-
+    FAILING, and the failure is the interesting one. The planner reaches for
+    completed_at/started_at instead, because the user is asking which FIELD to
+    look at and a QuerySpec can only express which ROWS to return. There is
+    nothing to filter on here: `duration_hours` is already in the envelope.
+
+    This is the `columns` gap made measurable -- projection is reserved and
+    hard-rejected (COLUMNS_NOT_SUPPORTED), so "pulls back specific fields", the
+    literal wording of the goal, is not expressible today. Keep this case
+    failing until it is; it is the cheapest standing reminder that the goal is
+    half-delivered.
+
+- id: d05
+  utterance: what part of the brain did these specimens come from?
+  expect_slots: [brain_region]
+  note: >-
+    "specimens" is the researcher's word for Sample; the field is found through
+    "Anatomical brain region this sample was collected from".
+
+- id: d06
+  utterance: what do we have on donors about toxicology reports?
+  expect_slots: [panel_type, specimen_matrix]
+  note: >-
+    RIGHT ANSWER CHANGED -- not a regression, and not a pass earned by tuning.
+
+    This was the negative case: the schema modelled nothing about toxicology, so
+    the turn had to name no slot and say so. `grow-demo-schema-collections` added
+    `ToxicologyReport`, which is the condition this case's own note set out for
+    converting it ("the day toxicology IS modelled, this becomes an ordinary
+    positive case with expect_slots, and the file follows the schema").
+
+    The first run at fifteen collections named `panel_type`, `specimen_matrix`,
+    `is_positive`, `reported_at` and `findings_summary` -- correct, and reached
+    without any prompt change. It was scored FAIL only because this file still
+    asserted expect_none. That is bookkeeping, and it is why the scaling
+    comparison records it separately from the cases that moved on their own.
+
+    The negative case it stopped being lives on as `n11` in
+    `discovery-new-collections.yaml`, pointed at imaging, which this schema
+    still does not model. Losing the only negative case to a schema change would
+    have quietly removed the one check that a planner refuses to invent.
+
+- id: d07
+  utterance: can we tell which donors were part of the main study group?
+  expect_slots: [cohort]
+  forbid_slots: [is_available]
+  note: >-
+    FAILING. `cohort` is right ("Study cohort this donor belongs to"), and
+    "main study group" IS genuinely ambiguous -- case, control, at_risk -- so
+    asking back is defensible. What is not defensible is asking back without
+    naming the field: the reply listed the three values but never said `cohort`,
+    leaving the user nothing to put in a query. A clarification still has to
+    hand over the data element.
+
+    `is_available` is the lexical trap: a system field about record
+    availability, nothing to do with study participation.
+
+- id: d08
+  utterance: what do we record about how samples are stored?
+  expect_slots: [storage_condition]
+  note: >-
+    d03 asks the same thing in different words and passed; this phrasing failed,
+    with the planner handing back a menu: "Are you asking what fields we track
+    about sample storage (schema discovery), or do you want to retrieve samples
+    filtered by how they're stored?"
+
+    The cause was a classification branch in the prompt -- decide whether this is
+    a question ABOUT THE DATA or one asking WHAT EXISTS -- and "what do we record
+    about X" is honestly both. A model that cannot classify asks, which is
+    exactly the refusal the contract forbids. The branch is gone: name the fields
+    always, and decide about rows yourself.
+
+    Kept as a separate case from d03 on purpose. Two phrasings of one question
+    behaving differently is the whole risk with prompt-shaped behaviour, and one
+    case per phrasing is the only way that stays visible.
+
+# --- Metadata listing. The original motivating questions, pinned so no amount
+# --- of prompt tuning for other cases can quietly take them away again.
+
+- id: d09
+  utterance: what fields are available on datasets?
+  expect_slots: [access_level, dataset_type, file_size_bytes, is_public, produced_by]
+  note: >-
+    THE question this whole line of work started from; it used to be refused. A
+    complete answer lists every Dataset field, so this asserts a representative
+    spread rather than all ten -- enough that a partial answer fails, without
+    pinning wording.
+
+- id: d10
+  utterance: which fields only accept a fixed set of values?
+  expect_slots: [access_level, dataset_type, cohort, sex, brain_region, sample_type, storage_condition, status, workflow_type]
+  note: >-
+    Asserts the answer spans entities rather than stopping at the first. The
+    listed slots were every enum in the schema when there were four entity
+    types; at fifteen there are twenty-two, so this is now a representative
+    spread. The assertion is unchanged and still a subset check -- naming the
+    newer enums as well is a better answer.
+
+- id: d11
+  utterance: what kinds of things does this dataset hold, and how do they relate?
+  expect_slots: [donor, input_samples, produced_by]
+  note: >-
+    Entity types and the edges between them. The expected slots are the three
+    references, because naming the edge is what tells a user a traversal is
+    possible -- listing entity names alone does not.

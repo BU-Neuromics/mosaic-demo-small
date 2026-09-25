@@ -52,11 +52,13 @@ CAPS = {
                 "multivalued": False, "enum_values": [], "target_entity_type": None,
                 "filter_ops": ["eq", "neq", "in", "gt", "gte", "lt", "lte", "is_null"],
                 "predicate": False, "orderable": True,
+                "description": "How much\n  material was banked,\n  in millilitres.",
             },
             {
                 "name": "donor", "kind": "reference", "range": "Donor", "required": True,
                 "multivalued": False, "enum_values": [], "target_entity_type": "Donor",
                 "filter_ops": [], "predicate": True, "orderable": False,
+                "description": "The person this specimen came from.",
             },
         ],
     },
@@ -203,6 +205,31 @@ class TestGrounding:
         text = render_capability_grounding(CAPS)
         assert "donor: reference -> Donor (to-one)" in text
         assert "NOT a direct field filter" in text
+
+    def test_slot_descriptions_are_rendered(self):
+        # The capability under test for schema discovery: a question phrased in the
+        # researcher's vocabulary must be resolvable to a slot whose NAME shares none
+        # of its words. Grounding that drops the description cannot do that.
+        text = render_capability_grounding(CAPS)
+        assert '"How much material was banked, in millilitres."' in text
+
+    def test_reference_slots_carry_their_descriptions_too(self):
+        # The reference branch used to `continue` before the description was appended,
+        # which would have omitted exactly the slots that name where related
+        # information lives.
+        text = render_capability_grounding(CAPS)
+        assert '"The person this specimen came from."' in text
+
+    def test_entity_descriptions_are_rendered(self):
+        text = render_capability_grounding(CAPS)
+        assert 'entity "Donor": A tissue donor.' in text
+
+    def test_a_folded_description_stays_on_one_line(self):
+        # The grounding is a line-per-slot listing the model reads positionally;
+        # LinkML folds long descriptions across lines.
+        text = render_capability_grounding(CAPS)
+        line = next(l for l in text.splitlines() if l.strip().startswith("volume_ml:"))
+        assert "millilitres." in line
 
     def test_traversable_edges_name_the_anchor_they_belong_to(self):
         # Two unrelated models previously put the wrong identifier in the relationship slot

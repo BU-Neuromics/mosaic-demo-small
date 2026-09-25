@@ -1,7 +1,8 @@
 {
   "_meta": {
-    "captured_against": "host-side `mosaic serve --config mosaic.yaml --graphql` on the fixed ../hippo checkout at commit ec59c90 (unreleased past v0.12.1) -- NOT the datahelix solo container. See README.md 'Two Mosaic builds in play'.",
-    "data_snapshot": "3600 records (300 donors / 900 samples / 1200 workflows / 1200 datasets), generate.py --seed 0"
+    "captured_against": "Mixed, per entry. q01-q25, q29-q31, q35 were captured 2026-08 against a host-side `mosaic serve --graphql` on the ../mosaic checkout at ec59c90 (repo named ../hippo at capture time; ADR-0004). q26-q28 and q32-q33 were re-captured 2026-09-17 against the certified DataHelix solo container running mosaic 0.13.0 (digest sha256:ded2942...), which is now this repo's default serving path.",
+    "data_snapshot": "3600 records (300 donors / 900 samples / 1200 workflows / 1200 datasets), generate.py --seed 0",
+    "shape_note": "mosaic 0.13.0 returns search results as a page envelope {items,total,limit,offset}; the pre-0.13.0 captures were bare lists. q26-q28 carry the envelope shape."
   },
   "q01": {
     "status": "ok",
@@ -1314,34 +1315,44 @@
   },
   "q26": {
     "status": "ok",
-    "graphql": "{ searchDonors(q: \"cohort-alpha:42\") { id name } }",
+    "graphql": "{ searchDonors(q: \"cohort-alpha:42\") { total items { id name } } }",
     "response": {
-      "searchDonors": [
-        {
-          "id": "DNR-0001",
-          "name": "Michael Jones"
-        }
-      ]
+      "searchDonors": {
+        "total": 1,
+        "items": [
+          {
+            "id": "DNR-0001",
+            "name": "Michael Jones"
+          }
+        ]
+      }
     }
   },
   "q27": {
     "status": "ok",
-    "graphql": "{ searchDatasets(q: \"recall-freeze\") { id name } }",
+    "graphql": "{ searchDatasets(q: \"recall-freeze\") { total items { id name } } }",
     "response": {
-      "searchDatasets": [
-        {
-          "id": "DTST-0001",
-          "name": "Proactive bandwidth-monitored intranet"
-        }
-      ]
+      "searchDatasets": {
+        "total": 1,
+        "items": [
+          {
+            "id": "DTST-0001",
+            "name": "Proactive bandwidth-monitored intranet"
+          }
+        ]
+      }
     }
   },
   "q28": {
     "status": "not_indexed",
-    "graphql": "{ searchSamples(q: \"tissue\") { id } }",
+    "graphql": "{ searchSamples(q: \"tissue\") { total items { id } } }",
     "response": {
-      "searchSamples": []
-    }
+      "searchSamples": {
+        "total": 0,
+        "items": []
+      }
+    },
+    "note": "No Sample slot is annotated hippo_search:fts5, so search always returns empty. Not blocked \u2014 the capability exists, this schema just does not use it."
   },
   "q29": {
     "status": "ok",
@@ -1676,37 +1687,65 @@
     }
   },
   "q32": {
-    "status": "blocked",
-    "graphql": "{ donors(filters: [{field: \"age_at_death\", value: 65, op: GT}]) { total } }",
-    "response": null,
-    "errors": [
-      {
-        "message": "Value 'GT' does not exist in 'FilterOp' enum.",
-        "locations": [
+    "status": "ok",
+    "graphql": "{ donors(filters: [{field: \"age_at_death\", value: 65, op: GT}], orderBy: AGE_AT_DEATH, orderDir: DESC, limit: 5) { total items { id ageAtDeath } } }",
+    "response": {
+      "donors": {
+        "total": 174,
+        "items": [
           {
-            "line": 1,
-            "column": 59
+            "id": "DNR-0272",
+            "ageAtDeath": 99
+          },
+          {
+            "id": "DNR-0115",
+            "ageAtDeath": 96
+          },
+          {
+            "id": "DNR-0079",
+            "ageAtDeath": 95
+          },
+          {
+            "id": "DNR-0169",
+            "ageAtDeath": 95
+          },
+          {
+            "id": "DNR-0236",
+            "ageAtDeath": 95
           }
         ]
       }
-    ],
-    "blocked_by": [
-      "mosaic#96"
-    ]
+    },
+    "note": "Unblocked as of mosaic 0.13.0 (issue #96 / #156 ADR-0007: orderBy/orderDir + range filters on the list surface). Was blocked_by mosaic#96."
   },
   "q33": {
-    "status": "blocked",
-    "reason": "No aggregation/group-by root query exists. The only route today is one equality-filtered count query per enum value (as q01/q02 do individually), not a single grouped-count query.",
-    "blocked_by": [
-      "mosaic#96"
-    ]
+    "status": "ok",
+    "graphql": "{ donorsFacetCounts(field: \"cohort\") { value count } }",
+    "response": {
+      "donorsFacetCounts": [
+        {
+          "value": "control",
+          "count": 125
+        },
+        {
+          "value": "case",
+          "count": 104
+        },
+        {
+          "value": "at_risk",
+          "count": 71
+        }
+      ]
+    },
+    "note": "Unblocked as of mosaic 0.13.0 (facet counts on the list surface). Was blocked_by mosaic#96."
   },
   "q34": {
     "status": "blocked",
-    "reason": "relatedTo(id, relationshipType) accepts no predicate on the returned entities' own fields, so a single-composed-query answer isn't possible -- only relatedTo plus a client-side filter over that one call's own small result (see q25's method for the general pattern).",
+    "reason": "relatedTo still takes only (id, relationshipType) \u2014 no predicate argument \u2014 so this cannot be one composed query. Verified against 0.13.0 on 2026-09-17: mosaic#148 closed 2026-08-20 but its fix is NOT in the v0.13.0 tag. Re-audit on the next release rather than inferring from the issue state.",
     "blocked_by": [
       "mosaic#148"
-    ]
+    ],
+    "blocked_at_version": "mosaic 0.13.0"
   },
   "q35": {
     "status": "ok",
