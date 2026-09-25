@@ -47,8 +47,21 @@ classes:
         description: >-
           Whether this donor has a documented history of repetitive head
           impacts (RHI) (facet).
+      samples:
+        range: Sample
+        multivalued: true
+        inverse: donor
+        description: >-
+          Samples collected from this donor — a virtual reverse edge over
+          Sample.donor's stored FK (mosaic ADR-0011). Nothing is stored for it.
       cause_of_death:
         description: Free-text cause of death, when known (sparse — often unrecorded).
+      diagnoses:
+        range: Diagnosis
+        multivalued: true
+        inverse: donor
+        description: >-
+          Diagnoses recorded for this donor (virtual reverse edge).
       notes:
         description: >-
           Free-text intake notes. Full-text searchable — one of the fields
@@ -103,6 +116,12 @@ classes:
       tags:
         multivalued: true
         description: Free-form labels (e.g. batch or shipment tags); sparse and variable in count.
+      aliquots:
+        range: Aliquot
+        multivalued: true
+        inverse: sample
+        description: >-
+          Aliquots drawn from this sample (virtual reverse edge).
       collected_at:
         range: date
         description: Date the sample was collected.
@@ -143,6 +162,13 @@ classes:
           When the workflow run finished. Sparse — approximately null for
           runs still queued/running (an approximation, not an enforced
           correlation with `status`).
+      datasets:
+        range: Dataset
+        multivalued: true
+        inverse: produced_by
+        description: >-
+          Datasets this workflow run produced (virtual reverse edge over
+          Dataset.produced_by).
       duration_hours:
         range: float
         description: Wall-clock duration of the run, in hours, once complete.
