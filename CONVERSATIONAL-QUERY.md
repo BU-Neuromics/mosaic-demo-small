@@ -717,10 +717,10 @@ happened. Anything grading or running `exon/` is grading a copy nobody executes.
 | **Reference fields go unnamed** | The most valuable thing left. `produced_by`, `donor`, `input_samples` are how a user learns a traversal is possible, and answers list the scalars and stop. `d11` fails on it in every run; `d09` fails on it in some. The capability exists — the metadata answers in §6 volunteer edges unprompted — it just is not reliable. |
 | **The negative case regressed** | Pushing "name the fields" to fix one case made `d06` name plausible-but-wrong fields for an unmodelled topic. An explicit carve-out didn't hold. |
 | **A clarification that withholds the field** | `d07` asks back about an ambiguous phrase — fine — without naming `cohort`, which leaves the user nothing to query. |
-| **Field selection in the *spec*** | The user can choose columns; the planner cannot express that choice. `columns` is rejected at parse. [mosaic#215](https://github.com/BU-Neuromics/mosaic/issues/215). |
+| **Field selection in the *spec*** | Still true of the *planner*: `columns` is rejected at parse, so a conversational turn cannot express the choice. [mosaic#215](https://github.com/BU-Neuromics/mosaic/issues/215). The browsing surface gained it 2026-09-29 (Aperture ADR-0041) by projecting client-side, which is what that error's own message prescribes — so the gap is now narrower than it reads: the capability exists, the *artifact* cannot carry it. |
 | ~~**`make chat` from pinned images**~~ | **Resolved 2026-09-29.** Mosaic v0.14.0 ships `--mcp`, the `mcp` extra and the Host allow-list; Reel v0.1.0 is its first published image. Both `make chat` and `make chat-dev` work. |
 | **A certified deployment** | Partly resolved. Both releases now exist and `aperture0.6.0+mosaic0.14.0` is certified, so `solo` boots — but it wires **no planner**, and Reel is not in the ledger yet (it needs a Mosaic pair to certify against). The conversational stack is still `ide`-only. |
-| **The older reliability suite** | Still grading the *retired* query-plan emitter. |
+| **The older reliability suite** | Still grading the *retired* query-plan emitter, but no longer only that: a QuerySpec grader landed alongside it 2026-09-29, with two failure classes the validator cannot see (`empty_related`, `wrong_result_shape`). Re-baselining the 29 expectation cases is what remains (§12 item 5). |
 | **`exon/` has forked** | The prompt work went to Reel only; this repo's copy is stale and Phase C3 hasn't happened. |
 | **Answers describe fields instead of naming them** | *"whether a screen was run and came back positive"* is readable and correct, and a user cannot type it into a filter. This is one reason cases score lower than the answers read — see §10. |
 | **A cold page still opens on whichever collection sorts first** | Partly fixed: the builder now takes its cold-start anchor from the nav's declared default instead of its own alphabetical index, so the two agree. But `buildNavView` itself falls back to `visible[0]` when no `defaultCollection` is configured, and this demo configures none — so it still lands on `Aliquot`, now for the nav's reason. Needs a `VITE_NAV` default, or task 7.3 (ask instead of defaulting). |
@@ -1133,7 +1133,7 @@ since been merged up.
   attributes and **no descriptions** — so GraphQL and MCP are strict supersets, not mirrors.
   Unfiled.
 
-### Reverse traversal is native now, and this schema does not use it
+### Reverse traversal is native now, and this schema now uses it
 
 [mosaic#204](https://github.com/BU-Neuromics/mosaic/issues/204) — *"QuerySpec has no
 reverse-edge traversal"* — was **closed 2026-09-19** by
@@ -1169,13 +1169,22 @@ the feature:
 So declaring `inverse:` is the schema author saying *"this direction is part of my model."*
 It is the intended interface, not a workaround.
 
-**`schemas/demo.yaml` declares none** — which is why `Donor` has zero forward references and
-why traversal from it falls through to Aperture's capped client-side semijoin. That is not a
-gap to patch; it is a capability this schema has not opted into. Whether it should is a
-modelling question about the data, not a mechanical one.
+**Updated 2026-09-29 — `schemas/demo.yaml` now declares four.** It previously declared none,
+which is why `Donor` had zero forward references and traversal from it fell through to
+Aperture's capped client-side semijoin. Four were opted into deliberately rather than
+exhaustively — `Donor.samples`, `Donor.diagnoses`, `Sample.aliquots`, `Workflow.datasets` —
+because there are fourteen forward references here and each declaration widens the surface a
+planner has to ground against, which is the thing this repo exists to measure.
 
-*(ADR-0011 is `Status: Proposed`, deciders "labadorf (pending)" — implemented and merged,
-not yet ratified. Same pattern as ADR-0010.)*
+The storage claim was tested rather than assumed: mosaic v0.14.0 served the declared schema
+against an **untouched copy** of `data/mosaic.db` and resolved every edge with no migration
+and no re-ingest — `DNR-0002` → 3 samples, `SMPL-0024` → 8 aliquots, `WRKF-0001` → 2
+datasets — plus a reverse predicate (`where: {diagnoses: {some: {isPrimary: {eq: true}}}}`
+→ 123 donors). That is what "virtual reverse edge over the forward FK" means in practice.
+
+*(ADR-0011 is now `Status: Accepted`, ratified in
+[mosaic#219](https://github.com/BU-Neuromics/mosaic/pull/219). ADR-0010 is still `Proposed`
+— the pattern this note used to pair them on now applies only to the latter.)*
 
 ### A note on one issue that was filed wrongly
 
@@ -1220,9 +1229,17 @@ simultaneously, and field-finding, the one everybody worries about, is not among
 defaulting (7.3), group the panel by entity (8.x), and search it (9.x) — which matters
 more now that it lists fifteen collections' worth of fields.
 
-**3. `columns` upstream.** [mosaic#215](https://github.com/BU-Neuromics/mosaic/issues/215).
-The goal's last clause, unexpressible in the artifact. The flat-list increment would be
-enough for the conversational path.
+**3. `columns` upstream.** [mosaic#215](https://github.com/BU-Neuromics/mosaic/issues/215),
+still open. The goal's last clause, unexpressible in the artifact. The flat-list increment
+would be enough for the conversational path.
+
+*Partly answered elsewhere (2026-09-29).* Aperture ADR-0041 ships referenced-class columns
+by doing exactly what `COLUMNS_NOT_SUPPORTED`'s own message prescribes — request full
+envelopes and project client-side — and splits the field so the two halves can land
+separately: traversal and grain belong in the artifact and wait on this issue, while
+visibility and ordering never needed to be there at all. So the browsing surface has the
+capability today; the conversational path still cannot *express* the choice, which is what
+#215 is for.
 
 **4. Phase C3.** Replace this repo's `exon/` with a pointer and a pin. It has forked; the
 longer it sits, the more expensive the reconciliation.
@@ -1231,6 +1248,23 @@ longer it sits, the more expensive the reconciliation.
 the precondition B-harness waits on. It carries an undecided design question: how to route
 facet- and range-shaped questions, where the obvious fix would leak into the conversational
 contract and break its no-aggregation guarantee. Two options written down, neither chosen.
+
+*Started 2026-09-29, two commits in.* Slot resolution moved out of `validator.py` into
+`schema.py` — it is schema grounding, not validation, and the grader needs it after the
+validator goes, which is the dependency 2.4 named. And the QuerySpec grader landed
+alongside the QueryPlan one rather than replacing it, so the suite can score both artifacts
+against the same questions: the two are not structurally comparable, since a QuerySpec
+expresses as one `related` criterion what a QueryPlan expressed as two chained steps.
+
+It brought two failure classes Mosaic's validator cannot see by construction — it checks
+shape and legality, never faithfulness. `empty_related`: a `related` criterion with no
+criteria, which validates, executes, and returns every anchor having *any* related record.
+`wrong_result_shape`: a row query for a question needing a distribution.
+
+The routing half is still unchosen, and the target is now sharper than the original note
+assumed: a *single* count is answerable through the execute envelope's `total` and should
+be routed rather than refused; only a per-category count structurally needs the facet tool
+(§5).
 
 **6. Releases — done, except the last mile.** Mosaic `v0.14.0`, Aperture `v0.6.0` and Reel
 `v0.1.0` are all published, and `fixture 1.1.0 · aperture0.6.0+mosaic0.14.0` is a passing
