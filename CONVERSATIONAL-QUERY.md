@@ -3,8 +3,14 @@
 Ask a LinkML-backed store what it holds, in plain language, and get a runnable query
 back. Runs in Docker behind one port.
 
-Updated 2026-09-22. Covers what it does, how it was built, how to run it, how it is
+Updated 2026-09-29. Covers what it does, how it was built, how to run it, how it is
 measured, and what is not done.
+
+**Status, 2026-09-29 — every component now ships.** Reel published its first release
+(`v0.1.0`) and Mosaic `v0.14.0` carries `--mcp`, the `mcp` extra and the Host allow-list,
+so `make chat` from pinned images works alongside `make chat-dev` for the first time. The
+release blockers this document has carried since it was written are closed; §12 records
+what is actually left.
 
 The demo schema grew from 4 entity classes to **15** on 2026-09-22 (§10). Every example
 in §6 was re-run against the larger schema and the result recorded, so the numbers here
@@ -161,19 +167,60 @@ that. The proposal is now *visible* immediately and still *runs* only when you s
 
 ## 5. Running it
 
+**Before anything else — model credentials.** Reel is the only service in the stack that
+talks to a model, and it holds none of its own; Mosaic and Aperture never see them. The
+default is Bedrock via a profile mounted read-only from the host:
+
+```bash
+aws sts get-caller-identity          # must succeed, or nothing below will answer
+export AWS_PROFILE=default           # whichever profile has Bedrock access
+```
+
+For a non-Bedrock provider set `REEL_MODEL` (a litellm-style provider-prefixed string)
+and that provider's key — `ANTHROPIC_API_KEY`, `OPENAI_API_KEY` — in the invoking
+environment. The compose file passes them through in list form on purpose: `KEY: ${KEY:-}`
+would *set* the variable to empty, and boto3 reads `AWS_PROFILE=""` as a profile literally
+named empty.
+
 ```bash
 cd datahelix/deploy/recipes/ide
 cp .env.example .env     # first time only — edit paths if your layout differs
-make chat-dev
+make chat-dev            # or `make chat` for pinned images
 open http://localhost:8080
 ```
 
 Then click **Query builder** in the left sidebar.
 
+**First run is slow and looks broken.** The source profiles install `node_modules` into a
+named volume, and the planner fetches its capability grounding at startup — if Mosaic is
+not listening yet it exits and restarts until it is. One or two planner restarts on a cold
+start are expected; `make logs-planner` says exactly what it is waiting for.
+
+**Checking it without the browser.** The relay registers only when `MOSAIC_EXON_URL` is
+set, so its presence is the signal that the whole chain is wired:
+
+```bash
+curl -s -X POST http://localhost:8080/graphql -H 'content-type: application/json' \
+  -d '{"query":"{ __schema { mutationType { fields { name } } } }"}' | grep -o converseQuerySpec
+```
+
+And one full turn, end to end — plain language in, runnable spec out:
+
+```bash
+curl -s -X POST http://localhost:8080/graphql -H 'content-type: application/json' \
+  -d '{"query":"mutation($u:String!){ converseQuerySpec(utterance:$u){ turn { status message querySpec } } }",
+       "variables":{"u":"How many tissue samples do we have from the hippocampus?"}}'
+```
+
+Measured 2026-09-29 against the live stack: a `proposal` in **2.8s**, anchored on `Sample`
+with `sample_type eq tissue` and `brain_region eq hippocampus` — which executes to 23 rows.
+Note the mutation takes `utterance` and returns `ConverseResult { turn, turns,
+suspendedTurnIds }`; it does not take a `turns` list on the first call.
+
 | Command | What it does |
 | --- | --- |
 | `make chat-dev` | Everything from source, planner included |
-| `make chat` | Same, from pinned images — *needs a Mosaic release, see §9* |
+| `make chat` | Same, from pinned images — works as of Mosaic v0.14.0 + Reel v0.1.0 |
 | `make dev` | No planner: browsing only, chat panel correctly hidden |
 | `make logs-planner` | Follow the planner — grounding, model calls, failures |
 | `make restart-planner` | Re-read the schema after changing it |
@@ -464,13 +511,22 @@ empty model string (its error named no provider at all, just a link to its docs)
 pass-through list form for optional variables, and the planner's config treats empty as
 unset for all five reads.
 
-**2. The published Mosaic v0.13.0 image has no `--mcp` flag at all.** The `mcp` extra
-postdates the tag. The `mosaic-dev` service now installs it on first run — mirroring the
-`node_modules` pattern `aperture-dev` already uses. **This comes out the moment an image
-ships with the extra.**
+**2. The published Mosaic v0.13.0 image had no `--mcp` flag at all.** The `mcp` extra
+postdated the tag, so `mosaic-dev` installed it on first run — mirroring the
+`node_modules` pattern `aperture-dev` uses. That note ended *"this comes out the moment an
+image ships with the extra."*
+
+> **Removed 2026-09-29.** v0.14.0 ships both, verified against the image directly. The
+> workaround did not merely become redundant — it **broke `make dev`**: the recipe's live
+> CI job timed out twice waiting on a dev server, because clearing the entrypoint to run a
+> shell and pip-install at container start is not free. Worth recording as the general
+> lesson: a workaround that outlives its cause is not inert, and the thing that made it
+> necessary is usually not the thing that tells you it is gone.
 
 **3. That image's `ENTRYPOINT` is `mosaic`.** A `command:` of `sh` arrives as `mosaic sh`
-→ *"No such command 'sh'"*. The entrypoint is now cleared explicitly.
+→ *"No such command 'sh'"*, which is why the entrypoint had to be cleared for item 2's
+shell. With item 2 gone the override went with it, and the service is back to a plain
+`command:` list.
 
 **4. In the source profile the service is `mosaic-dev`, not `mosaic`.** Compose service
 names *are* the DNS names, so the planner pointing at `mosaic` got *"Name or service not
@@ -642,8 +698,8 @@ happened. Anything grading or running `exon/` is grading a copy nobody executes.
 | **The negative case regressed** | Pushing "name the fields" to fix one case made `d06` name plausible-but-wrong fields for an unmodelled topic. An explicit carve-out didn't hold. |
 | **A clarification that withholds the field** | `d07` asks back about an ambiguous phrase — fine — without naming `cohort`, which leaves the user nothing to query. |
 | **Field selection in the *spec*** | The user can choose columns; the planner cannot express that choice. `columns` is rejected at parse. [mosaic#215](https://github.com/BU-Neuromics/mosaic/issues/215). |
-| **`make chat` from pinned images** | Needs a Mosaic newer than v0.13.0, for `--mcp` and the Host allow-list. `make chat-dev` works today. |
-| **A certified deployment** | `ide` builds from source and is exempt from the deploy gate. `solo` needs a Mosaic release *and* a Reel release. |
+| ~~**`make chat` from pinned images**~~ | **Resolved 2026-09-29.** Mosaic v0.14.0 ships `--mcp`, the `mcp` extra and the Host allow-list; Reel v0.1.0 is its first published image. Both `make chat` and `make chat-dev` work. |
+| **A certified deployment** | Partly resolved. Both releases now exist and `aperture0.6.0+mosaic0.14.0` is certified, so `solo` boots — but it wires **no planner**, and Reel is not in the ledger yet (it needs a Mosaic pair to certify against). The conversational stack is still `ide`-only. |
 | **The older reliability suite** | Still grading the *retired* query-plan emitter. |
 | **`exon/` has forked** | The prompt work went to Reel only; this repo's copy is stale and Phase C3 hasn't happened. |
 | **Answers describe fields instead of naming them** | *"whether a screen was run and came back positive"* is readable and correct, and a user cannot type it into a filter. This is one reason cases score lower than the answers read — see §10. |
@@ -1156,18 +1212,27 @@ the precondition B-harness waits on. It carries an undecided design question: ho
 facet- and range-shaped questions, where the obvious fix would leak into the conversational
 contract and break its no-aggregation guarantee. Two options written down, neither chosen.
 
-**6. Releases.** `make chat` from pinned images needs a Mosaic release. `solo` needs that
-and a Reel release to certify against.
+**6. Releases — done, except the last mile.** Mosaic `v0.14.0`, Aperture `v0.6.0` and Reel
+`v0.1.0` are all published, and `fixture 1.1.0 · aperture0.6.0+mosaic0.14.0` is a passing
+ledger entry. What is left is narrower than it was: Reel has no ledger entry of its own,
+and `solo` — the single-container recipe — wires no planning service, so the conversational
+stack runs only under `ide`. Getting it into `solo` is what would make it deployable by
+someone who is not running a checkout.
 
-### Nothing is on `main`
+### Most of it is on `main` now (2026-09-29)
 
-| Repo | Branch |
+The table here used to read *"nothing is on `main`"*. That stopped being true this week.
+
+| Repo | State |
 | --- | --- |
-| `reel` | `main` (its own default — runtime, image, evals) |
-| `mosaic` | `docs/ratify-adr-0010` |
-| `mosaic-demo-small` | `exon-conversational-turn-core` (schema growth + scaling measurement) |
-| `aperture` | `fix/discovery-turn-chrome` |
-| `datahelix` | `feat/ide-planning-service` |
+| `reel` | **`main`**, released `v0.1.0` — first published image; CI green for the first time |
+| `mosaic` | **`main`**, released `v0.14.0` — MCP boundary, `converseQuerySpec`, reverse edges |
+| `aperture` | **`main`**, released `v0.6.0` — chat panel, traversal columns |
+| `datahelix` | **`main`** carries the certified pins; the ide planner wiring is in review |
+| `mosaic-demo-small` | still `exon-conversational-turn-core` — schema growth, scaling measurement, `inverse:` slots |
+
+So the honest version is the inverse of what it was: the components ship, and what remains
+unmerged is this repo's own branch and one recipe PR.
 
 They want reviewing as a set — several only make sense together.
 
