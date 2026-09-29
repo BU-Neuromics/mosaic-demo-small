@@ -18,7 +18,8 @@ Comparison is on semantics, never spelling: field names resolve through hippoSch
 most likely way to waste a week chasing ghosts.
 """
 from ..ops import FilterStep, RelatedLookupStep
-from ..validator import ValidationError, resolve_field, validate_plan
+from ..schema import resolve_field
+from ..validator import ValidationError, validate_plan
 from .outcome import FailureClass, SampleResult
 
 
