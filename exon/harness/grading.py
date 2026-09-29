@@ -391,3 +391,139 @@ def _compare_expected(case_id: str, result: dict, expected_results: dict | None)
             )
 
     return "; ".join(problems)
+
+
+# ---------------------------------------------------------------------------
+# QuerySpec grading (task 2.5). Lives alongside the QueryPlan grader above
+# during the port, so the suite can score both artifacts against the same
+# questions -- the before/after this harness exists to provide.
+#
+# Deliberately NOT a translation of `check_faithfulness`. A QuerySpec expresses
+# as one `related` criterion what a QueryPlan expressed as a second step chained
+# by `source_step`, so the two are not structurally comparable and a diff would
+# report every relationship case as a false regression (2.5a).
+# ---------------------------------------------------------------------------
+
+def _spec_criteria(spec: dict, kind: str) -> list:
+    return [c for c in (spec.get("criteria") or []) if c.get("kind") == kind]
+
+
+def check_empty_related(spec: dict) -> tuple:
+    """-> (ok, detail). Task 2.5d.
+
+    A `related` criterion with no `criteria` asserts nothing. Mosaic's compiler fills a
+    trivially-true predicate on the target's identifier, so it validates, executes, and
+    returns every anchor record having *any* related record -- a silently dropped
+    constraint wearing the shape of a successful query. Nothing upstream can catch it:
+    the spec is legal.
+    """
+    for c in _spec_criteria(spec, "related"):
+        if not c.get("criteria"):
+            return False, (
+                f"`related` criterion on edge {c.get('edge')!r} carries no criteria -- it "
+                f"asserts nothing and matches every anchor record that has any related "
+                f"record, silently dropping the constraint the instruction stated"
+            )
+    return True, ""
+
+
+def check_result_shape(spec: dict, case) -> tuple:
+    """-> (ok, detail). Task 2.5c, grading half only.
+
+    A row query cannot express a grouped count. `execute_query_spec`'s envelope carries a
+    scalar `total`, which is why *single*-count questions come back correct and must not be
+    graded wrong -- but a per-category question needs a distribution, and no amount of row
+    querying produces one.
+
+    This grades the gap; it does not fix it. Routing facet/range/search-shaped instructions
+    to the aggregation tools is a planner change, tracked separately -- deliberately, since
+    the obvious implementation (a `result_shape` field on SPEC_TOOL) would leak into the
+    conversational turn contract.
+    """
+    want = getattr(case.spec, "result_shape", "rows")
+    if want == "rows":
+        return True, ""
+    return False, (
+        f"the instruction asks for a {want}-shaped answer, but the emitter produced a row "
+        f"query (anchor {spec.get('anchor')!r}, {len(spec.get('criteria') or [])} criteria). "
+        f"A row query's envelope carries a single scalar total and structurally cannot "
+        f"express a {want}; this needed the {want} tool, not a filter"
+    )
+
+
+def check_spec_faithfulness(spec: dict, case, mosaic_schema: dict) -> tuple:
+    """-> (ok, detail). `detail` names the specific defect, because that string is what the
+    refiner reasons over."""
+    exp = case.spec
+    if exp is None:
+        return True, ""
+
+    if exp.anchor and spec.get("anchor") != exp.anchor:
+        return False, (
+            f"anchored on {spec.get('anchor')!r} but the question is about {exp.anchor!r} -- "
+            f"the anchor decides what a result row IS, so this answers a different question"
+        )
+
+    entity = spec.get("anchor")
+    actual = {
+        _canon(mosaic_schema, entity, c.get("slot", "")): (c.get("value"), c.get("op", "eq"))
+        for c in _spec_criteria(spec, "field")
+    }
+
+    for rc in exp.required_criteria:
+        slot = _canon(mosaic_schema, entity, rc.slot)
+        if slot not in actual:
+            return False, (
+                f"missing required criterion {slot}={rc.value!r} -- the instruction states "
+                f"this constraint and the spec drops it (present: {sorted(actual) or 'none'})"
+            )
+        val, op = actual[slot]
+        if not _values_equal(rc.value, val):
+            return False, (
+                f"criterion {slot} has value {val!r} but the instruction says {rc.value!r}"
+            )
+        if str(op) != str(rc.op):
+            return False, (
+                f"criterion {slot} uses op {op!r}; {rc.op!r} is required to match the "
+                f"instruction"
+            )
+
+    if exp.forbid_extra_criteria:
+        required = {_canon(mosaic_schema, entity, rc.slot) for rc in exp.required_criteria}
+        extra = sorted(set(actual) - required)
+        if extra:
+            return False, (
+                f"adds criteria {extra} the instruction never asked for -- over-filtering "
+                f"answers a narrower question than the one posed"
+            )
+
+    got_related = {c.get("edge"): c for c in _spec_criteria(spec, "related")}
+    for rr in exp.required_related:
+        got = got_related.get(rr.edge)
+        if got is None:
+            return False, (
+                f"missing a related criterion on edge {rr.edge!r} -- the instruction "
+                f"constrains the related entity and the spec does not traverse it "
+                f"(edges present: {sorted(k for k in got_related if k) or 'none'})"
+            )
+        if got.get("quantifier", "some") != rr.quantifier:
+            return False, (
+                f"edge {rr.edge!r} uses quantifier {got.get('quantifier')!r}; the "
+                f"instruction means {rr.quantifier!r}"
+            )
+        sub = {s.get("slot"): (s.get("value"), s.get("op", "eq")) for s in got.get("criteria") or []}
+        for want in rr.criteria:
+            if want.slot not in sub:
+                return False, (
+                    f"edge {rr.edge!r} is traversed but its criterion {want.slot}="
+                    f"{want.value!r} is missing -- the constraint applies to the related "
+                    f"record, not the anchor"
+                )
+            val, op = sub[want.slot]
+            if not _values_equal(want.value, val):
+                return False, (
+                    f"edge {rr.edge!r}: criterion {want.slot} has value {val!r} but the "
+                    f"instruction says {want.value!r}"
+                )
+
+    return True, ""

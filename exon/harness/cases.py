@@ -43,6 +43,55 @@ class StepExpectation:
 
 
 @dataclass(frozen=True)
+class CriterionExpectation:
+    """One `kind: field` condition the spec must carry.
+
+    `op` mirrors the QuerySpec vocabulary (lowercase `eq`/`gt`/`in`/...), not the old
+    QueryPlan FilterOp enum — the artifacts spell operators differently and silently
+    accepting either would hide a real emitter mistake.
+    """
+
+    slot: str
+    value: object
+    op: str = "eq"
+
+
+@dataclass(frozen=True)
+class RelatedExpectation:
+    """One `kind: related` condition: an edge, a quantifier, and conditions on the SAME
+    related record.
+
+    A QuerySpec expresses as one `related` criterion what a QueryPlan expressed as a
+    second `related_lookup` step chained by `source_step`. That is why the two
+    expectation shapes cannot be compared structurally (2.5a) — same question, different
+    arity, and a structural diff would report every relationship case as a regression.
+    """
+
+    edge: str
+    quantifier: str = "some"
+    criteria: tuple = ()
+
+
+@dataclass(frozen=True)
+class SpecExpectation:
+    """What a correct `QuerySpec` for this question asserts.
+
+    Deliberately not a mirror of `StepExpectation`. It describes ONE artifact, and it adds
+    `result_shape`, which has no QueryPlan equivalent: a question asking for grouped counts
+    is not answerable by any row query, so "which tool should this have gone to" becomes a
+    gradeable property rather than an unstated assumption (2.5c).
+    """
+
+    anchor: str | None = None
+    required_criteria: tuple = ()
+    required_related: tuple = ()
+    forbid_extra_criteria: bool = True
+    #: rows | facet | range | search — what shape of answer the instruction asks for.
+    #: Anything but `rows` means a row query is a silent degradation, however valid.
+    result_shape: str = "rows"
+
+
+@dataclass(frozen=True)
 class TestCase:
     id: str
     instruction: str                 # verbatim from questions.yaml
@@ -53,6 +102,11 @@ class TestCase:
     execute: bool = False
     split: str = "train"
     tags: tuple = ()
+    #: The QuerySpec-shaped expectation. Present alongside `steps` during the port so the
+    #: suite grades both artifacts against the same questions and the before/after the
+    #: harness exists to provide is not lost mid-migration (the pattern task 2.2 used for
+    #: the emitter itself).
+    spec: object = None
 
     @property
     def expects_plan(self) -> bool:
@@ -76,6 +130,37 @@ def _step_exp(d: dict) -> StepExpectation:
         relationship_type=d.get("relationship_type"),
         required_client_filter=_filter_exp(cf) if cf else None,
         source_step=d.get("source_step"),
+    )
+
+
+def _criterion_exp(d: dict) -> CriterionExpectation:
+    return CriterionExpectation(slot=d["slot"], value=d.get("value"), op=d.get("op", "eq"))
+
+
+def _related_exp(d: dict) -> RelatedExpectation:
+    return RelatedExpectation(
+        edge=d["edge"],
+        quantifier=d.get("quantifier", "some"),
+        criteria=tuple(_criterion_exp(c) for c in d.get("criteria", [])),
+    )
+
+
+_RESULT_SHAPES = {"rows", "facet", "range", "search"}
+
+
+def _spec_exp(d: dict, cid: str) -> SpecExpectation:
+    shape = d.get("result_shape", "rows")
+    if shape not in _RESULT_SHAPES:
+        raise SuiteError(
+            f"expectation {cid!r}: result_shape {shape!r} is not one of "
+            f"{sorted(_RESULT_SHAPES)}"
+        )
+    return SpecExpectation(
+        anchor=d.get("anchor"),
+        required_criteria=tuple(_criterion_exp(c) for c in d.get("required_criteria", [])),
+        required_related=tuple(_related_exp(r) for r in d.get("required_related", [])),
+        forbid_extra_criteria=d.get("forbid_extra_criteria", True),
+        result_shape=shape,
     )
 
 
@@ -105,10 +190,10 @@ def load_suite(
                 f"expectation {cid!r} names a question that does not exist in "
                 f"{questions_yaml} -- the files have drifted apart"
             )
-        if not e.get("expect_rejection") and not e.get("steps"):
+        if not e.get("expect_rejection") and not e.get("steps") and not e.get("spec"):
             raise SuiteError(
-                f"expectation {cid!r} has neither steps nor expect_rejection -- it asserts "
-                f"nothing"
+                f"expectation {cid!r} has neither steps, spec, nor expect_rejection -- it "
+                f"asserts nothing"
             )
         cases.append(
             TestCase(
@@ -116,6 +201,7 @@ def load_suite(
                 instruction=q["question"],
                 question_capability=q.get("capability", "unknown"),
                 steps=tuple(_step_exp(s) for s in e.get("steps", [])),
+                spec=_spec_exp(e["spec"], cid) if e.get("spec") else None,
                 expect_rejection=e.get("expect_rejection"),
                 rejection_reason=e.get("rejection_reason", ""),
                 execute=bool(e.get("execute")),
