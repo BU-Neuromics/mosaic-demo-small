@@ -205,18 +205,37 @@ curl -s -X POST http://localhost:8080/graphql -H 'content-type: application/json
   -d '{"query":"{ __schema { mutationType { fields { name } } } }"}' | grep -o converseQuerySpec
 ```
 
-And one full turn, end to end — plain language in, runnable spec out:
+And one full turn, end to end — plain language in, runnable spec out. One line, no
+GraphQL variable, so there is nothing for a shell to mangle on paste:
 
 ```bash
-curl -s -X POST http://localhost:8080/graphql -H 'content-type: application/json' \
-  -d '{"query":"mutation($u:String!){ converseQuerySpec(utterance:$u){ turn { status message querySpec } } }",
-       "variables":{"u":"How many tissue samples do we have from the hippocampus?"}}'
+curl -s -X POST http://localhost:8080/graphql -H 'content-type: application/json' -d '{"query":"mutation { converseQuerySpec(utterance: \"Show me tissue samples from the hippocampus\") { turn { status message querySpec } } }"}'
 ```
 
-Measured 2026-09-29 against the live stack: a `proposal` in **2.8s**, anchored on `Sample`
-with `sample_type eq tissue` and `brain_region eq hippocampus` — which executes to 23 rows.
-Note the mutation takes `utterance` and returns `ConverseResult { turn, turns,
-suspendedTurnIds }`; it does not take a `turns` list on the first call.
+Expect `status: "proposal"` with a spec anchored on `Sample`, carrying `sample_type eq
+tissue` and `brain_region eq hippocampus` — which executes to 23 rows. Typically two to
+three seconds.
+
+The mutation takes `utterance` and returns `ConverseResult { turn, turns,
+suspendedTurnIds }`; it does **not** take a `turns` list on the first call.
+
+**Don't start with a "how many" question.** It is the most ambiguous thing you can ask
+this surface, and it is the first thing everyone tries. `QuerySpec` has no aggregation, so
+the planner often returns a `clarification` — *"QuerySpec can't answer 'how many'"* — which
+reads like a failure and is not one.
+
+It is also **over-conservative**, and worth knowing precisely:
+
+- **A single count is answerable today.** `execute_query_spec`'s envelope carries `total`
+  independently of the page, so *"how many tissue samples from the hippocampus"* is a
+  filter plus one number — 23. Refusing it is a lost answer, not a saved mistake.
+- **A per-category count is not.** *"How many donors per cohort"* needs a distribution, and
+  `total` is a single scalar. No amount of row-querying produces it; that one needs the
+  facet tool, and routing to it is unbuilt (§12).
+
+**Two runs of the same question can differ** — `proposal` one time, `clarification` the
+next. That is the reliability question this document measures in §10, not a setup problem.
+A single run is an anecdote; treat any one result here as one sample.
 
 | Command | What it does |
 | --- | --- |
