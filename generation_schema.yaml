@@ -34,3 +34,47 @@ classes:
         range: Dataset
         multivalued: true
         inlined_as_list: true
+      toxicology_reports:
+        range: ToxicologyReport
+        multivalued: true
+        inlined_as_list: true
+      diagnoses:
+        range: Diagnosis
+        multivalued: true
+        inlined_as_list: true
+      assessments:
+        range: Assessment
+        multivalued: true
+        inlined_as_list: true
+      consent_records:
+        range: ConsentRecord
+        multivalued: true
+        inlined_as_list: true
+      aliquots:
+        range: Aliquot
+        multivalued: true
+        inlined_as_list: true
+      storage_locations:
+        range: StorageLocation
+        multivalued: true
+        inlined_as_list: true
+      run_configurations:
+        range: RunConfiguration
+        multivalued: true
+        inlined_as_list: true
+      instruments:
+        range: Instrument
+        multivalued: true
+        inlined_as_list: true
+      reagent_lots:
+        range: ReagentLot
+        multivalued: true
+        inlined_as_list: true
+      qc_flags:
+        range: QcFlag
+        multivalued: true
+        inlined_as_list: true
+      publications:
+        range: Publication
+        multivalued: true
+        inlined_as_list: true

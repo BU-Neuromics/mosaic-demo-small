@@ -38,7 +38,9 @@ an OpenSpec change.
   existing single-shot planning core, not a second, separate service. Each turn is validated
   against Mosaic's `validate_query_spec` before ever being returned; the LLM never decides to
   execute. Response is discriminated (`proposal` — an updated, validated `QuerySpec` plus a
-  natural-language restatement — or `clarification` — a question back, no spec change). The MVP
+  natural-language restatement — or `clarification` — no spec change, carrying either a question
+  back or, for a schema-discovery question, the answer itself, marked `resolution: "answered"`
+  per `add-schema-discovery-for-query-building`). The MVP
   operation vocabulary is restricted to `filter` and `exists-related-filter` (Reel's own broader
   op catalog — `distinct-values`, `group-by+count`, `pivot-grain`, `set-op` — stays out of scope,
   consistent with `add-mosaic-mcp-boundary`'s refusal to grow the query language prematurely).

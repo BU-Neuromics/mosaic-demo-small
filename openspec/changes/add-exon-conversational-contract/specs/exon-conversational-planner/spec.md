@@ -36,9 +36,17 @@ into Exon's own retry loop rather than being surfaced to the caller as a raw or 
 
 Exon SHALL return one of two response shapes for a turn: a `proposal` (an updated, validated
 `QuerySpec` plus a natural-language restatement of the current interpretation) or a `clarification`
-(no `QuerySpec` change, a natural-language question back to the user). Exon SHALL default to
-`proposal` whenever a reasonable, visible, correctable interpretation of the utterance exists, and
-SHALL use `clarification` only when the utterance is genuinely ambiguous.
+(no `QuerySpec` change, a natural-language message back to the user). Exon SHALL default to
+`proposal` whenever a reasonable, visible, correctable interpretation of the utterance exists.
+
+A `clarification` SHALL carry either a question back to the user (the utterance is genuinely
+ambiguous) or an ANSWER to what was asked. The second kind exists for SCHEMA DISCOVERY: a user who
+asks what the data holds, rather than asking for records, is working out which fields to put in a
+query. Exon SHALL answer such a question by naming the relevant fields — the entity each belongs
+to, and what its description says it holds — and SHALL mark that turn as having answered rather
+than as awaiting input. Exon SHALL NOT decline a discovery question on the grounds that it is a
+reference lookup rather than a query refinement, and SHALL NOT answer one by proposing a query
+anchored on an entity type that describes the schema.
 
 #### Scenario: An unambiguous refinement produces a proposal
 
@@ -54,6 +62,27 @@ SHALL use `clarification` only when the utterance is genuinely ambiguous.
   retry
 - **THEN** Exon returns a `clarification` response with no `QuerySpec` change, rather than guessing
   and returning a `proposal` the user must notice and correct
+
+#### Scenario: A discovery question is answered by naming the fields that bear on it
+
+- **WHEN** a user asks what information is held about a topic, phrased in their own vocabulary
+  rather than in field names
+- **THEN** Exon returns a `clarification` marked as having answered, whose message names the fields
+  bearing on that topic with the entity each belongs to and what it holds, and invites their
+  inclusion in the query
+
+#### Scenario: A discovery answer leads into a spec
+
+- **WHEN** the user accepts the fields named in the preceding discovery turn
+- **THEN** the next turn is a `proposal` whose `QuerySpec` is anchored and constrained over those
+  fields, with no query executed against a schema-describing entity type in between
+
+#### Scenario: A discovery question is not refused
+
+- **WHEN** a user asks what the schema holds
+- **THEN** Exon does not decline on the grounds that the question is a reference lookup rather than
+  a query refinement, and does not offer to list fields in one turn and decline to do so in the
+  next
 
 ### Requirement: The MVP operation vocabulary is restricted to filter and exists-related-filter
 
@@ -78,6 +107,13 @@ recompute turns after it against the edited state, and SHALL mark any recomputed
 longer validates or no longer makes sense given the edit as `suspended` rather than silently
 dropping or silently reinterpreting it.
 
+Suspension SHALL be scoped to a recomputed `clarification` that BLOCKS — one asking for input the
+planner needs before the draft can move. A `clarification` that ANSWERED, such as a schema-discovery
+reply, leaves the draft unchanged and requires nothing from the user, and SHALL be returned as an
+ordinary recomputed turn rather than suspended. Suspending one would cascade to every turn after
+it, breaking a conversation that remains coherent — and discovery is a normal opening move, not an
+exceptional one.
+
 #### Scenario: Editing an earlier turn recomputes what follows it
 
 - **WHEN** the caller requests a redo from turn N with a new utterance, where turns after N already
@@ -92,6 +128,13 @@ dropping or silently reinterpreting it.
 - **THEN** that turn's status is set to `suspended` and it remains visible to the caller for
   re-prompting, rather than being silently dropped from the turn sequence or silently
   reinterpreted without the user's input
+
+#### Scenario: Editing upstream of a discovery turn preserves the turns after it
+
+- **WHEN** the caller edits a turn preceding a discovery turn, and that discovery turn recomputes
+  to the same answered clarification
+- **THEN** the discovery turn is returned as an ordinary recomputed turn, and every later turn that
+  still validates is returned as a proposal rather than being suspended as depending on it
 
 ### Requirement: Anchor pivots always re-run fresh against current data
 
