@@ -18,14 +18,15 @@ Comparison is on semantics, never spelling: field names resolve through hippoSch
 most likely way to waste a week chasing ghosts.
 """
 from ..ops import FilterStep, RelatedLookupStep
-from ..validator import ValidationError, resolve_field, validate_plan
+from ..schema import resolve_field
+from ..validator import ValidationError, validate_plan
 from .outcome import FailureClass, SampleResult
 
 
-def _canon(hippo_schema: dict, entity: str | None, name: str) -> str:
+def _canon(mosaic_schema: dict, entity: str | None, name: str) -> str:
     """Canonical slot name, or the input unchanged when it can't be resolved (the validator will
     already have rejected a genuinely unknown name, so this only normalises spelling)."""
-    fields = (hippo_schema.get(entity) or {}).get("fields", {}) if entity else {}
+    fields = (mosaic_schema.get(entity) or {}).get("fields", {}) if entity else {}
     return resolve_field(fields, name) or name
 
 
@@ -37,7 +38,7 @@ def _values_equal(expected, actual) -> bool:
     return str(expected) == str(actual)
 
 
-def check_faithfulness(plan, case, hippo_schema: dict) -> tuple:
+def check_faithfulness(plan, case, mosaic_schema: dict) -> tuple:
     """-> (ok, detail). `detail` names the specific defect, because that string is what the
     refiner reasons over -- vagueness here directly degrades the loop."""
     exp_steps = case.steps
@@ -59,10 +60,10 @@ def check_faithfulness(plan, case, hippo_schema: dict) -> tuple:
                 )
 
             actual = {
-                _canon(hippo_schema, got.entity, f.field): (f.value, f.op) for f in got.filters
+                _canon(mosaic_schema, got.entity, f.field): (f.value, f.op) for f in got.filters
             }
             for rf in exp.required_filters:
-                slot = _canon(hippo_schema, exp.entity, rf.field)
+                slot = _canon(mosaic_schema, exp.entity, rf.field)
                 if slot not in actual:
                     return False, (
                         f"step {i}: missing required filter {slot}={rf.value!r} -- the "
@@ -83,7 +84,7 @@ def check_faithfulness(plan, case, hippo_schema: dict) -> tuple:
 
             if exp.forbid_extra_filters:
                 required = {
-                    _canon(hippo_schema, exp.entity, rf.field) for rf in exp.required_filters
+                    _canon(mosaic_schema, exp.entity, rf.field) for rf in exp.required_filters
                 }
                 extra = sorted(set(actual) - required)
                 if extra:
@@ -93,8 +94,8 @@ def check_faithfulness(plan, case, hippo_schema: dict) -> tuple:
                     )
 
             for want in exp.select_fields_include:
-                slot = _canon(hippo_schema, got.entity, want)
-                have = {_canon(hippo_schema, got.entity, s) for s in got.select_fields}
+                slot = _canon(mosaic_schema, got.entity, want)
+                have = {_canon(mosaic_schema, got.entity, s) for s in got.select_fields}
                 if slot not in have:
                     return False, (
                         f"step {i}: does not select {slot!r}, which the question asks about"
@@ -102,24 +103,24 @@ def check_faithfulness(plan, case, hippo_schema: dict) -> tuple:
 
             if exp.required_forward_relation:
                 fr = got.forward_relation or {}
-                want_rel = _canon(hippo_schema, exp.entity, exp.required_forward_relation)
-                got_rel = _canon(hippo_schema, exp.entity, fr.get("field", "")) if fr else ""
+                want_rel = _canon(mosaic_schema, exp.entity, exp.required_forward_relation)
+                got_rel = _canon(mosaic_schema, exp.entity, fr.get("field", "")) if fr else ""
                 if got_rel != want_rel:
                     return False, (
                         f"step {i}: the question asks for the related {want_rel!r} record's "
                         f"attributes, but the plan resolves {got_rel or 'no'} forward relation"
                     )
                 target = (
-                    (hippo_schema.get(exp.entity) or {})
+                    (mosaic_schema.get(exp.entity) or {})
                     .get("fields", {})
                     .get(want_rel, {})
                     .get("targetEntityType")
                 )
                 have = {
-                    _canon(hippo_schema, target, s) for s in fr.get("select_fields", []) or []
+                    _canon(mosaic_schema, target, s) for s in fr.get("select_fields", []) or []
                 }
                 for want in exp.required_forward_select:
-                    slot = _canon(hippo_schema, target, want)
+                    slot = _canon(mosaic_schema, target, want)
                     if slot not in have:
                         return False, (
                             f"step {i}: forward relation {want_rel!r} does not select {slot!r}, "
@@ -153,7 +154,7 @@ def check_faithfulness(plan, case, hippo_schema: dict) -> tuple:
                         f"every referencing entity, not the ones asked for"
                     )
                 if not _values_equal(exp.required_client_filter.value, cf.value) or _canon(
-                    hippo_schema, None, cf.field
+                    mosaic_schema, None, cf.field
                 ) != exp.required_client_filter.field:
                     return False, (
                         f"step {i}: client filter is {cf.field}={cf.value!r}, expected "
@@ -213,7 +214,7 @@ def grade_sample(
     attempt,
     case,
     sample_index: int,
-    hippo_schema: dict,
+    mosaic_schema: dict,
     capability_manifest: dict,
     *,
     endpoint: str | None = None,
@@ -262,7 +263,7 @@ def grade_sample(
 
     # --- tier 2: validator ---
     try:
-        validate_plan(attempt.plan, hippo_schema, capability_manifest)
+        validate_plan(attempt.plan, mosaic_schema, capability_manifest)
         rejected = None
     except ValidationError as e:
         rejected = str(e)
@@ -284,7 +285,7 @@ def grade_sample(
         return SampleResult(outcome=FailureClass.PLAN_INVALID, detail=rejected, **base)
 
     # --- tier 3: faithfulness ---
-    ok, detail = check_faithfulness(attempt.plan, case, hippo_schema)
+    ok, detail = check_faithfulness(attempt.plan, case, mosaic_schema)
     if not ok:
         return SampleResult(outcome=FailureClass.PLAN_UNFAITHFUL, detail=detail, **base)
 
@@ -293,7 +294,7 @@ def grade_sample(
         from ..executor import execute_plan
 
         try:
-            result = execute_plan(attempt.plan, endpoint, hippo_schema)
+            result = execute_plan(attempt.plan, endpoint, mosaic_schema)
         except Exception as e:  # noqa: BLE001 - any execution failure is a graded outcome
             return SampleResult(
                 outcome=FailureClass.EXEC_ERROR, detail=f"{type(e).__name__}: {e}", **base
@@ -390,3 +391,139 @@ def _compare_expected(case_id: str, result: dict, expected_results: dict | None)
             )
 
     return "; ".join(problems)
+
+
+# ---------------------------------------------------------------------------
+# QuerySpec grading (task 2.5). Lives alongside the QueryPlan grader above
+# during the port, so the suite can score both artifacts against the same
+# questions -- the before/after this harness exists to provide.
+#
+# Deliberately NOT a translation of `check_faithfulness`. A QuerySpec expresses
+# as one `related` criterion what a QueryPlan expressed as a second step chained
+# by `source_step`, so the two are not structurally comparable and a diff would
+# report every relationship case as a false regression (2.5a).
+# ---------------------------------------------------------------------------
+
+def _spec_criteria(spec: dict, kind: str) -> list:
+    return [c for c in (spec.get("criteria") or []) if c.get("kind") == kind]
+
+
+def check_empty_related(spec: dict) -> tuple:
+    """-> (ok, detail). Task 2.5d.
+
+    A `related` criterion with no `criteria` asserts nothing. Mosaic's compiler fills a
+    trivially-true predicate on the target's identifier, so it validates, executes, and
+    returns every anchor record having *any* related record -- a silently dropped
+    constraint wearing the shape of a successful query. Nothing upstream can catch it:
+    the spec is legal.
+    """
+    for c in _spec_criteria(spec, "related"):
+        if not c.get("criteria"):
+            return False, (
+                f"`related` criterion on edge {c.get('edge')!r} carries no criteria -- it "
+                f"asserts nothing and matches every anchor record that has any related "
+                f"record, silently dropping the constraint the instruction stated"
+            )
+    return True, ""
+
+
+def check_result_shape(spec: dict, case) -> tuple:
+    """-> (ok, detail). Task 2.5c, grading half only.
+
+    A row query cannot express a grouped count. `execute_query_spec`'s envelope carries a
+    scalar `total`, which is why *single*-count questions come back correct and must not be
+    graded wrong -- but a per-category question needs a distribution, and no amount of row
+    querying produces one.
+
+    This grades the gap; it does not fix it. Routing facet/range/search-shaped instructions
+    to the aggregation tools is a planner change, tracked separately -- deliberately, since
+    the obvious implementation (a `result_shape` field on SPEC_TOOL) would leak into the
+    conversational turn contract.
+    """
+    want = getattr(case.spec, "result_shape", "rows")
+    if want == "rows":
+        return True, ""
+    return False, (
+        f"the instruction asks for a {want}-shaped answer, but the emitter produced a row "
+        f"query (anchor {spec.get('anchor')!r}, {len(spec.get('criteria') or [])} criteria). "
+        f"A row query's envelope carries a single scalar total and structurally cannot "
+        f"express a {want}; this needed the {want} tool, not a filter"
+    )
+
+
+def check_spec_faithfulness(spec: dict, case, mosaic_schema: dict) -> tuple:
+    """-> (ok, detail). `detail` names the specific defect, because that string is what the
+    refiner reasons over."""
+    exp = case.spec
+    if exp is None:
+        return True, ""
+
+    if exp.anchor and spec.get("anchor") != exp.anchor:
+        return False, (
+            f"anchored on {spec.get('anchor')!r} but the question is about {exp.anchor!r} -- "
+            f"the anchor decides what a result row IS, so this answers a different question"
+        )
+
+    entity = spec.get("anchor")
+    actual = {
+        _canon(mosaic_schema, entity, c.get("slot", "")): (c.get("value"), c.get("op", "eq"))
+        for c in _spec_criteria(spec, "field")
+    }
+
+    for rc in exp.required_criteria:
+        slot = _canon(mosaic_schema, entity, rc.slot)
+        if slot not in actual:
+            return False, (
+                f"missing required criterion {slot}={rc.value!r} -- the instruction states "
+                f"this constraint and the spec drops it (present: {sorted(actual) or 'none'})"
+            )
+        val, op = actual[slot]
+        if not _values_equal(rc.value, val):
+            return False, (
+                f"criterion {slot} has value {val!r} but the instruction says {rc.value!r}"
+            )
+        if str(op) != str(rc.op):
+            return False, (
+                f"criterion {slot} uses op {op!r}; {rc.op!r} is required to match the "
+                f"instruction"
+            )
+
+    if exp.forbid_extra_criteria:
+        required = {_canon(mosaic_schema, entity, rc.slot) for rc in exp.required_criteria}
+        extra = sorted(set(actual) - required)
+        if extra:
+            return False, (
+                f"adds criteria {extra} the instruction never asked for -- over-filtering "
+                f"answers a narrower question than the one posed"
+            )
+
+    got_related = {c.get("edge"): c for c in _spec_criteria(spec, "related")}
+    for rr in exp.required_related:
+        got = got_related.get(rr.edge)
+        if got is None:
+            return False, (
+                f"missing a related criterion on edge {rr.edge!r} -- the instruction "
+                f"constrains the related entity and the spec does not traverse it "
+                f"(edges present: {sorted(k for k in got_related if k) or 'none'})"
+            )
+        if got.get("quantifier", "some") != rr.quantifier:
+            return False, (
+                f"edge {rr.edge!r} uses quantifier {got.get('quantifier')!r}; the "
+                f"instruction means {rr.quantifier!r}"
+            )
+        sub = {s.get("slot"): (s.get("value"), s.get("op", "eq")) for s in got.get("criteria") or []}
+        for want in rr.criteria:
+            if want.slot not in sub:
+                return False, (
+                    f"edge {rr.edge!r} is traversed but its criterion {want.slot}="
+                    f"{want.value!r} is missing -- the constraint applies to the related "
+                    f"record, not the anchor"
+                )
+            val, op = sub[want.slot]
+            if not _values_equal(want.value, val):
+                return False, (
+                    f"edge {rr.edge!r}: criterion {want.slot} has value {val!r} but the "
+                    f"instruction says {want.value!r}"
+                )
+
+    return True, ""

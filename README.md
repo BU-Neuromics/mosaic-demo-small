@@ -1,8 +1,10 @@
 # mosaic-demo-small
 
-A small, self-contained Mosaic demo: four entity classes (`Donor`, `Sample`,
-`Workflow`, `Dataset`) modeling a simplified biobank/omics pipeline, with
-~3,600 realistic synthetic records. Built to seriously exercise Aperture's
+A small, self-contained Mosaic demo: fifteen entity classes modeling a
+simplified biobank/omics pipeline — a core chain of `Donor` → `Sample` →
+`Workflow` → `Dataset`, plus clinical, governance, specimen-handling,
+instrumentation and publication collections around it — with ~8,800 realistic
+synthetic records. Built to seriously exercise Aperture's
 faceting, full-text search, and relationship traversal at a scale that's easy
 to scan and reason about — deliberately independent of the much larger
 `hippo-benchmark`/brainbank demo (see sibling repo
@@ -11,6 +13,27 @@ to scan and reason about — deliberately independent of the much larger
 See `openspec/changes/add-small-demo-schema/` (proposal, design, tasks, delta
 spec) for the full rationale and acceptance criteria this implementation
 satisfies.
+
+## A note on "hippo" vs "mosaic"
+
+The product was renamed Hippo → Mosaic (upstream ADR-0004), and this repo's own
+code and docs use **Mosaic** throughout. Some `hippo*` spellings remain, and
+every one of them is deliberate — **do not bulk-rename them**, because each is
+either someone else's identifier or not the product name at all:
+
+| Spelling | Why it stays |
+|---|---|
+| `hippocampus` | An anatomical brain region — real data values in this schema. Nothing to do with the product. |
+| `hippoSchema`, `hippoEntityType` | **Live GraphQL field/type names** that upstream Mosaic still serves. Renaming breaks every query. |
+| `hippo_core`, `hippo_ext`, `hippo_search`, `hippo_index`, `hippo_meta`, `hippo_external_xref` | Data-contract identifiers and LinkML annotation keys, **deliberately not renamed** by ADR-0004. Upstream reads these exact strings. |
+| `hippo-benchmark`, `brainbank-hippo-performance`, `hippo-reference-ensembl` | Names of other real repos. |
+| `hippoSource.ts`, `VITE_HIPPO_GRAPHQL_URL` | Aperture's own file and env-var names. |
+| `../hippo@<commit>` in `captured_against` / "last verified" strings | Provenance records. At capture time the repo really was named `hippo`; rewriting them would falsify the record. The `../hippo` clone was a stale duplicate of `../mosaic` and was **deleted 2026-09-17**; the live editable install is `../mosaic` (`BU-Neuromics/mosaic`). |
+
+Exon's own local Python names for the schema it fetches *were* renamed
+(`fetch_mosaic_schema`, `mosaic_schema`, `MOSAIC_SCHEMA_QUERY`) — those are
+ours, internal, and carry no wire meaning. The GraphQL query string they send
+still asks for `hippoSchema`, because that is what the server answers to.
 
 ## Schema
 
@@ -58,14 +81,17 @@ regardless of any user-declared `tree_root` (ADR-0003) — a user-declared
 `tree_root` class is *not* a value type, so if it lived in `schemas/` it would
 get its own real (unwanted) fifth table. Verified empirically: with
 `DemoBundle` inside `schemas/`, `mosaic migrate` created a `DemoBundle` table;
-moved out, exactly four entity tables are created.
+moved out, exactly the schema's own entity tables are created (fifteen, as of
+`grow-demo-schema-collections`).
 
 ## Generating data
 
 `generate.py` uses `linkml-data-gen`'s **Python API** (`DataGenerator` +
 `GenerationConfig`), not its CLI, because the CLI clamps `--count-for` to
-`[1, 1000]` per class and two of our targets (`workflows`, `datasets`) are
-1,200. Driven by `hints.yaml` (weighted enums, normal/lognormal numeric
+`[1, 1000]` per class and four of our targets (`workflows`, `datasets`,
+`aliquots`, `run_configurations`) are 1,200. `max_count` is a per-collection
+clamp, not a global one, so adding collections does not eat into the others'
+budgets. Driven by `hints.yaml` (weighted enums, normal/lognormal numeric
 distributions, sparsity probabilities, Poisson cardinalities — see
 [linkml-data-gen's hints docs](../linkml-data-gen/docs/hints.md)).
 
@@ -95,20 +121,20 @@ make clean       # wipe data/
 
 ### Serving GraphQL for Aperture
 
-**As of this repo's current schema**, see "Two Mosaic builds in play" above:
-the `datahelix` solo container is pinned to a pre-`ec59c90` published Mosaic
-image and will crash-loop on `Workflow.input_samples: required: true`. Use
-the host's fixed `../hippo` checkout directly instead, until a new Mosaic
-release + digest bump lands:
+**The solo container is the default path** — see "Two Mosaic builds in play"
+below; it was verified working on 2026-09-17 and serves the Aperture SPA as
+well as GraphQL. Serve from a host checkout only when you need something newer
+than the last release (`converseQuerySpec`, CORS, `relatedTo` predicates):
 
 ```bash
-mosaic serve --config mosaic.yaml --host 127.0.0.1 --port 8080 --graphql
+mosaic serve --config mosaic.yaml --host 127.0.0.1 --port 8080 --graphql --mcp
 # -> http://localhost:8080/graphql (GraphiQL)
+# --mcp is only needed by exon/ (see exon/README.md), harmless otherwise -- but it is
+# easier to start it once with the flag than to rediscover why `python -m exon` 404s.
 ```
 
-Once `datahelix`'s certified-frontier pin moves past `ec59c90`, the solo
-recipe below becomes safe to use again for the full Aperture SPA (not just
-the GraphQL API):
+The certified-frontier pin has since moved past `ec59c90` (mosaic 0.13.0), so
+the solo recipe below runs the full Aperture SPA, not just the GraphQL API:
 
 ```bash
 cd ../datahelix/deploy/recipes/solo
@@ -121,7 +147,7 @@ already supports pointing at an arbitrary project directory. The recipe's own
 default `project/` (the existing `hippo-benchmark` demo) is never touched;
 confirmed by checksum/mtime on its `data/mosaic.db` before and after.
 
-Manually verified in Aperture: enum/boolean faceting on all four classes,
+Manually verified in Aperture: enum/boolean faceting on all classes,
 full-text search on both seeded keywords, the full `Dataset → producedBy →
 Workflow → inputSamples → Sample → donor → Donor` traversal (via each
 entity's detail page and its `Relationships`/`History` sections), and the
@@ -130,13 +156,11 @@ absence of any reverse query for `input_samples`.
 ## Known upstream issues (filed, fixed on `main`, not yet released)
 
 Two genuine Mosaic bugs were found and filed while building this demo
-(BU-Neuromics/mosaic). Both are fixed by commit `ec59c90`, which landed on
-`main` **after** the `v0.12.1` tag was cut and has not shipped in a release
-yet — see the "Two Mosaic builds in play" caveat below for what that means
-for this repo in practice.
+(BU-Neuromics/mosaic). Both are fixed by commit `ec59c90`, which **shipped in mosaic v0.13.0**
+(2026-08-20) and is what the certified solo container now runs — see "Two
+Mosaic builds in play" below.
 
-- **[#143](https://github.com/BU-Neuromics/mosaic/issues/143)** (fixed on
-  `main`, unreleased) — `mosaic migrate`, re-run against an
+- **[#143](https://github.com/BU-Neuromics/mosaic/issues/143)** (fixed, released in v0.13.0) — `mosaic migrate`, re-run against an
   already-migrated database, used to misidentify any multivalued reference
   slot as a missing physical column, crashing on `ALTER TABLE` if that slot
   was `required: true`. Re-verified against an editable `../hippo` checkout
@@ -157,26 +181,47 @@ for this repo in practice.
 
 ### Two Mosaic builds in play — container vs. host checkout
 
-The `datahelix` solo recipe's container image is built `FROM` a
-**digest-pinned, published** `ghcr.io/bu-neuromics/mosaic` image
-(`v0.12.1`, see `datahelix/certification/composition.lock.json`) — by
-design, per the Dockerfile's own comment, it never builds Mosaic from
-source. That published `v0.12.1` image **predates** `ec59c90`, so the
-*container* still has both bugs. Booting it against this repo's current
-schema (`input_samples: required: true`) reproduces #143 immediately —
-confirmed empirically: `docker restart` crash-loops in exactly the
-ALTER-TABLE way #143 describes.
+**The container path works. Use it.** Verified 2026-09-17 against
+`mosaic 0.13.0` (digest `sha256:ded2942…`): boots healthy, `RestartCount: 0`,
+no `Workflow.input_samples: required: true` error, SPA and `/docs` both 200,
+and all 300 donors / 900 samples / 1200 workflows served.
 
-Only the **host's editable `../hippo` checkout** (used for this repo's own
-`make migrate`/`make ingest`/`mosaic serve` CLI calls) has the fix. Until
-BU-Neuromics/mosaic cuts a new release past `ec59c90` and `datahelix` bumps
-`composition.lock.json` to its digest, **the certified solo container
-cannot run this repo's current schema.** For this change's spike and
-benchmark, a host-side `mosaic serve --config mosaic.yaml --graphql` (bound
-to the same `:8080` the container would otherwise use) stands in for the
-container — the GraphQL surface and behavior are otherwise identical, just
-served by the fixed build rather than the pinned one. `evals/` snapshots
-note which build served them.
+```bash
+cd ../datahelix/deploy/recipes/solo
+PROJECT_DIR=/abs/path/to/mosaic-demo-small make up
+# -> http://localhost:8080  (Aperture SPA + GraphQL + /docs)
+```
+
+The historical crash-loop (#143/#144) is gone: mosaic **v0.13.0** contains
+`ec59c90`, and `datahelix` `main` pins that digest. Run the recipe from
+datahelix **`main`** — an older checkout may still pin `v0.12.1`
+(`sha256:2ac3e3c…`), which is the digest that crash-looped. The
+`ARG MOSAIC_IMAGE` line in `deploy/recipes/solo/Dockerfile` is the evidence;
+`make check-pins` verifies it against the certification lock.
+
+**What the container does NOT have.** It serves the last *release*, and two
+things this repo cares about landed after it:
+
+| Capability | In v0.13.0 (container)? |
+|---|---|
+| `relatedTo` reverse lookup (#146) | ✅ yes |
+| sort / `orderBy` + facet counts (#96) | ✅ yes — `donorsFacetCounts`, `orderBy: AGE_AT_DEATH` |
+| `relatedTo` **predicate** (#148) | ❌ no — still `(id, relationshipType)` only |
+| **`converseQuerySpec`** (#205) | ❌ no — mosaic `main` only, 34 commits past the tag |
+| CORS middleware (#207) | ❌ no — also post-tag |
+
+So the conversational work (Exon, Aperture's chat panel) still needs a Mosaic
+newer than any release. For that, prefer `datahelix/deploy/recipes/ide/`, which
+is built for running unreleased/source Aperture and Mosaic behind one gateway
+(`make dev`, or `MOSAIC_VERSION=local`) and is formally exempt from the
+ADR-0001 deploy gate. A host-side `mosaic serve --config mosaic.yaml --graphql
+--mcp` also still works.
+
+**One API change to know about.** v0.13.0 returns search results as a page
+envelope, so `{ searchDonors(q: …) { id name } }` is now invalid — it must be
+`{ searchDonors(q: …) { total items { id name } } }`. The underlying data is
+unchanged; `evals/questions.yaml` and `evals/expected-results.json` still carry
+the old bare-list shape and need updating.
 
 Also worth knowing: `Dataset.file_size_bytes` is declared `range: float`, not
 `integer` — GraphQL's `Int` scalar is 32-bit signed, and this demo's file

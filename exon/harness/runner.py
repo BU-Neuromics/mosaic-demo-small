@@ -46,12 +46,12 @@ def _is_transport(err: str) -> bool:
     return any(n.lower() in err.lower() for n in needles)
 
 
-def _one_sample(case, index, ctx, hippo_schema, manifest, cfg) -> SampleResult:
+def _one_sample(case, index, ctx, mosaic_schema, manifest, cfg) -> SampleResult:
     attempt = None
     for tri in range(TRANSPORT_RETRIES):
         attempt = request_plan(
             case.instruction,           # the ONLY case-derived text the model ever sees
-            hippo_schema,
+            mosaic_schema,
             manifest,
             model=cfg["model"],
             context=ctx,
@@ -68,7 +68,7 @@ def _one_sample(case, index, ctx, hippo_schema, manifest, cfg) -> SampleResult:
             attempt,
             case,
             index,
-            hippo_schema,
+            mosaic_schema,
             manifest,
             endpoint=cfg["endpoint"],
             expected_results=cfg["expected_results"],
@@ -85,7 +85,7 @@ def _one_sample(case, index, ctx, hippo_schema, manifest, cfg) -> SampleResult:
 def run_suite(
     cases,
     artifact,
-    hippo_schema: dict,
+    mosaic_schema: dict,
     capability_manifest: dict,
     *,
     model: str,
@@ -100,7 +100,7 @@ def run_suite(
 ) -> SuiteReport:
     """Run every selected case `samples_per_case` times against the rendered context."""
     selected = split_cases(cases, split)
-    system_prompt, grounding = artifact.render(hippo_schema, capability_manifest)
+    system_prompt, grounding = artifact.render(mosaic_schema, capability_manifest)
     ctx = (system_prompt, grounding)
 
     cfg = {
@@ -121,7 +121,7 @@ def run_suite(
 
     with ThreadPoolExecutor(max_workers=max_workers) as pool:
         futures = {
-            pool.submit(_one_sample, c, i, ctx, hippo_schema, capability_manifest, cfg): (c, i)
+            pool.submit(_one_sample, c, i, ctx, mosaic_schema, capability_manifest, cfg): (c, i)
             for c, i in jobs
         }
         for fut in as_completed(futures):

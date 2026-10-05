@@ -25,7 +25,7 @@ migrate:
 	mosaic migrate --schema-dir schemas --db-path $(DB)
 
 ingest:
-	mosaic ingest --file data/bundle.yaml --db-path $(DB) --validate-schema schemas/demo.yaml
+	mosaic ingest --file data/bundle.yaml --db-path $(DB) --validate-schema schemas
 
 query:
 	python3 query_demo.py --db $(DB)

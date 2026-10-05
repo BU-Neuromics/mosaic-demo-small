@@ -30,9 +30,18 @@ class FailureClass(str, Enum):
     EXEC_ERROR = "exec_error"                      # GraphQL error at execution
     RESULT_MISMATCH = "result_mismatch"            # ran, returned the wrong data
 
+    # --- QuerySpec-era classes: valid specs that answer the wrong question ---
+    # Both are invisible to Mosaic's validator by construction. It checks shape and
+    # legality, never faithfulness, so neither of these can ever come back as a coded
+    # error — if the harness does not grade them, nothing does.
+    WRONG_RESULT_SHAPE = "wrong_result_shape"      # row query for a grouped-count question
+    EMPTY_RELATED = "empty_related"                # `related` with no criteria: constraint dropped
+
 
 CONTEXT_ADDRESSABLE = frozenset(
     {
+        FailureClass.WRONG_RESULT_SHAPE,
+        FailureClass.EMPTY_RELATED,
         FailureClass.NO_STRUCTURED_OUTPUT,
         FailureClass.UNPARSEABLE,
         FailureClass.PLAN_INVALID,
@@ -66,6 +75,17 @@ REMEDY_HINTS = {
     ),
     FailureClass.EXEC_ERROR: "schema-presentation or glossary change.",
     FailureClass.RESULT_MISMATCH: "glossary entry mapping the domain wording to the right field/value.",
+    FailureClass.WRONG_RESULT_SHAPE: (
+        "not a filter problem -- the spec was correct for the rows it asked for. The instruction "
+        "asked for a grouped count (or a range/search), which no row query can express, so the "
+        "remedy is routing: name the aggregation tools and when to reach for them. Adding more "
+        "filter guidance will not move this."
+    ),
+    FailureClass.EMPTY_RELATED: (
+        "a CONSTRAINT block stating that a `related` criterion with no `criteria` asserts nothing "
+        "and must never be emitted -- it validates, executes, and silently returns every anchor "
+        "with any related record, so it reads as success."
+    ),
 }
 
 

@@ -163,35 +163,61 @@ SPEC_TOOL = {
 SPEC_JSON_SCHEMA = SPEC_TOOL["function"]["parameters"]
 
 
-def render_capability_grounding(capabilities: dict) -> str:
-    """The per-entity field listing, with each field's LEGAL OPERATORS inline.
+def _one_line(text: str) -> str:
+    """Collapse a LinkML folded description onto one line.
 
-    This is the substantive grounding improvement over planner.py's render_schema_slots,
-    which listed field names only and left the model to guess which operators applied --
-    a guess it could only be corrected on after a failed validation round-trip. Reference
-    fields are rendered as traversable edges rather than as directly-filterable fields,
-    because that is what the manifest reports: Mosaic's `where:` contract gives references
-    no direct FilterOp at all, only relationship-predicate filtering (mosaic#181).
+    The grounding is a line-per-slot listing the model reads positionally; a
+    description arriving as a multi-line block would break that shape.
+    """
+    return " ".join(text.split())
+
+
+def render_capability_grounding(capabilities: dict) -> str:
+    """The per-entity field listing, with each field's LEGAL OPERATORS and its
+    human-authored DESCRIPTION inline.
+
+    The operators are the substantive grounding improvement over planner.py's
+    render_schema_slots, which listed field names only and left the model to guess which
+    applied -- a guess it could only be corrected on after a failed validation round-trip.
+    Reference fields are rendered as traversable edges rather than as directly-filterable
+    fields, because that is what the manifest reports: Mosaic's `where:` contract gives
+    references no direct FilterOp at all, only relationship-predicate filtering (mosaic#181).
+
+    The descriptions are what make SCHEMA DISCOVERY possible: a question phrased in the
+    researcher's own vocabulary ("what do we have on donors about toxicology reports?")
+    resolves to a slot whose name may share none of its words. The manifest has carried
+    them all along -- `slot_model_to_dict` includes `description`, spread into every field
+    by `entity_capability_to_dict` -- and this renderer used to drop them, which is what
+    made schema questions look like a capability gap rather than a rendering one.
     """
     lines = []
     for entity, caps in sorted(capabilities.items()):
-        lines.append(f'- entity "{entity}":')
+        header = f'- entity "{entity}":'
+        if caps.get("description"):
+            header += f' {_one_line(caps["description"])}'
+        lines.append(header)
         for f in sorted(caps["fields"], key=lambda f: f["name"]):
             name = f["name"]
             if f["kind"] == "reference" and f.get("predicate"):
                 target = f.get("target_entity_type")
                 arity = "many" if f.get("multivalued") else "one"
-                lines.append(
+                detail = (
                     f'    {name}: reference -> {target} (to-{arity}) -- traversable as a '
                     f'related edge, NOT a direct field filter'
                 )
-                continue
-            ops = ", ".join(f["filter_ops"]) if f["filter_ops"] else "(not filterable)"
-            detail = f"    {name}: {f['range']} -- ops: {ops}"
-            if f.get("enum_values"):
-                detail += f"; allowed values: {', '.join(f['enum_values'])}"
-            if f.get("orderable"):
-                detail += "; orderable"
+            else:
+                ops = ", ".join(f["filter_ops"]) if f["filter_ops"] else "(not filterable)"
+                detail = f"    {name}: {f['range']} -- ops: {ops}"
+                if f.get("enum_values"):
+                    detail += f"; allowed values: {', '.join(f['enum_values'])}"
+                if f.get("orderable"):
+                    detail += "; orderable"
+            # Every slot, reference fields INCLUDED. The reference branch used to
+            # `continue` before this point, which would have omitted exactly the slots
+            # that name where related information lives -- most of what "what do we have
+            # about X" is actually asking.
+            if f.get("description"):
+                detail += f'; "{_one_line(f["description"])}"'
             lines.append(detail)
     return "\n".join(lines)
 
@@ -215,6 +241,14 @@ def render_traversable_edges(capabilities: dict) -> str:
                 )
     if not lines:
         lines.append("- (this schema exposes no traversable references)")
+    lines.append(
+        "- Only the forward direction is offered above (a reference field the anchor "
+        "entity itself holds). There is no reverse traversal -- an anchor cannot reach "
+        "entities that merely hold a reference back to it. If the instruction requires "
+        "that direction, this is a real capability limitation: say so plainly (or ask a "
+        "clarifying question, in turn mode) rather than inventing an edge name that "
+        "isn't listed above."
+    )
     return "\n".join(lines)
 
 
@@ -295,7 +329,7 @@ def request_spec(
     """One stateless single-turn call. No retries -- see plan_query_spec for the facade.
 
     Takes the capability manifest alone: unlike request_plan, there is no separate
-    hippo_schema argument, because Mosaic's manifest already carries the field metadata the
+    mosaic_schema argument, because Mosaic's manifest already carries the field metadata the
     two used to have to be cross-referenced for.
 
     `context` is an optional (system_prompt, grounding) pair, letting the harness swap in a

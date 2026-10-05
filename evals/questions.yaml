@@ -1,7 +1,8 @@
 # Capability benchmark for mosaic-demo-small's live GraphQL endpoint.
 #
 # Captured against a host-side `mosaic serve --config mosaic.yaml --graphql`
-# on the fixed `../hippo` checkout (commit ec59c90, unreleased past v0.12.1)
+# on the fixed `../mosaic` checkout (commit ec59c90, unreleased past v0.12.1;
+#  the repo was named `hippo` at capture time, renamed per ADR-0004)
 # -- see README.md's "Two Mosaic builds in play" for why this isn't the
 # datahelix solo container. Each question's `graphql` field is the exact
 # query run to produce `expected-results.json`'s entry of the same id.
@@ -246,6 +247,7 @@
     sample SMPL-0032?
   capability: blocked
   blocked_by: [mosaic#148]
+  blocked_at_version: mosaic 0.13.0
   note: >-
     The narrower gap mosaic#148 actually blocks: relatedTo(id, relationshipType)
     accepts no predicate on the returned entities' own fields, so this
@@ -258,13 +260,13 @@
 - id: q26
   category: search
   question: Search donor notes for "cohort-alpha:42".
-  graphql: '{ searchDonors(q: "cohort-alpha:42") { id name } }'
+  graphql: '{ searchDonors(q: "cohort-alpha:42") { total items { id name } } }'
   capability: search
 
 - id: q27
   category: search
   question: Search dataset descriptions for "recall-freeze".
-  graphql: '{ searchDatasets(q: "recall-freeze") { id name } }'
+  graphql: '{ searchDatasets(q: "recall-freeze") { total items { id name } } }'
   capability: search
   note: >-
     Both q26/q27 exercise mosaic#144's fix directly -- the seeded keywords
@@ -275,7 +277,7 @@
   category: search
   question: Search samples for "tissue".
   capability: not_indexed
-  graphql: '{ searchSamples(q: "tissue") { id } }'
+  graphql: '{ searchSamples(q: "tissue") { total items { id } } }'
   note: >-
     searchSamples exists on the schema (every entity type gets one) but no
     Sample field is annotated hippo_search:fts5, so it always returns [].
@@ -311,25 +313,27 @@
     just the first page's total field alone.
 
 - id: q32
-  category: unsupported
+  category: entity_filtering
   question: List donors older than 65 at death, sorted by age descending.
-  graphql: '{ donors(filters: [{field: "age_at_death", value: 65, op: GT}]) { total } }'
-  capability: blocked
-  blocked_by: [mosaic#96]
+  graphql: '{ donors(filters: [{field: "age_at_death", value: 65, op: GT}], orderBy: AGE_AT_DEATH, orderDir: DESC, limit: 5) { total items { id ageAtDeath } } }'
+  capability: filter
   note: >-
-    FilterOp only has EQ and IN -- GT is rejected outright (confirmed:
-    "Value 'GT' does not exist in 'FilterOp' enum"). There is also no sort
-    argument on any list root query. Both are mosaic#96 (open).
+    UNBLOCKED at mosaic 0.13.0 (was blocked_by mosaic#96). Range filter ops and
+    orderBy/orderDir landed on the GraphQL list surface via #156 / ADR-0007,
+    which merged 2026-08-19, one day before the v0.13.0 tag. Verified live
+    2026-09-17 against the certified container: 174 donors, correctly ordered
+    (99, 96, 95, 95, 95).
 
 - id: q33
-  category: unsupported
+  category: aggregation
   question: How many donors are there per cohort (a facet count / group-by)?
-  capability: blocked
-  blocked_by: [mosaic#96]
+  graphql: '{ donorsFacetCounts(field: "cohort") { value count } }'
+  capability: aggregation
   note: >-
-    No aggregation/group-by root query exists. The only route today is one
-    equality-filtered count query per enum value (as q01/q02 do
-    individually), not a single grouped-count query.
+    UNBLOCKED at mosaic 0.13.0 (was blocked_by mosaic#96). A grouped-count root
+    query now exists as <entity>FacetCounts, so this is one query rather than one
+    equality-filtered count per enum value. Verified live 2026-09-17 against the
+    certified container: control 125 / case 104 / at_risk 71 (= 300).
 
 - id: q35
   category: relationship_traversal
@@ -354,3 +358,36 @@
     a reference to other questions that a STATELESS planner cannot resolve.
     Verified live: 26 hippocampus tissue samples, 9 of which have at least
     one rna_seq-typed referencing workflow.
+
+- id: q36
+  category: schema_discovery
+  question: What do we have on donors about head injuries?
+  capability: discovery
+  note: >-
+    Schema discovery in service of building a query: the researcher is working
+    out which fields to include, not asking for records. The answer is
+    `history_of_rhi`, whose NAME shares no word with the question — only its
+    description ("a documented history of repetitive head impacts (RHI)") makes
+    it findable. That is the point: this question is unanswerable from grounding
+    that carries names and types alone, which is what
+    `render_capability_grounding` used to emit.
+
+- id: q37
+  category: schema_discovery
+  question: Which fields tell us whether a dataset can be shared outside the project?
+  capability: discovery
+  note: >-
+    Two fields answer it — `access_level` and `is_public` — and neither name
+    contains "shared" or "outside". A correct answer names both; naming only one
+    is a partial answer, and proposing a query over records is the wrong shape
+    entirely.
+
+- id: q38
+  category: schema_discovery
+  question: Is there anything that tells us how a sample was kept before analysis?
+  capability: discovery
+  note: >-
+    Resolves to `storage_condition` via its description ("How the sample is
+    stored"). Phrased as a yes/no to check the planner answers with the FIELD
+    rather than with a bare "yes" — a discovery answer that does not name the
+    slot cannot be built on in the next turn.

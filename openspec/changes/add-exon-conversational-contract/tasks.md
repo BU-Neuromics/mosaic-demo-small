@@ -2,16 +2,31 @@
 
 Not implementable from `mosaic-demo-small`. Tracked upstream as `BU-Neuromics/mosaic#186`, filed
 alongside the #177 split (same batch as #182/#183, which this tool depends on) — Decision 8 below
-is the wire contract #186's implementer needs; posting it as a comment there is this change's
-remaining handoff step.
+is the wire contract #186's implementer needs.
 
-- [ ] 1.1 *(blocked — owned by `hippo`, tracked as mosaic#186)* `converse_query_spec` MCP tool implementing
+**Handoff step: done.** Decision 8's wire contract was posted as a comment on `mosaic#186`
+(request/response shape, `MOSAIC_EXON_URL` config, validation ownership, failure semantics). The
+text above previously called this "this change's remaining handoff step"; that was stale.
+
+**Shipped upstream 2026-09-08 — `BU-Neuromics/mosaic` PR #199, merged (`e04e919`); `mosaic#186`
+closed as completed.** Held for explicit review rather than self-merged first, because it adds
+Mosaic's first outbound network call (read-only posture unchanged, but "Mosaic makes an egress
+HTTP request when configured to" is a deployment-shape change); reviewed and merged with all 8 CI
+checks green, including postgres and CodeQL. With this, the whole ADR-0009 cluster is closed.
+
+What unblocked it: #186's own stated blocker was never a Mosaic-side gap but *cross-repo access to
+a real Exon endpoint to integrate against*. Phase 2's endpoint (below) supplied that, once
+published — this repo's `exon-conversational-turn-core` branch is now pushed, which is what made
+the upstream work possible.
+
+- [x] 1.1 *(shipped: mosaic PR #199, merged)* `converse_query_spec` MCP tool implementing
       the wire contract in `design.md` Decision 8: `POST` to a `MOSAIC_EXON_URL`-configured
       endpoint with the `{utterance, query_spec, turns, edit_turn_id}` request /
       `{turn, suspended_turn_ids}` response shape; tool absent from the MCP server entirely when
       `MOSAIC_EXON_URL` is unset; hosted alongside the `validate_query_spec`/`execute_query_spec`
-      tools from `add-mosaic-mcp-boundary` Phase 1.
-- [ ] 1.2 *(blocked — owned by `hippo`, tracked as mosaic#186)* `converse_query_spec` re-validates the
+      tools from `add-mosaic-mcp-boundary` Phase 1. All as specified; both registration directions
+      verified live (7 tools when configured, the prior 6 and no `converse_query_spec` when not).
+- [x] 1.2 *(shipped: mosaic PR #199, merged)* `converse_query_spec` re-validates the
       `QuerySpec` in Exon's HTTP response in-process (direct function call, not over MCP) before
       ever returning a `proposal`-status turn, and never calls `execute_query_spec` itself
       (Decision 8). Exon-unreachable/timeout/still-invalid-after-retry all surface as an `"error"`
@@ -19,27 +34,130 @@ remaining handoff step.
       otherwise consistent with `add-mosaic-mcp-boundary`'s existing constraints (no write/mutation
       path; `X-Mosaic-Actor` remains provenance-only).
 
-## Phase 2 — Exon (this repo; **blocked on Phase 1 shipping and being confirmed live**)
+      All as specified. Re-validation is a direct `validate_query_spec` call in-process, and a spec
+      Exon labelled `proposal` that Mosaic's validator rejects becomes an `error` turn (tested with
+      an unknown slot, an unknown anchor, and a malformed shape). A test asserts no
+      `client.query()` occurs. Failure semantics verified live: with Exon killed, the call returned
+      `is_error: False` at the protocol level with a structured `error` turn naming the unreachable
+      service. Read-only posture unchanged; `X-Mosaic-Actor` untouched. Went **beyond** this task's
+      wording in one respect worth noting: the tool also strictly rejects out-of-contract Exon
+      *responses* (unrecognized status, missing message, a `proposal` with no spec, a
+      `clarification`/`suspended` turn carrying one), since Mosaic is the only thing between an
+      out-of-contract planning service and Aperture's UI.
 
-- [ ] 2.1 Confirm Phase 1 has shipped and is reachable before starting any of the following.
-- [ ] 2.2 Add a turn-mode HTTP entry point to Exon implementing Decision 8's wire contract exactly
-      (`{utterance, query_spec, turns, edit_turn_id}` in, `{turn, suspended_turn_ids}` out; `Turn`
-      shape as specified), alongside (not replacing) the single-shot entry point from
-      `add-mosaic-mcp-boundary`.
-- [ ] 2.3 Implement the discriminated response shape (`proposal` vs. `clarification`); Exon's own
-      generation retry loop may call Mosaic's `validate_query_spec` as an MCP client (same
-      relationship the single-shot planner already has) to iterate on a candidate before returning
-      it — the authoritative re-validation happens on Mosaic's side per task 1.2, not here.
-- [ ] 2.4 Restrict the turn-mode op vocabulary to `filter`/`exists-related-filter`
-      (`FieldCondition`/`RelatedCondition`) — no aggregation, pivot, or set-op support.
-- [ ] 2.5 Implement rewind-and-edit: each turn carries an `id`; editing an earlier turn recomputes
+## Phase 2 — Exon (this repo; **only full end-to-end integration is blocked on Phase 1**)
+
+**Correction found while implementing (2026-09-07):** the header above originally blocked *all* of
+Phase 2 on Phase 1 shipping. That's stricter than the real dependency. Exon's own turn-mode planning
+core and HTTP endpoint need only what `add-mosaic-mcp-boundary` Phase 1 already shipped
+(`mosaic://capabilities`, `validate_query_spec`) — nothing here calls `converse_query_spec` itself;
+that tool is Exon's *caller*, not a dependency. Building and proving the endpoint standalone first
+(a real HTTP client hitting a real Exon server) is the same "build the callee before the caller, so
+there's something real to verify against" order already used for `mosaic#195`/`#196`. Only the
+*full* Aperture → Mosaic → Exon path is blocked on Phase 1 (`mosaic#186`) actually shipping.
+
+- [x] 2.1 ~~Confirm Phase 1 has shipped and is reachable before starting any of the following.~~
+      Superseded by the correction above — confirm instead that `add-mosaic-mcp-boundary` Phase 1
+      (already shipped) is reachable, since that's what 2.2+ actually depend on. Confirmed, not
+      assumed: slice 3's live verification (see 2.5) ran a real uvicorn server, hit by a real HTTP
+      client over an actual socket, driving a full conversation against the real Mosaic demo
+      server's own capability manifest.
+- [x] 2.2 Add a turn-mode planning core and HTTP entry point to Exon implementing Decision 8's wire
+      contract exactly (`{utterance, query_spec, turns, edit_turn_id}` in, `{turn,
+      suspended_turn_ids}` out; `Turn` shape as specified), alongside (not replacing) the
+      single-shot entry point from `add-mosaic-mcp-boundary`. Shipped across three slices, verified
+      independently at each step (`exon/conversational_planner.py` — the stateless planning core;
+      `exon/conversational_orchestrator.py` — turn-list/rewind-and-edit bookkeeping; the HTTP
+      endpoint itself, next).
+- [x] 2.2a **Decision 9 (`design.md`)**: resolved the tension between the wire's explicit
+      `query_spec` field and the turn-history-derived current draft. For now, Aperture locks its
+      point-and-click `QuerySpec` builder once a chat starts, so they can never genuinely diverge —
+      the endpoint asserts they agree (400-level, naming both, if they don't) rather than silently
+      trusting one or the other. `conversational_orchestrator.append_turn` already accepts an
+      optional `existing_query_spec` override so lifting that lock later is a change to the HTTP
+      layer alone (stop asserting equality, pass the wire value through as the override) — no change
+      needed to the orchestrator, `edit_turn`, or the wire contract itself.
+- [ ] 2.3 *(unblocked 2026-09-08, not started)* The discriminated response
+      shape (`proposal` vs. `clarification`) itself already shipped as part of 2.2
+      (`conversational_planner.py`'s `emit_turn_response` tool) — what remains here is specifically
+      an optional self-validation retry loop: Exon's own generation retry loop calling Mosaic's
+      `validate_query_spec` as an MCP client to iterate on a candidate before returning it (the
+      authoritative re-validation still happens on Mosaic's side per task 1.2, not here).
+
+      **Correction: the task's original premise — "same relationship the single-shot planner
+      already has" — is false about the code today.** No MCP client exists anywhere in this repo
+      on either branch — `exon/requirements.txt` carries only `litellm`, `fastapi`, `uvicorn` (no
+      `mcp`/`modelcontextprotocol`/`fastmcp`), and neither `conversational_planner.py` nor
+      `spec_planner.py` calls one. The single-shot planner emits a `QuerySpec` and stops; Mosaic
+      validates it after the fact, out of process, not because Exon called it as a client.
+      Creating that client is `add-mosaic-mcp-boundary` task 2.3's job (still unchecked there).
+
+      **Update (same day, later): the upstream reason that task was paused no longer applies.**
+      `f430674` paused the whole Exon migration on an aggregation/search gap, tracked as
+      `mosaic#195`/`#196`. Both shipped and merged upstream since — `mosaic#195` via PR #197,
+      `mosaic#196` via PR #198 — and verified live just now against this repo's own demo server:
+      `mosaic serve --mcp` exposes `count_query_spec`/`facet_query_spec`/`field_range_query_spec`/
+      `search_query_spec` alongside `validate_query_spec`/`execute_query_spec`, and
+      `facet_query_spec` on `Donor.cohort` returned `control: 125, case: 104, at_risk: 71` — the
+      exact q33 numbers the gap was blocking. `add-mosaic-mcp-boundary` task 2.3 (and its 2.4-2.7)
+      is therefore actionable now, not blocked on anything upstream — it just hasn't been done yet
+      in this repo. This task (conversational 2.3) is blocked on that migration happening, not on
+      any further upstream work.
+
+      **Unblocked 2026-09-08.** `add-mosaic-mcp-boundary` task 2.3 shipped — `exon/mosaic_mcp.py`
+      now exposes `validate_query_spec()` as an MCP client call, which is the one thing this task
+      was waiting on. Nothing blocks it any more; it simply isn't built.
+
+      Still only a quality improvement, not a correctness requirement: Mosaic's
+      `converse_query_spec` re-validates authoritatively regardless — and as of PR #199 that is
+      shipped and merged (task 1.2), so the guarantee this loop would *improve* is now actually
+      enforced in production rather than merely specified. That makes this less urgent than when
+      it was written, not more.
+- [x] 2.4 Restrict the turn-mode op vocabulary to `filter`/`exists-related-filter`
+      (`FieldCondition`/`RelatedCondition`) — no aggregation, pivot, or set-op support. True by
+      construction: `TURN_TOOL`'s `query_spec` property reuses `SPEC_TOOL`'s shape verbatim, which
+      never exposes a `CriteriaGroup`/aggregation/pivot kind at all — there is nothing to restrict
+      because nothing broader was ever offered to the model.
+- [x] 2.5 Implement rewind-and-edit: each turn carries an `id`; editing an earlier turn recomputes
       turns after it; a later turn invalidated by the edit is marked `suspended`, never silently
-      dropped or reinterpreted.
-- [ ] 2.6 Implement anchor-pivot behavior: switching entity type always re-derives the relationship
+      dropped or reinterpreted. Shipped in `conversational_orchestrator.py` (slice 2) and verified
+      live twice: a scripted-stub cascade test proving no further model calls happen once
+      suspension starts, and a real multi-turn conversation over real HTTP (slice 3) where an edit
+      pivoting `Sample` → `Workflow` correctly suspended a later turn referencing a field that
+      doesn't exist on the new anchor, with a useful re-prompt naming the exact conflict.
+- [x] 2.6 Implement anchor-pivot behavior: switching entity type always re-derives the relationship
       as a fresh filter rule against current data, never a reference to a frozen prior result set.
-- [ ] 2.7 No persistence: conversation state lives only in the caller's (Aperture's) hands across
-      calls; Exon's turn function stores nothing between calls beyond what's passed in.
-- [ ] 2.8 Update `exon/README.md` and `APERTURE_EXON_CONTRACT.md` to reflect the shipped state.
+      True by construction, not separately implemented: every turn emits a FULL `QuerySpec` (never
+      a diff), grounded fresh in `mosaic://capabilities` each call, and this planning flow never
+      executes anything (never calls `execute_query_spec`) — there is no result set anywhere in
+      this code for a pivot to accidentally reference.
+- [x] 2.7 No persistence: conversation state lives only in the caller's (Aperture's) hands across
+      calls; Exon's turn function stores nothing between calls beyond what's passed in. True by
+      construction: `conversational_orchestrator.py`'s functions are pure (`turns` is never
+      mutated, always returned as a new list) and `conversational_server.py` holds no state between
+      requests — every call reconstructs everything from the request body alone.
+- [x] 2.8 Update `exon/README.md` and `APERTURE_EXON_CONTRACT.md` to reflect the shipped state.
+      README gained a "Conversational mode" section (files, wire contract, Decision 9's lock as
+      implemented, what's still deferred) and a fix to the now-stale "no multi-turn conversation"
+      limitation line. The contract doc's status header now points at the formalized OpenSpec
+      change and the shipped modules instead of reading as an unimplemented brainstorm; its
+      dependency graph and decisions list were updated to match (mosaic#186 filed, Decision 9's
+      resolution noted).
+- [x] 2.8a **Make it runnable and demonstrable** (added 2026-09-08, not in the original plan).
+      The contract was complete and merged while remaining impossible to *show*:
+      `create_conversational_app` had no caller but a test, so Mosaic's `converse_query_spec` had
+      nothing to point `MOSAIC_EXON_URL` at. Three pieces close that:
+      - `python -m exon.conversational_server` — the deployable turn service, fetching
+        `mosaic://capabilities` once at startup via the task-2.3 MCP client.
+      - `python -m exon.chat` — an interactive terminal chat standing in for Aperture's unbuilt
+        UI. Talks **only** to Mosaic's `converse_query_spec`, never to Exon directly, so it
+        exercises the real path; and it holds the turn list, playing Aperture's state-carrier role.
+      - `./run-chat-demo.sh` — starts both services, wires them together, drops into the chat,
+        and tears down on exit.
+
+      This is also what found the `turns` wire-contract gap (see `design.md` Decision 8's
+      correction): a client that actually derives its own draft from the turn list surfaced a bug
+      that reading the spec did not.
 - [ ] 2.9 Update `openspec/specs/exon-conversational-planner/spec.md` (new) and
       `openspec/specs/mosaic-query-boundary-contract/spec.md` at archive time.
 
