@@ -8,9 +8,9 @@ from typing import Optional, Union
 
 @dataclass
 class FieldFilter:
-    field: str  # A field on the entity. Either the hippoSchema slot name ("sample_type")
+    field: str  # A field on the entity. Either the mosaicSchema slot name ("sample_type")
     #             or its camelCase spelling ("sampleType") is accepted upstream since
-    #             mosaic#149/PR#150; the validator resolves both through hippoSchema and
+    #             mosaic#149/PR#150; the validator resolves both through mosaicSchema and
     #             rejects anything else. Prefer slot names -- resolve, never guess.
     value: object
     op: str = "EQ"  # "EQ" | "IN" -- anything else is unsupported (mosaic#96)

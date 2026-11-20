@@ -6,7 +6,7 @@ joined by id to plan-level expectations in `evals/plan-expectations.yaml`. Autho
 questions would discard that verification, and a wrong test is worse than no test -- the loop
 would happily tune the context toward it.
 
-Expectations assert query *semantics*, never spelling: field names resolve through hippoSchema, so
+Expectations assert query *semantics*, never spelling: field names resolve through mosaicSchema, so
 `sample_type` and `sampleType` satisfy the same expectation (both are accepted upstream since
 mosaic#149/PR#150). Failing a correct plan on cosmetics is the most likely way to send the refiner
 chasing ghosts.

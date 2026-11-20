@@ -3,7 +3,7 @@
 # Aperture once loaded (per design.md's Open Questions).
 
 slots:
-  # Entity's lifecycle flag (hippo_core.yaml) — always active for this demo;
+  # Entity's lifecycle flag (mosaic_core.yaml) — always active for this demo;
   # Mosaic's own availability-transition mechanism (not generation) is how a
   # real deployment would later mark things archived/superseded/removed.
   is_available:

@@ -17,7 +17,7 @@ default_prefix: demo
 default_range: string
 imports:
   - linkml:types
-  - hippo_core
+  - mosaic_core
 
 classes:
 
@@ -67,7 +67,7 @@ classes:
           Free-text intake notes. Full-text searchable — one of the fields
           used to exercise Aperture's search.
         annotations:
-          hippo_search: fts5
+          mosaic_search: fts5
 
   Sample:
     is_a: Entity
@@ -112,7 +112,7 @@ classes:
           Lab accession code. Exact-match lookup key, not meant for full-text
           search.
         annotations:
-          hippo_index: true
+          mosaic_index: true
       tags:
         multivalued: true
         description: Free-form labels (e.g. batch or shipment tags); sparse and variable in count.
@@ -206,7 +206,7 @@ classes:
           Free-text description. Full-text searchable — the other field used
           to exercise Aperture's search.
         annotations:
-          hippo_search: fts5
+          mosaic_search: fts5
       file_size_bytes:
         range: float
         description: >-
@@ -265,7 +265,7 @@ classes:
           Free-text narrative of the toxicology findings. Full-text
           searchable.
         annotations:
-          hippo_search: fts5
+          mosaic_search: fts5
 
   Diagnosis:
     is_a: Entity
@@ -274,10 +274,10 @@ classes:
       several, of which at most one is marked primary.
     annotations:
       # Mosaic derives bundle/accessor names as snake_case(ClassName) + "s",
-      # which makes this one `diagnosiss`. `hippo_accessor` is the framework's
-      # own override for exactly that case (hippo_ext.yaml names `analyses`
+      # which makes this one `diagnosiss`. `mosaic_accessor` is the framework's
+      # own override for exactly that case (mosaic_ext.yaml names `analyses`
       # among its examples) — the only class in this schema that needs it.
-      hippo_accessor: diagnoses
+      mosaic_accessor: diagnoses
     attributes:
       name:
         required: true
@@ -448,7 +448,7 @@ classes:
           Asset tag of the freezer or cabinet. Exact-match lookup key, not
           meant for full-text search.
         annotations:
-          hippo_index: true
+          mosaic_index: true
       shelf:
         description: Shelf or rack position within the freezer.
       temperature_celsius:
@@ -493,7 +493,7 @@ classes:
           Version string of the pipeline software, e.g. `2.14.1`. Exact-match
           lookup key.
         annotations:
-          hippo_index: true
+          mosaic_index: true
       parameter_preset:
         range: ParameterPresetEnum
         required: true
@@ -535,7 +535,7 @@ classes:
           Manufacturer serial number. Unique per instrument; exact-match
           lookup key.
         annotations:
-          hippo_index: true
+          mosaic_index: true
       commissioned_on:
         range: date
         description: Date the instrument entered service.
@@ -563,7 +563,7 @@ classes:
           Manufacturer lot number. Exact-match lookup key, not meant for
           full-text search.
         annotations:
-          hippo_index: true
+          mosaic_index: true
       vendor:
         required: true
         description: Supplier the lot was purchased from.
@@ -625,7 +625,7 @@ classes:
           Free-text explanation of what the check found. Full-text
           searchable.
         annotations:
-          hippo_search: fts5
+          mosaic_search: fts5
 
   Publication:
     is_a: Entity
@@ -651,7 +651,7 @@ classes:
           Digital Object Identifier. Exact-match lookup key, not meant for
           full-text search.
         annotations:
-          hippo_index: true
+          mosaic_index: true
       journal:
         required: true
         description: Name of the journal the paper appeared in.
@@ -670,7 +670,7 @@ classes:
         description: >-
           The paper's abstract. Full-text searchable.
         annotations:
-          hippo_search: fts5
+          mosaic_search: fts5
 
   QualityMetrics:
     description: >-
@@ -691,15 +691,15 @@ classes:
   ExternalID:
     abstract: true
     description: >-
-      Override of hippo_core's deprecated ExternalID: this demo doesn't use
+      Override of mosaic_core's deprecated ExternalID: this demo doesn't use
       the external-system-ID linking mechanism, and ExternalID (unlike
       Process/Validator/ReferenceLoader) isn't in Mosaic's own
       INFRASTRUCTURE_CLASSES exclusion list, so without this override it
       would show up as its own (permanently empty) Aperture collection.
       Marking it `abstract: true` here — a local redeclaration, which
-      LinkML's import-merge semantics let win over hippo_core's imported
+      LinkML's import-merge semantics let win over mosaic_core's imported
       shape — excludes it the same way any other value-typed/abstract
-      class is excluded, with no changes to hippo_core.yaml or Aperture and
+      class is excluded, with no changes to mosaic_core.yaml or Aperture and
       no effect on this schema's own `is_a: Entity` classes.
 
 enums:

@@ -26,7 +26,7 @@ def _filters_to_gql(filters, filter_mode: str) -> str:
 
 
 def _to_camel(slot_name: str) -> str:
-    """hippoSchema slot name -> GraphQL output field name (e.g. "brain_region" ->
+    """mosaicSchema slot name -> GraphQL output field name (e.g. "brain_region" ->
     "brainRegion"). GraphQL output *selection* requires the camelCase form -- unlike filter
     `field` values, which accept either spelling since mosaic#149/PR#150. Keeping this
     conversion in one place, rather than asking the planner to know both vocabularies, is
@@ -49,7 +49,7 @@ def execute_plan(plan: QueryPlan, endpoint: str, mosaic_schema: dict) -> dict:
 
 
 def _execute_filter_step(step: FilterStep, endpoint: str, mosaic_schema: dict) -> dict:
-    # Read the accessor name from hippoSchema -- never guess it (the same "don't guess a
+    # Read the accessor name from mosaicSchema -- never guess it (the same "don't guess a
     # name, read it" discipline that mosaic#149 taught this pipeline the hard way).
     accessor = mosaic_schema[step.entity]["accessor_name"]
     fields = ["id"] + [_to_camel(f) for f in step.select_fields if f != "id"]

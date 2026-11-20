@@ -33,7 +33,7 @@ instruction --[planner.py, LLM]--> QueryPlan --[validator.py]--> validated plan
 
 ## Modules
 
-- `schema.py` — fetches `hippoSchema` (the source of field names and of the kind/multivalued
+- `schema.py` — fetches `mosaicSchema` (the source of field names and of the kind/multivalued
   metadata the validator needs) and loads the capability manifest.
 - `ops.py` — the typed op catalog: `FilterStep` (a root list query, optionally with a forward
   single-valued-relation nested selection), `RelatedLookupStep` (a bounded reverse
@@ -41,7 +41,7 @@ instruction --[planner.py, LLM]--> QueryPlan --[validator.py]--> validated plan
 - `validator.py` — rejects, never approximates: unknown entities/fields, unsupported filter
   ops (mosaic#96), fields that exist but cannot be filtered on (multivalued references → use
   `relatedTo`; computed provenance fields → use `asOf`), and `related_lookup` steps not scoped
-  to an earlier step's ids. Field names resolve through `hippoSchema` in either the slot-name
+  to an earlier step's ids. Field names resolve through `mosaicSchema` in either the slot-name
   or camelCase spelling, both accepted upstream since mosaic#149/PR#150.
 - `executor.py` — runs a validated plan against the live GraphQL endpoint, paginating until
   every matching record is retrieved. Converts slot names to camelCase for output *selection*

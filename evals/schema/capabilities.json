@@ -40,7 +40,7 @@
     "Sample": {
       "list": true,
       "get": true,
-      "search": { "supported": false, "note": "searchSamples(q) exists on the schema but no field is annotated hippo_search:fts5 -- always returns []" },
+      "search": { "supported": false, "note": "searchSamples(q) exists on the schema but no field is annotated mosaic_search:fts5 -- always returns []" },
       "equality_filters": {
         "supported": true,
         "fields": ["donor", "sample_type", "brain_region", "storage_condition", "replicate_number", "accession", "collected_at", "name"],
@@ -79,7 +79,7 @@
     "Workflow": {
       "list": true,
       "get": true,
-      "search": { "supported": false, "note": "searchWorkflows(q) exists on the schema but no field is annotated hippo_search:fts5 -- always returns []" },
+      "search": { "supported": false, "note": "searchWorkflows(q) exists on the schema but no field is annotated mosaic_search:fts5 -- always returns []" },
       "equality_filters": {
         "supported": true,
         "fields": ["status", "workflow_type", "started_at", "completed_at", "duration_hours", "name"],

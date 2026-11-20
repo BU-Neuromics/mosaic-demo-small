@@ -13,7 +13,7 @@ executable"; it cannot answer "does this plan represent what was asked". Those a
 questions, and the observed failure -- a structurally valid plan with an empty filter list that
 had silently dropped every stated constraint -- passes the first and fails the second.
 
-Comparison is on semantics, never spelling: field names resolve through hippoSchema so
+Comparison is on semantics, never spelling: field names resolve through mosaicSchema so
 `sample_type` and `sampleType` are the same assertion. Failing a correct plan on cosmetics is the
 most likely way to waste a week chasing ghosts.
 """
