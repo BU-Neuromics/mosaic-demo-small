@@ -17,36 +17,38 @@ satisfies.
 ## A note on "hippo" vs "mosaic"
 
 The product was renamed Hippo → Mosaic (upstream ADR-0004), and this repo's own
-code and docs use **Mosaic** throughout. Some `hippo*` spellings remain, and
-every one of them is deliberate — **do not bulk-rename them**, because each is
-either someone else's identifier or not the product name at all:
+code and docs use **Mosaic** throughout. Mosaic v0.16.0 also renamed the
+data-contract identifiers (datahelix platform ADR-0007), and this repo follows:
+`mosaicSchema` / `mosaicEntityType`, the `mosaic_core` import, the `mosaic_*`
+annotation keys, and Aperture's `VITE_GRAPHQL_URL`. Some `hippo*` spellings
+remain, and every one of them is deliberate — **do not bulk-rename them**,
+because each is a record, someone else's identifier, or not the product name:
 
 | Spelling | Why it stays |
 |---|---|
 | `hippocampus` | An anatomical brain region — real data values in this schema. Nothing to do with the product. |
-| `hippoSchema`, `hippoEntityType` | **Live GraphQL field/type names** that upstream Mosaic still serves. Renaming breaks every query. |
-| `hippo_core`, `hippo_ext`, `hippo_search`, `hippo_index`, `hippo_meta`, `hippo_external_xref` | Data-contract identifiers and LinkML annotation keys, **deliberately not renamed** by ADR-0004. Upstream reads these exact strings. |
+| `hippoSchema`, `hippo_*` in `evals/schema/introspection.json`, `evals/schema/mosaic-domain-schema.json`, `evals/baselines/`, the eval fingerprints, and dated findings in `exon/README.md` / `CONVERSATIONAL-QUERY.md` | Captured server responses and dated records from before Mosaic v0.16.0. They show what the server said then; recapture rather than edit them. |
 | `hippo-benchmark`, `brainbank-hippo-performance`, `hippo-reference-ensembl` | Names of other real repos. |
-| `hippoSource.ts`, `VITE_HIPPO_GRAPHQL_URL` | Aperture's own file and env-var names. |
+| `hippoSource.ts` | Aperture's own file name. |
 | `../hippo@<commit>` in `captured_against` / "last verified" strings | Provenance records. At capture time the repo really was named `hippo`; rewriting them would falsify the record. The `../hippo` clone was a stale duplicate of `../mosaic` and was **deleted 2026-09-17**; the live editable install is `../mosaic` (`BU-Neuromics/mosaic`). |
 
 Exon's own local Python names for the schema it fetches *were* renamed
 (`fetch_mosaic_schema`, `mosaic_schema`, `MOSAIC_SCHEMA_QUERY`) — those are
-ours, internal, and carry no wire meaning. The GraphQL query string they send
-still asks for `hippoSchema`, because that is what the server answers to.
+ours, internal, and carry no wire meaning. The GraphQL query they send asks
+for `mosaicSchema`, so Exon needs Mosaic v0.16.0 or later.
 
 ## Schema
 
 `schemas/demo.yaml` — four concrete classes, each `is_a: Entity` (Mosaic's
-built-in `hippo_core` base: `id` + `is_available`), plus one inlined
+built-in `mosaic_core` base: `id` + `is_available`), plus one inlined
 value-object:
 
 - **`Donor`** — `cohort`/`sex` enum facets, `age_at_death` (normal
   distribution), sparse `cause_of_death`, full-text-searchable `notes`
-  (`hippo_search: fts5`).
+  (`mosaic_search: fts5`).
 - **`Sample`** — `sample_type`/`storage_condition` enum facets, single-valued
   `donor` reference, skewed `replicate_number`, exact-match `accession`
-  (`hippo_index: true`), sparse multivalued `tags`.
+  (`mosaic_index: true`), sparse multivalued `tags`.
 - **`Workflow`** — `status`/`workflow_type` enum facets, multivalued
   `input_samples` reference, `started_at`/`completed_at`/`duration_hours`.
 - **`Dataset`** — `dataset_type`/`access_level` enum facets, boolean

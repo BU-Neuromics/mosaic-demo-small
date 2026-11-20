@@ -5,7 +5,7 @@ Stops a plausible-looking but wrong plan from ever reaching the live GraphQL end
 Field-name vocabulary (mosaic#149, fixed upstream in 7669fac/PR#150): the server now accepts
 BOTH the LinkML slot name (`sample_type`) and the camelCase spelling exposed on the entity type
 (`sampleType`), and raises `UNKNOWN_FILTER_FIELD` on anything else rather than silently matching
-zero rows. This validator mirrors that: it resolves either spelling through `hippoSchema` --
+zero rows. This validator mirrors that: it resolves either spelling through `mosaicSchema` --
 never by guessing a transformation -- and pre-empts the server's three error classes so a bad
 plan is caught before execution rather than after.
 """
@@ -14,7 +14,7 @@ from .ops import FilterStep, RelatedLookupStep, QueryPlan
 SUPPORTED_FILTER_OPS = ("EQ", "IN")  # FilterOp enum has no gt/lt/ne/contains -- mosaic#96, open
 
 # Computed at read time from the provenance log rather than stored as columns (sec9 §9.7), so
-# they are absent from hippoSchema's slot list and the server rejects filtering on them with a
+# they are absent from mosaicSchema's slot list and the server rejects filtering on them with a
 # pointer to `asOf`. Named explicitly so the plan gets that same actionable message instead of a
 # generic "unknown field".
 COMPUTED_TEMPORAL_FIELDS = frozenset({"created_at", "updated_at", "created_by", "updated_by"})
@@ -73,7 +73,7 @@ def _resolve_or_raise(i: int, entity: str, entity_fields: dict, name: str, what:
 def _validate_filter_step(i: int, step: FilterStep, mosaic_schema: dict) -> None:
     if step.entity not in mosaic_schema:
         raise ValidationError(
-            f"step {i}: unknown entity {step.entity!r} -- not present in live hippoSchema"
+            f"step {i}: unknown entity {step.entity!r} -- not present in live mosaicSchema"
         )
     entity_fields = mosaic_schema[step.entity]["fields"]
 

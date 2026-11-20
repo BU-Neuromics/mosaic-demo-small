@@ -132,7 +132,7 @@
   question: Look up the sample with accession SMP604876.
   graphql: '{ samples(filters: [{field: "accession", value: "SMP604876"}]) { total items { id } } }'
   capability: filter
-  note: Exact-match lookup key (hippo_index:true), not full-text search.
+  note: Exact-match lookup key (mosaic_index:true), not full-text search.
 
 - id: q18
   category: entity_filtering
@@ -280,7 +280,7 @@
   graphql: '{ searchSamples(q: "tissue") { total items { id } } }'
   note: >-
     searchSamples exists on the schema (every entity type gets one) but no
-    Sample field is annotated hippo_search:fts5, so it always returns [].
+    Sample field is annotated mosaic_search:fts5, so it always returns [].
     Deliberately NOT `capability: blocked` -- that value is reserved for
     tracked upstream/platform gaps (see design.md's target: "100% of
     unsupported questions correctly identified as such" distinguishes

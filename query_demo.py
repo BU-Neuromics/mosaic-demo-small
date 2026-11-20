@@ -4,7 +4,7 @@
 instead of) manual verification in Aperture.
 
 Demonstrates: per-class counts, a facet tally, a single-valued-reference
-filter query, full-text search on both hippo_search fields, and the full
+filter query, full-text search on both mosaic_search fields, and the full
 Dataset -> Workflow -> Sample -> Donor traversal.
 """
 

@@ -151,7 +151,7 @@ echo "     Exon up, grounded in the live schema."
 if [[ -n "$APERTURE_WEB_DIR" ]]; then
   echo "3/${STEP_COUNT}  Starting Aperture's web dev server on :${APERTURE_WEB_PORT} ..."
   ( cd "$APERTURE_WEB_DIR" && \
-    VITE_HIPPO_GRAPHQL_URL="http://127.0.0.1:${MOSAIC_PORT}/graphql" \
+    VITE_GRAPHQL_URL="http://127.0.0.1:${MOSAIC_PORT}/graphql" \
     npm run dev -- --port "$APERTURE_WEB_PORT" --strictPort \
     > "$LOGDIR/aperture-web.log" 2>&1 ) &
   APERTURE_PID=$!
