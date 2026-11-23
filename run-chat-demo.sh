@@ -18,6 +18,11 @@
 # nothing new to demo over the terminal chat -- starting it now just proves
 # the launcher wiring ahead of that landing.
 #
+# If vite dies with "EMFILE: too many open files, watch ...", the machine is
+# out of inotify instances (fs.inotify.max_user_instances), usually because
+# other dev servers or editors hold them. Retry with polling instead:
+#   CHOKIDAR_USEPOLLING=1 APERTURE_WEB_DIR=... ./run-chat-demo.sh
+#
 # All started services are stopped again on exit. Run from the repo root.
 set -uo pipefail
 
@@ -121,17 +126,28 @@ require_free_port "$MOSAIC_PORT" "Mosaic"
 require_free_port "$EXON_PORT" "Exon's turn service"
 
 STEP_COUNT=3
+# Origins Mosaic must allow cross-origin requests from. The Aperture SPA is
+# served from its own port and calls Mosaic's /graphql directly, so without
+# these the browser's CORS preflight is refused and Aperture shows "Could not
+# introspect the endpoint". Both spellings: vite prints localhost, we print
+# 127.0.0.1, and the browser treats them as different origins.
+CORS_ARGS=()
 if [[ -n "$APERTURE_WEB_DIR" ]]; then
   [[ -d "$APERTURE_WEB_DIR" ]] || die "APERTURE_WEB_DIR=$APERTURE_WEB_DIR does not exist."
   [[ -d "$APERTURE_WEB_DIR/node_modules" ]] || die \
     "$APERTURE_WEB_DIR has no node_modules -- run 'npm install' there first."
+  [[ -x "$APERTURE_WEB_DIR/node_modules/.bin/vite" ]] || die \
+    "$APERTURE_WEB_DIR/node_modules/.bin/vite not found -- is this Aperture's web/ directory?"
   require_free_port "$APERTURE_WEB_PORT" "Aperture's web dev server"
+  CORS_ARGS=(--cors-origin "http://127.0.0.1:${APERTURE_WEB_PORT}"
+             --cors-origin "http://localhost:${APERTURE_WEB_PORT}")
   STEP_COUNT=4
 fi
 
 echo "1/${STEP_COUNT}  Starting Mosaic on :${MOSAIC_PORT} (GraphQL + MCP, Exon at ${EXON_URL}) ..."
 MOSAIC_EXON_URL="$EXON_URL" \
   mosaic serve --config mosaic.yaml --graphql --mcp --port "$MOSAIC_PORT" \
+  ${CORS_ARGS[@]+"${CORS_ARGS[@]}"} \
   > "$LOGDIR/mosaic.log" 2>&1 &
 MOSAIC_PID=$!
 wait_for "http://127.0.0.1:${MOSAIC_PORT}/graphql" "$MOSAIC_PID" \
@@ -150,9 +166,14 @@ echo "     Exon up, grounded in the live schema."
 
 if [[ -n "$APERTURE_WEB_DIR" ]]; then
   echo "3/${STEP_COUNT}  Starting Aperture's web dev server on :${APERTURE_WEB_PORT} ..."
+  # Run vite itself (Aperture's `npm run dev` is just `vite`) and `exec` it,
+  # so $! is the node process that holds the port. Through `npm run dev` it
+  # would be the wrapper subshell, with vite two processes below: wait_for's
+  # ownership check then rejects our own server, and cleanup's kill misses
+  # vite and leaves it orphaned on the port.
   ( cd "$APERTURE_WEB_DIR" && \
     VITE_GRAPHQL_URL="http://127.0.0.1:${MOSAIC_PORT}/graphql" \
-    npm run dev -- --port "$APERTURE_WEB_PORT" --strictPort \
+    exec ./node_modules/.bin/vite --port "$APERTURE_WEB_PORT" --strictPort \
     > "$LOGDIR/aperture-web.log" 2>&1 ) &
   APERTURE_PID=$!
   wait_for "http://127.0.0.1:${APERTURE_WEB_PORT}/" "$APERTURE_PID" \
