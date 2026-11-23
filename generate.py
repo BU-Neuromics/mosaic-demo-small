@@ -3,7 +3,7 @@
 
 Uses linkml-data-gen's Python API (not its CLI) so the per-class counts can
 exceed the CLI's ``--count-for`` clamp of 1000. Builds the SchemaView by hand
-with an explicit importmap so ``schemas/demo.yaml``'s ``imports: [hippo_core]``
+with an explicit importmap so ``schemas/demo.yaml``'s ``imports: [mosaic_core]``
 resolves without going through Mosaic's own schema-loading path (see
 generation_schema.yaml's header comment for why a separate, generation-only
 tree_root schema is used instead of declaring one in schemas/demo.yaml).
@@ -69,11 +69,11 @@ SEEDED_PUBLICATION_KEYWORD = "consortium-nine"
 
 
 def _build_schema_view() -> SchemaView:
-    hippo_core = str(
-        importlib.resources.files("mosaic.schemas").joinpath("hippo_core")
+    mosaic_core = str(
+        importlib.resources.files("mosaic.schemas").joinpath("mosaic_core")
     ).removesuffix(".yaml")
     importmap = {
-        "hippo_core": hippo_core,
+        "mosaic_core": mosaic_core,
         "demo": DEMO_SCHEMA.removesuffix(".yaml"),
     }
     return SchemaView(GENERATION_SCHEMA, importmap=importmap)
@@ -104,7 +104,7 @@ def _check_generation_pools(sv: SchemaView) -> None:
         for name in sv.class_slots("DemoBundle")
     }
     # Mosaic's own exclusion list, imported rather than restated: these classes
-    # come from hippo_core, get no table, and so must get no pool. A local copy
+    # come from mosaic_core, get no table, and so must get no pool. A local copy
     # would silently drift the day Mosaic changes it.
     missing = sorted(
         name
@@ -125,7 +125,7 @@ def _check_generation_pools(sv: SchemaView) -> None:
     # A pool that exists under the wrong NAME is the subtler half of the same
     # hazard. Mosaic ignores our tree_root and synthesizes its own from the
     # domain classes, deriving each pool name as snake_case(ClassName) + "s"
-    # (overridable per class with `hippo_accessor`). A DemoBundle slot that
+    # (overridable per class with `mosaic_accessor`). A DemoBundle slot that
     # disagrees generates fine and then fails at ingest with "Additional
     # properties are not allowed" — which names the pool but not the rule it
     # broke. `Diagnosis` -> `diagnosiss` found this the hard way.
@@ -143,7 +143,7 @@ def _check_generation_pools(sv: SchemaView) -> None:
             "DemoBundle pool names disagree with Mosaic's synthesized tree root "
             "— ingest would reject the bundle:\n  "
             + "\n  ".join(mismatched)
-            + "\nRename the DemoBundle slot, or set the class's `hippo_accessor` "
+            + "\nRename the DemoBundle slot, or set the class's `mosaic_accessor` "
             "annotation to the name you want."
         )
 

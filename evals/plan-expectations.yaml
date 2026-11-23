@@ -5,7 +5,7 @@
 # the two files cannot silently drift apart.
 #
 # What an expectation asserts is *query semantics*, not spelling or formatting:
-#   - required_filters      : these filters MUST be present (field resolved through hippoSchema,
+#   - required_filters      : these filters MUST be present (field resolved through mosaicSchema,
 #                             so `sample_type` and `sampleType` both satisfy the same expectation)
 #   - forbid_extra_filters  : true (default) means silently ADDING a constraint is also a failure,
 #                             not just dropping one -- over-filtering answers a different question

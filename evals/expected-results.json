@@ -1352,7 +1352,7 @@
         "items": []
       }
     },
-    "note": "No Sample slot is annotated hippo_search:fts5, so search always returns empty. Not blocked \u2014 the capability exists, this schema just does not use it."
+    "note": "No Sample slot is annotated mosaic_search:fts5, so search always returns empty. Not blocked \u2014 the capability exists, this schema just does not use it."
   },
   "q29": {
     "status": "ok",

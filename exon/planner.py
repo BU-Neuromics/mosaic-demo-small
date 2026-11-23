@@ -95,7 +95,7 @@ PLAN_TOOL = {
                             "select_fields": {
                                 "type": "array",
                                 "items": {"type": "string"},
-                                "description": "hippoSchema slot names to return for this "
+                                "description": "mosaicSchema slot names to return for this "
                                 "entity.",
                             },
                             "forward_relation": {
@@ -151,7 +151,7 @@ def render_schema_slots(mosaic_schema: dict) -> str:
     (`samples`) in the `entity` field, producing "unknown entity 'samples'". When unrelated
     models fail identically the defect is in the grounding, not the model: it offered two names
     and never said which one belongs where. The planner has no use for the accessor; only the
-    executor does, and it reads it straight from hippoSchema.
+    executor does, and it reads it straight from mosaicSchema.
     """
     lines = []
     for entity, info in sorted(mosaic_schema.items()):
@@ -162,7 +162,7 @@ def render_schema_slots(mosaic_schema: dict) -> str:
 
 def render_relationship_types(mosaic_schema: dict) -> str:
     """Placeholder renderer: the ONLY valid relationship_type values for related_lookup steps,
-    derived directly from hippoSchema field metadata -- never from the capability manifest's
+    derived directly from mosaicSchema field metadata -- never from the capability manifest's
     human-authored descriptive labels (e.g. "workflows_via_input_samples"), which are keys for
     documentation, not values the API accepts. Confirmed empirically: a model given the
     manifest's raw dict passed those descriptive keys as relationship_type, which silently
