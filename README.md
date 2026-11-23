@@ -29,7 +29,7 @@ because each is a record, someone else's identifier, or not the product name:
 | `hippocampus` | An anatomical brain region — real data values in this schema. Nothing to do with the product. |
 | `hippoSchema`, `hippo_*` in `evals/schema/introspection.json`, `evals/schema/mosaic-domain-schema.json`, `evals/baselines/`, the eval fingerprints, and dated findings in `exon/README.md` / `CONVERSATIONAL-QUERY.md` | Captured server responses and dated records from before Mosaic v0.16.0. They show what the server said then; recapture rather than edit them. |
 | `hippo-benchmark`, `brainbank-hippo-performance`, `hippo-reference-ensembl` | Names of other real repos. |
-| `hippoSource.ts` | Aperture's own file name. |
+| `hippoSource.ts` | Historical references in `openspec/` to Aperture's former file (now `mosaicSource.ts`). |
 | `../hippo@<commit>` in `captured_against` / "last verified" strings | Provenance records. At capture time the repo really was named `hippo`; rewriting them would falsify the record. The `../hippo` clone was a stale duplicate of `../mosaic` and was **deleted 2026-09-17**; the live editable install is `../mosaic` (`BU-Neuromics/mosaic`). |
 
 Exon's own local Python names for the schema it fetches *were* renamed

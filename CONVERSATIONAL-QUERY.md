@@ -240,7 +240,7 @@ A single run is an anecdote; treat any one result here as one sample.
 | Command | What it does |
 | --- | --- |
 | `make chat-dev` | Everything from source, planner included |
-| `make chat` | Same, from pinned images — works as of Mosaic v0.14.0 + Reel v0.1.0 |
+| `make chat` | Same, from pinned images — works as of Mosaic v0.16.0 + Reel v0.1.0 |
 | `make dev` | No planner: browsing only, chat panel correctly hidden |
 | `make logs-planner` | Follow the planner — grounding, model calls, failures |
 | `make restart-planner` | Re-read the schema after changing it |
