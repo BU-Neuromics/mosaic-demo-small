@@ -171,9 +171,12 @@ if [[ -n "$APERTURE_WEB_DIR" ]]; then
   # would be the wrapper subshell, with vite two processes below: wait_for's
   # ownership check then rejects our own server, and cleanup's kill misses
   # vite and leaves it orphaned on the port.
+  # --host 127.0.0.1: vite's default host is `localhost`, which Node >= 17
+  # resolves to ::1 first on macOS, so the 127.0.0.1 health check below and
+  # the URL printed after it would miss the server.
   ( cd "$APERTURE_WEB_DIR" && \
     VITE_GRAPHQL_URL="http://127.0.0.1:${MOSAIC_PORT}/graphql" \
-    exec ./node_modules/.bin/vite --port "$APERTURE_WEB_PORT" --strictPort \
+    exec ./node_modules/.bin/vite --host 127.0.0.1 --port "$APERTURE_WEB_PORT" --strictPort \
     > "$LOGDIR/aperture-web.log" 2>&1 ) &
   APERTURE_PID=$!
   wait_for "http://127.0.0.1:${APERTURE_WEB_PORT}/" "$APERTURE_PID" \
